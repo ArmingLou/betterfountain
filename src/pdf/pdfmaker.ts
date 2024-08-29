@@ -126,22 +126,76 @@ async function initDoc(opts: Options) {
     doc.registerFont('ScriptOblique', fp + 'courier-prime-italic.ttf');
     if (opts.font != "Courier Prime") {
         var variants = await fontFinder.listVariants(opts.font);
+        var initedMap = new Map<string, number>();
+        var weightPathMap = new Map<number, string>();
+        var pat = '';
         variants.forEach((variant: any) => {
             switch (variant.style) {
                 case "regular":
                     doc.registerFont('ScriptNormal', variant.path);
+                    pat = variant.path;
+                    initedMap.set('ScriptNormal', variant.weight);
+                    weightPathMap.set(variant.weight, variant.path);
                     break;
                 case "bold":
                     doc.registerFont('ScriptBold', variant.path);
+                    initedMap.set('ScriptBold', variant.weight);
+                    weightPathMap.set(variant.weight, variant.path);
                     break;
                 case "italic":
                     doc.registerFont('ScriptOblique', variant.path);
+                    initedMap.set('ScriptOblique', variant.weight);
                     break;
                 case "boldItalic":
                     doc.registerFont('ScriptBoldOblique', variant.path);
+                    initedMap.set('ScriptBoldOblique', variant.weight);
+                    weightPathMap.set(variant.weight, variant.path);
                     break;
+                default:
+                    weightPathMap.set(variant.weight, variant.path)
+                    break
             }
         });
+        if (pat !== '') {
+            weightPathMap.forEach((path: string, weight: number) => {
+                if (!initedMap.get('ScriptOblique')) {
+                    if (weight < 400) {
+                        doc.registerFont('ScriptOblique', path);
+                        initedMap.set('ScriptOblique', weight);
+                    }
+                }
+                if (!initedMap.get('ScriptBold')) {
+                    if (weight > 400 && weight <= 700) {
+                        doc.registerFont('ScriptBold', path);
+                        initedMap.set('ScriptBold', weight);
+                        weightPathMap.set(weight, path);
+                    }
+                }
+                if (!initedMap.get('ScriptBoldOblique')) {
+                    if (weight > 700) {
+                        doc.registerFont('ScriptBoldOblique', path);
+                        initedMap.set('ScriptBoldOblique', weight);
+                        weightPathMap.set(weight, path);
+                    }
+                }
+            })
+            // 指定字体，没有粗体/斜体等样式，用常规字体样式替换，避免不能显示打印的问题
+            if (!initedMap.get('ScriptBold')) {
+                if (initedMap.get('ScriptBoldOblique')) {
+                    doc.registerFont('ScriptBold', weightPathMap.get(initedMap.get('ScriptBoldOblique')));
+                } else {
+                    doc.registerFont('ScriptBold', pat);
+                }
+            }
+            if (!initedMap.get('ScriptOblique')) doc.registerFont('ScriptOblique', pat);
+            if (!initedMap.get('ScriptBoldOblique')) {
+                if (initedMap.get('ScriptBold')) {
+                    doc.registerFont('ScriptBoldOblique', weightPathMap.get(initedMap.get('ScriptBold')));
+                } else {
+                    doc.registerFont('ScriptBoldOblique', pat);
+                }
+            }
+        }
     }
 
     doc.font('ScriptNormal');
@@ -222,9 +276,11 @@ async function initDoc(opts: Options) {
             i += innersplit.length - 1;
         }
 
+        var width = options.width !== undefined ? options.width : print.page_width;
         // var font_width = print.font_width;
         var textobjects = [];
         var currentIndex = 0;
+        var currentWidth = 0;
         for (var i = 0; i < split_for_formatting.length; i++) {
             var elem = split_for_formatting[i];
             if (elem === '***') {
@@ -258,7 +314,51 @@ async function initDoc(opts: Options) {
                         linkurl = link.url;
                     }
                 }
+                for (var j = 0; j < elem.length; j++) {
+                    if (elem[j] == '\n') {
+                        currentWidth = 0;
+                    } else if (elem[j] == ' ') {
+                        currentWidth += 0.5;
+                    } else if (elem.charCodeAt(j) < 255) {
+                        currentWidth += 1;
+                    } else {
+                        currentWidth += 1.6;
+                    }
+                    if (currentWidth > width * 9) {
+                        // currentWidth = 0;
+                        // elem = elem.slice(0, j + 1) + '\n' + elem.slice(j);
+                        // j++;
+                        var enSplit = false;
+                        if(elem.charCodeAt(j) < 255){
+                            // 处理英文单词，不截断单词
+                            for (var k = j; k >= 0; k--) {
+                                if (elem[k] === " ") {
+                                    if (k > 0) {
+                                        elem = elem.slice(0, k) + '\n' + elem.slice(k+1);
+                                        j = k - 1;
+                                    }
+                                    enSplit = true;
+                                    break;
+                                } else if (elem.charCodeAt(k) > 255) {
+                                    if (k > 0) {
+                                        elem = elem.slice(0, k + 1) + '\n' + elem.slice(k+1);
+                                        j = k ;
+                                    }
+                                    enSplit = true;
+                                    break;
+                                } else if (elem[k] === "\n") {
+                                    break;
+                                }
+                            }
+                        } 
+                        if (!enSplit) {
+                            elem = elem.slice(0, j + 1) + '\n' + elem.slice(j);
+                        }
+                        
+                    }
+                }
                 textobjects.push({
+                    lineBreak: false,
                     text: elem,
                     link: linkurl,
                     font: font,
@@ -274,48 +374,48 @@ async function initDoc(opts: Options) {
                 align: options.align
             });*/
         }
-        var width = options.width !== undefined ? options.width : print.page_width;
+
         addTextbox(textobjects, doc, x * 72, y * 72, width * 72, {
-            lineBreak: options.line_break,
+            lineBreak: false,
             align: options.align,
             baseline: 'top'
         });
 
     };
 
-    function splitBy(text:string, delimiter:string) {
-        var 
-          delimiterPATTERN = '(' + delimiter + ')', 
-          delimiterRE = new RegExp(delimiterPATTERN, 'g');
-      
-        return text.split(delimiterRE).reduce(function(chunks, item){
-          if (item.match(delimiterRE)){
-            chunks.push(item)
-          } else {
-            chunks[chunks.length - 1] += item
-          };
-          return chunks
-        }, [])
-      }
+    function splitBy(text: string, delimiter: string) {
+        var
+            delimiterPATTERN = '(' + delimiter + ')',
+            delimiterRE = new RegExp(delimiterPATTERN, 'g');
 
-    interface image{ path: string }
+        return text.split(delimiterRE).reduce(function (chunks, item) {
+            if (item.match(delimiterRE)) {
+                chunks.push(item)
+            } else {
+                chunks[chunks.length - 1] += item
+            };
+            return chunks
+        }, [])
+    }
+
+    interface image { path: string }
     doc.text2withImages = function (text: string, x: number, y: number, options: any) {
         let textparts = splitBy(text, regex.link.source);
-        var parts:{text?:string,image?:image}[] = [];
+        var parts: { text?: string, image?: image }[] = [];
         for (let i = 0; i < textparts.length; i++) {
             let match = regex.link.exec(textparts[i]);
-            if(match.length>0){
-                parts.push({image:{path:match[6]}});
-                parts.push({text:textparts[i].slice(match[0].length)})
+            if (match.length > 0) {
+                parts.push({ image: { path: match[6] } });
+                parts.push({ text: textparts[i].slice(match[0].length) })
             }
-            else{
-                parts.push({text:textparts[i]});
+            else {
+                parts.push({ text: textparts[i] });
             }
         }
         var additionalY = 0;
         for (const part of parts) {
-            if(part.text){
-                doc.text2(part.text, x, y+additionalY, options);
+            if (part.text) {
+                doc.text2(part.text, x, y + additionalY, options);
             }
         }
     }
@@ -537,7 +637,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 offset += ' ';
             }
 
-            doc.format_text(offset + cfg.print_header, 1.5, print.page_number_top_margin-0.1, {
+            doc.format_text(offset + cfg.print_header, 1.5, print.page_number_top_margin - 0.1, {
                 color: '#777777'
             });
         }
@@ -666,7 +766,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             var general_text_properties = {
                 color: color,
                 highlight: false,
-                bold:false,
+                bold: false,
                 highlightcolor: [0, 0, 0]
             }
 
@@ -680,11 +780,32 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         new_text_properties.highlight = true;
                         new_text_properties.highlightcolor = wordToColor(character);
                     };
-                    if(cfg.embolden_character_names){
-                        new_text_properties.bold = true;
-                    }
                 };
+                // if (cfg.embolden_character_names && lline.type === 'character') {
+                //     new_text_properties.bold = true;
+                // }
                 return new_text_properties
+            }
+            // TODO Arming (2024-08-29) : 
+            function wrapCharAndDialog(intput:any,lline = line):any{
+                if (lline.type === "character") {
+                    if (cfg.embolden_character_names) {
+                        if (intput.endsWith(cfg.text_contd)) {
+                            intput = intput.substring(0, intput.length - cfg.text_contd.length);
+                            intput = '**' + intput + '**' + cfg.text_contd;
+                        } else {
+                            intput = '**' + intput + '**';
+                        }
+                    }
+                }
+                // if (lline.type === "dialogue") {
+                //     if (cfg.emitalic_dialog) {
+                //         if(!intput.endsWith('*') || !intput.startsWith('*')){
+                //             intput = '*' + intput + '*';
+                //         }
+                //     }
+                // }
+                return intput
             }
 
             var text_properties = get_text_properties();
@@ -743,6 +864,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                 }
 
+                
                 if (line.type === "scene_heading") {
                     if (cfg.create_bookmarks) {
                         getOutlineChild(outline, outlineDepth, 0).addItem(text);
@@ -755,6 +877,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         text = '_' + text + '_';
                     }
                 }
+
+                text = wrapCharAndDialog(text,line)
 
                 if (line.type === 'synopsis') {
                     feed += print.synopsis.padding || 0;
@@ -778,7 +902,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             feed_right -= (feed_right - print.left_margin) / 2;
                             feed_right += (print.page_width - print.right_margin - print.left_margin) / 2;
                             var right_text_properties = get_text_properties(right_line);
-                            doc.text2(right_line.text, feed_right, print.top_margin + print.font_height * y_right++, right_text_properties);
+                            var tx = wrapCharAndDialog(right_line.text,right_line);
+                            doc.text2(tx, feed_right, print.top_margin + print.font_height * y_right++, right_text_properties);
                         });
                     }
                     feed -= (feed - print.left_margin) / 2;
@@ -854,8 +979,8 @@ export type pdfstats = {
     linemap: Map<number, lineStruct> //the structure of each line
 }
 export type PdfAsBase64 = {
-    data:string;
-    stats:pdfstats;
+    data: string;
+    stats: pdfstats;
 }
 
 export var get_pdf_stats = async function (opts: Options): Promise<pdfstats> {
@@ -870,16 +995,16 @@ export var get_pdf_stats = async function (opts: Options): Promise<pdfstats> {
     return stats;
 }
 
-const toBase64 = (doc:any):Promise<string> => {
+const toBase64 = (doc: any): Promise<string> => {
     return new Promise((resolve, reject) => {
         try {
             const stream = doc.pipe(new Base64Encode());
 
             let base64Value = '';
-            stream.on('data', (chunk:any) => {
+            stream.on('data', (chunk: any) => {
                 base64Value += chunk;
             });
-            
+
             stream.on('end', () => {
                 resolve(base64Value);
             });
@@ -890,7 +1015,7 @@ const toBase64 = (doc:any):Promise<string> => {
 };
 
 
-export var get_pdf_base64 = async function(opts:Options): Promise<PdfAsBase64> {
+export var get_pdf_base64 = async function (opts: Options): Promise<PdfAsBase64> {
     var doc = await initDoc(opts);
     let stats: pdfstats = { pagecount: 1, pagecountReal: 1, linemap: new Map<number, lineStruct>() };
     stats.pagecount = opts.parsed.lines.length / opts.print.lines_per_page;
@@ -899,7 +1024,7 @@ export var get_pdf_base64 = async function(opts:Options): Promise<PdfAsBase64> {
     });
     await generate(doc, opts, stats.linemap);
     doc.end();
-    return{
+    return {
         data: await toBase64(doc),
         stats: stats
     }

@@ -35,6 +35,7 @@ const workspace = {
     pdfConfig: {
       emboldenSceneHeaders: true,
       emboldenCharacterNames: false,
+      emitalicDialog: false,
       showPageNumbers: true,
       splitDialog: true,
       printTitlePage: true,

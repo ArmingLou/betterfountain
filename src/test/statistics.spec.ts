@@ -24,10 +24,12 @@ const exportConfig: ExportConfig  =  {
 };
 
 const fountainConfig: FountainConfig  = {
+    calculate_duration: 1,
     refresh_stats_on_save: false,
     number_scenes_on_save:  false,
     embolden_scene_headers: false,
     embolden_character_names: false,
+    emitalic_dialog: false,
     show_page_numbers: false,
     split_dialogue: false,
     print_title_page: false,

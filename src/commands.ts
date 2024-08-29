@@ -7,20 +7,46 @@ import * as afterparser from "./afterwriting-parser";
 import { GeneratePdf } from "./pdf/pdf";
 import { getActiveFountainDocument, getEditor, openFile, shiftScenes } from "./utils";
 import * as telemetry from "./telemetry";
+import { pdfPanels } from "./providers/PdfPreview";
 
-export async function exportPdf(showSaveDialog: boolean = true, openFileOnSave: boolean = false, highlightCharacters = false) {
+export async function exportPdf(uri: vscode.Uri | undefined | null, showSaveDialog: boolean = true, openFileOnSave: boolean = false, highlightCharacters = false) {
   var canceled = false;
   if (canceled) return;
-  var editor = getEditor(getActiveFountainDocument());
+  let doc;
+  if (uri) {
+    if (uri.scheme == 'file' && (uri.path.endsWith('.fountain')||uri.path.endsWith('.spmd'))) {
+      doc = uri
+    } else if (uri.scheme == 'webview-panel') {
+      // 从 pdf 预览 webviewPannel 导出
+      for (let i = 0; i < pdfPanels.length; i++) {
+        if (pdfPanels[i].panel.active){
+          doc = vscode.Uri.parse(pdfPanels[i].uri);
+          break
+        }
+      }
+    }
+  }
+  if (!doc) {
+    doc = getActiveFountainDocument()
+  }
 
+  // var editor = getEditor(doc);
+  // get text form vscode.uri
+  var by = await vscode.workspace.fs.readFile(doc);
+  // 转成string
+  var text = Buffer.from(by).toString('utf-8');
 
-  var config = getFountainConfig(getActiveFountainDocument());
+  // 从uri获取文件名
+  var filename = doc.path.substring(doc.path.lastIndexOf('/') + 1);
+  filename = filename.replace(/(\.(((better)?fountain)|spmd|txt))$/, '');
+
+  var config = getFountainConfig(doc);
   telemetry.reportTelemetry("command:fountain.exportpdf");
 
-  var parsed = await afterparser.parse(editor.document.getText(), config, false);
+  var parsed = await afterparser.parse(text, config, false);
 
   var exportconfig: ExportConfig = { highlighted_characters: [] };
-  var filename = editor.document.fileName.replace(/(\.(((better)?fountain)|spmd|txt))$/, ''); //screenplay.fountain -> screenplay
+  // var filename = editor.document.fileName.replace(/(\.(((better)?fountain)|spmd|txt))$/, ''); //screenplay.fountain -> screenplay
   if (highlightCharacters) {
     var highlighted_characters = await vscode.window.showQuickPick(Array.from(parsed.properties.characters.keys()), { canPickMany: true });
     exportconfig.highlighted_characters = highlighted_characters;
@@ -56,7 +82,7 @@ export async function exportPdf(showSaveDialog: boolean = true, openFileOnSave: 
 
 var lastShiftedParseId = "";
 
-export function shiftScenesUpDn (direction: number) {
+export function shiftScenesUpDn(direction: number) {
   var editor = getEditor(getActiveFountainDocument());
   var parsed = parsedDocuments.get(editor.document.uri.toString());
 

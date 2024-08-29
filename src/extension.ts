@@ -79,8 +79,8 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('fountain.statistics', createStatisticsPanel));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.jumpto', commands.jumpTo));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdf', commands.exportPdf));
-  context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfdebug', async () => commands.exportPdf(false, true)));
-  context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfcustom', async () => commands.exportPdf(true, false, true)));
+  context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfdebug', async () => commands.exportPdf(null,false, true)));
+  context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfcustom', async () => commands.exportPdf(null,true, false, true)));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exporthtml', exportHtml));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.overwriteSceneNumbers', overwriteSceneNumbers));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.updateSceneNumbers', updateSceneNumbers));
@@ -109,7 +109,7 @@ export function activate(context: ExtensionContext) {
   languages.registerFoldingRangeProvider({ language: 'fountain' }, new FountainFoldingRangeProvider());
 
   //Setup autocomplete
-  languages.registerCompletionItemProvider({ language: 'fountain' }, new FountainCompletionProvider(), '\n', '\r', '-', ' ');
+  languages.registerCompletionItemProvider({ language: 'fountain' }, new FountainCompletionProvider(), '\n', '\r', '-', ' ', '.', '@');
 
   //Setup symbols (outline)
   languages.registerDocumentSymbolProvider({ language: 'fountain' }, new FountainSymbolProvider());

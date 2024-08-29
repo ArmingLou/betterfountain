@@ -18,7 +18,7 @@ export async function exportHtml(){
     var fountainconfig = getFountainConfig(editor.document.uri);
 	var output = afterparser.parse(editor.document.getText(), fountainconfig , true);
 
-    let extensionpath = vscode.extensions.getExtension("piersdeseilligny.betterfountain").extensionPath;
+    let extensionpath = vscode.extensions.getExtension("Arming.betterfountain").extensionPath;
     let htmlpath = path.join(extensionpath, 'assets', 'staticexport.html');
 	var rawhtml =  fs.readFileSync(htmlpath, 'utf8');
 

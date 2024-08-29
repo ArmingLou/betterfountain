@@ -190,7 +190,7 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
                 gradeToAge(readability.gunningFog))/6;
             if(averageComplexity>0) speechcomplexityArray.push(averageComplexity);
         }
-        const wordsSpoken = getWordCount(allDialogueCombined);
+        const wordsSpoken = getCharacterCountWithoutWhitespace(allDialogueCombined);
         characterStats.push({
             name: singledialPerChar,
             color: rgbToHex(wordToColor(singledialPerChar, 0.6, 0.5)),
@@ -294,7 +294,7 @@ function locationtime(val:string):string{
         return val.toLowerCase()
             .replace(/\s+/g, ' ')
             .replace(/\.$/g, '')
-            .replace(/[^\w ]+/g, '')
+            // .replace(/[^\w ]+/g, '')
             .replace(/  +/g, ' ')
             .trim()
             .replace(/^(the)?\s*(next|following)\b/i, '')
@@ -366,8 +366,31 @@ const getLengthChart = (parsed:parseoutput):{action:lengthchartitem[], dialogue:
             scenes[scenes.length-1].endline = scene.line-1;
         }
         var deconstructedSlug = regex.scene_heading.exec(scene.text);
-        const sceneType = locationtype(deconstructedSlug?.[1]);
-        const sceneTime = locationtime(afterdash(deconstructedSlug?.[2]));
+        let sceneType :'int'|'ext'|'mixed'|'other'
+        let sceneTime
+        if(deconstructedSlug){
+            sceneType = locationtype(deconstructedSlug?.[1]);
+            sceneTime = locationtime(afterdash(deconstructedSlug?.[2]));
+        } else {
+            // 直接 点“.” 开头的场景
+            if(scene.text.trimLeft().startsWith("(室内)")){
+                sceneType = "int";
+            } else if(scene.text.trimLeft().startsWith("(室外)")){
+                sceneType = "ext";
+            } else {
+                sceneType = "other";
+            }
+            sceneTime = locationtime(afterdash(scene.text));
+        }
+        if (sceneTime === '白天'){
+            sceneTime = 'day';
+        } else if (sceneTime === '夜晚'){
+            sceneTime = 'night';
+        } else if (sceneTime === '黎明'){
+            sceneTime = 'dawn';
+        } else if (sceneTime === '黄昏'){
+            sceneTime = 'dusk';
+        }
         scenes.push({
             type: sceneType,
             line:scene.line,

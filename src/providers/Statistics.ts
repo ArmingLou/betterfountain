@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from 'path';
 import * as fs from "fs";
-import { getEditor, getActiveFountainDocument } from "../utils";
+import { getEditor, getActiveFountainDocument, getAssetsUri } from "../utils";
 import { FountainConfig, getFountainConfig } from "../configloader";
 import { assetsPath, resolveAsUri } from "../utils";
 import * as afterparser from "../afterwriting-parser";
@@ -67,8 +67,9 @@ export function createStatisticsPanel(): vscode.WebviewPanel {
     statspanel = vscode.window.createWebviewPanel(
       'fountain-statistics', // Identifies the type of the webview. Used internally
       panelname, // Title of the panel displayed to the user
-      vscode.ViewColumn.Three, // Editor column to show the new webview panel in.
+      vscode.ViewColumn.Two, // Editor column to show the new webview panel in.
       { enableScripts: true, });
+      statspanel.iconPath = getAssetsUri("graph");
   }
   loadWebView(editor.document.uri, statspanel);
   return statspanel;

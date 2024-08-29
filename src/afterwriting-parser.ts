@@ -38,7 +38,7 @@ export const regex: { [index: string]: RegExp } = {
     section: /^[ \t]*(#+)(?: *)(.*)/,
     synopsis: /^[ \t]*(?:\=(?!\=+) *)(.*)/,
 
-    scene_heading: /^[ \t]*([.](?![.])|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[. ])(.+?)(#[-.0-9a-z]+#)?$/i,
+    scene_heading: /^[ \t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.])(.+?)(#[^\\s]+#)?$/i,
     scene_number: /#(.+)#/,
 
     transition: /^[ \t]*((?:FADE (?:TO BLACK|OUT)|CUT TO BLACK)\.|.+ TO\:|^TO\:$)|^(?:> *)(.+)/,
@@ -664,6 +664,25 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             if (thistoken.type != "action" && thistoken.type != "dialogue")
                 thistoken.text = thistoken.text.trim();
 
+            // TODO Arming (2024-08-29) : 
+            // if (thistoken.type === "character") {
+            //     if (cfg.embolden_character_names) {
+            //         if (thistoken.text.endsWith(cfg.text_contd)) {
+            //             thistoken.text = thistoken.text.substring(0, thistoken.text.length - cfg.text_contd.length);
+            //             thistoken.text = '**' + thistoken.text + '**' + cfg.text_contd;
+            //         } else {
+            //             thistoken.text = '**' + thistoken.text + '**';
+            //         }
+            //     }
+            // } else
+             if (thistoken.type === "dialogue") {
+                if (cfg.emitalic_dialog) {
+                    if(!thistoken.text.endsWith('*') || !thistoken.text.startsWith('*')){
+                        thistoken.text = '*' + thistoken.text + '*';
+                    }
+                }
+            }
+
             if(thistoken.ignore){
                 ignoredLastToken = true;
             }
@@ -788,6 +807,11 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     case 'dialogue_begin': html.push('<div class=\"dialogue' + (current_token.dual ? ' ' + current_token.dual : '') + '\">'); break;
 
                     case 'character':
+                        var content = current_token.html;
+                        if (cfg.embolden_character_names) {
+                            content = '<span class=\"bold haseditorline\" id="sourceline_' + current_token.line + '">' + content + '</span>';
+                        }
+                        
                         if (current_token.dual == "left") {
                             html.push('<div class=\"dialogue left\">');
                         } else if (current_token.dual == "right") {
@@ -795,9 +819,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         }
 
                         if (config.print_dialogue_numbers) {
-                            html.push('<h4 class="haseditorline" id="sourceline_' + current_token.line + '">' + current_token.takeNumber + ' – ' + current_token.text + '</h4>');
+                            html.push('<h4 class="haseditorline" id="sourceline_' + current_token.line + '">' + current_token.takeNumber + ' – ' + content + '</h4>');
                         } else {
-                            html.push('<h4 class="haseditorline" id="sourceline_' + current_token.line + '">' + current_token.text + '</h4>');
+                            html.push('<h4 class="haseditorline" id="sourceline_' + current_token.line + '">' + content + '</h4>');
                         }
 
                         break;

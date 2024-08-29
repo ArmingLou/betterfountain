@@ -354,7 +354,7 @@ function updateStats(){
             { data:'name', name:"name", title:"Name", alwaysvisible:true },
             { data:'secondsSpoken', name:"duration", title:"Duration", render:renderDuration },
             { data:'speakingParts', name:"lines", title:"Lines", render:renderInvert },
-            { data:'wordsSpoken', name:"words", title:"Words", render:renderInvert },
+            { data:'wordsSpoken', name:"chars", title:"chars", render:renderInvert },
             { data:'averageComplexity', name:"complexity", title:"Complexity", render:renderComplexity},
             { data:'monologues', name:"monologues", title:"Monologues", render:renderInvert }
         ],
@@ -398,9 +398,19 @@ function updateStats(){
             if(data.color){
                 $(row).find("td").first().css("color", data.color);
                 $(row).find("td.location-time").html(data.times_of_day.map((it, index) => {
+                    let cs = it;
+                    if(it === '白天'){
+                        cs = 'day';
+                    } else if(it === '夜晚'){
+                        cs = 'night';
+                    } else if(it === '黄昏'){
+                        cs = 'dusk';
+                    } else if(it === '黎明'){
+                        cs = 'dawn';
+                    }
                     let output = `<span>${it.toUpperCase()}`;
                     index < data.times_of_day.length-1 ? output += ", </span>" : output += "</span>";
-                    return $(output).css('color', `var(--scenecolor-${it}`);
+                    return $(output).css('color', `var(--scenecolor-${cs}`);
                 }));
                 $(row).find("td.location-type").first().css("color", `var(--scenecolor-${data.interior_exterior})`);
             }

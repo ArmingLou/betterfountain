@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "1.13.0",
+	"version": "3.3.1",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -22,7 +22,7 @@
 	"bugs": {
 		"url": "https://github.com/piersdeseilligny/betterfountain/issues"
 	},
-	"publisher": "piersdeseilligny",
+	"publisher": "Arming",
 	"categories": [
 		"Programming Languages",
 		"Other"
@@ -104,6 +104,28 @@
 					"when": "view == fountain-outline"
 				}
 			],
+			"editor/title": [
+				{
+					"command": "fountain.livepreview",
+					"group": "navigation",
+					"when": "editorLangId == fountain"
+				},
+				{
+					"command": "fountain.pdfpreview",
+					"group": "navigation",
+					"when": "editorLangId == fountain"
+				},
+				{
+					"command": "fountain.statistics",
+					"group": "navigation",
+					"when": "editorLangId == fountain"
+				},
+				{
+					"command": "fountain.exportpdf",
+					"group": "navigation",
+					"when": "editorLangId == fountain || activeWebviewPanelId == 'fountain-pdfpreview'"
+				}
+			],
 			"commandPalette": [
 				{
 					"command": "fountain.jumpto",
@@ -154,6 +176,11 @@
 						"type": "boolean",
 						"default": true,
 						"description": "Noise texture on the live preview (absent from PDF)"
+					},
+					"fountain.general.calculateDuration": {
+						"type": "number",
+						"default": 0.1945548,
+						"description": "时间预估系数(不同语言写作下,根据实际使用进行调整修改)"
 					}
 				}
 			},
@@ -161,6 +188,11 @@
 				"title": "Fountain PDF Export",
 				"type": "object",
 				"properties": {
+					"fountain.pdf.emitalicDialog": {
+						"type": "boolean",
+						"default": false,
+						"description": "Make dialogue italic"
+					},
 					"fountain.pdf.emboldenSceneHeaders": {
 						"type": "boolean",
 						"default": true,
@@ -168,7 +200,7 @@
 					},
 					"fountain.pdf.emboldenCharacterNames": {
 						"type": "boolean",
-						"default": false,
+						"default": true,
 						"description": "Make character names bold"
 					},
 					"fountain.pdf.showPageNumbers": {
@@ -212,7 +244,7 @@
 					},
 					"fountain.pdf.printSynopsis": {
 						"type": "boolean",
-						"default": false,
+						"default": true,
 						"description": "Print synopsis (marked with =)"
 					},
 					"fountain.pdf.printActions": {
@@ -335,11 +367,13 @@
 			{
 				"command": "fountain.livepreview",
 				"title": "Show screenplay live preview (Dynamic switching)",
-				"category": "Fountain"
+				"category": "Fountain",
+				"icon": "$(open-preview)"
 			},
 			{
 				"command": "fountain.pdfpreview",
-				"title": "Show screenplay PDF Preview (not real-time)"
+				"title": "Show screenplay PDF Preview (not real-time)",
+				"icon": "$(file-pdf)"
 			},
 			{
 				"command": "fountain.livepreviewstatic",
@@ -349,7 +383,8 @@
 			{
 				"command": "fountain.exportpdf",
 				"title": "Export screenplay PDF",
-				"category": "Fountain"
+				"category": "Fountain",
+				"icon": "$(live-share)"
 			},
 			{
 				"command": "fountain.exporthtml",
@@ -384,7 +419,8 @@
 			{
 				"command": "fountain.statistics",
 				"title": "Calculate screenplay statistics",
-				"category": "Fountain"
+				"category": "Fountain",
+				"icon": "$(graph)"
 			},
 			{
 				"command": "fountain.debugtokens",

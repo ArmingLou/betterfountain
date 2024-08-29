@@ -6,6 +6,7 @@ import * as path from "path";
 import * as telemetry from "./telemetry";
 import * as sceneNumbering from './scenenumbering';
 import * as fs from "fs";
+import { getFountainConfig } from "./configloader";
 
 /**
  * @returns {vscode.Uri} relevant fountain document for the currently selected preview or text editor
@@ -49,7 +50,7 @@ export function slugify(text: string): string
 {
   return text.toString().toLowerCase()
     .replace(/\s+/g, '-')           // Replace spaces with -
-    .replace(/[^\w-]+/g, '')       // Remove all non-word chars
+    // .replace(/[^\w-]+/g, '')       // Remove all non-word chars
     .replace(/-{2,}/g, '-')         // Replace multiple - with single -
     .replace(/^-+/, '')             // Trim - from start of text
     .replace(/-+$/, '');            // Trim - from end of text
@@ -64,10 +65,24 @@ export const parseLocationInformation = (scene_heading:RegExpMatchArray) => {
 	//input group 1 is int/ext, group 2 is location and time, group 3 is scene number
 	let splitLocationFromTime = scene_heading[2].match(/(.*)[-–—−](.*)/)
 	if (scene_heading != null && scene_heading.length>=3) {
+		var i = scene_heading[1].indexOf('I') != -1;
+		var e = scene_heading[1].indexOf('EX') != -1|| scene_heading[1].indexOf('E.')!= -1;
+		var n = splitLocationFromTime ? splitLocationFromTime[1].trim() : scene_heading[2].trim();
+		if(n.startsWith('(室内)')) {
+			n = n.substring(4).trim();
+			if(!i){
+				i = true;
+			}
+		} else if( n.startsWith('(室外)')) {
+			n = n.substring(4).trim();
+			if(!e){
+				e = true;
+			}
+		}
 		return {
-			name: splitLocationFromTime ? splitLocationFromTime[1].trim() : scene_heading[2].trim(),
-			interior: scene_heading[1].indexOf('I') != -1,
-			exterior: scene_heading[1].indexOf('EX') != -1|| scene_heading[1].indexOf('E.')!= -1,
+			name: n,
+			interior: i,
+			exterior: e,
 			time_of_day: splitLocationFromTime ? splitLocationFromTime[2].trim() : ""
 		}
 	}
@@ -98,7 +113,8 @@ export const getCharactersWhoSpokeBeforeLast = (parsedDocument:any, position:vsc
 	let lastCharacter = undefined;
 	while(searchIndex>0 && !stopSearch){
 		var token = parsedDocument.tokens[searchIndex-1];
-		if(token.type=="character"){
+		if(token===undefined){
+		}else if(token.type=="character"){
 			var name =  trimCharacterForceSymbol(trimCharacterExtension(token.text)).trim();
 			if(lastCharacter==undefined){
 				lastCharacter = name;
@@ -153,10 +169,16 @@ export const findCharacterThatSpokeBeforeTheLast = (
 export const calculateDialogueDuration = (dialogue:string): number =>{
 	var duration = 0;
 
+	const config = getFountainConfig(getActiveFountainDocument());
+	var x = 0.1945548;
+	if(config.calculate_duration){
+		x = config.calculate_duration
+	}
+
 	//According to this paper: http://www.office.usp.ac.jp/~klinger.w/2010-An-Analysis-of-Articulation-Rates-in-Movies.pdf
 	//The average amount of syllables per second in the 14 movies analysed is 5.13994 (0.1945548s/syllable)
-	var sanitized = dialogue.replace(/[^\w]/gi, '');
-	duration+=((sanitized.length)/3)*0.1945548;
+	var sanitized = dialogue.replace(/[\s]/gi, '');
+	duration+=((sanitized.length)/3)*x;// TODO Arming (2024-08-29) : 时间预估算法
 	//duration += syllable(dialogue)*0.1945548;
 
 	//According to a very crude analysis involving watching random movie scenes on youtube and measuring pauses with a stopwatch
@@ -385,7 +407,7 @@ interface IPackageInfo {
 	aiKey: string;
 }
 export function getPackageInfo(): IPackageInfo | null {
-	const extension = vscode.extensions.getExtension('piersdeseilligny.betterfountain');
+	const extension = vscode.extensions.getExtension('Arming.betterfountain');
 	if (extension && extension.packageJSON) {
 		return {
 			name: extension.packageJSON.name,
@@ -434,7 +456,7 @@ export function wordToColor(word: string, s:number = 0.5, v:number = 1): Array<n
 	return HSVToRGB(h, s, v)
 }
 
-const extensionpath = vscode.extensions.getExtension("piersdeseilligny.betterfountain").extensionPath;
+const extensionpath = vscode.extensions.getExtension("Arming.betterfountain").extensionPath;
 export function resolveAsUri(panel:vscode.WebviewPanel,...p: string[]):string {
     const uri = vscode.Uri.file(path.join(extensionpath, ...p));
     return panel.webview.asWebviewUri(uri).toString();

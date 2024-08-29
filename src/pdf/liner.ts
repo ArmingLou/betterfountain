@@ -1,17 +1,40 @@
 import { token } from "../token";
 
 export class Liner {
-    printTakeNumbers:boolean = false;
-    h:any = {}
+    printTakeNumbers: boolean = false;
+    h: any = {}
     _state = "normal"; // 'dialogue'
 
-    constructor(helper:any, printTakeNumbers:boolean){
+    constructor(helper: any, printTakeNumbers: boolean) {
         this.h = helper;
         this.printTakeNumbers = printTakeNumbers;
     }
 
-    split_text = (text:any, max:any, index:any, token:token):any => {
-        if (text.length <= max) {
+    get_max_idx = (text: any, max: any): any => {
+        var idx = 0;
+        var len = 0;
+        for (var i = 0; i < text.length; i++) {
+            // 判断字符是否 双角
+            if (text.charCodeAt(i) > 255) {
+                // 是双角, 长度按 1.5 增加
+                len += 1.6;
+            } else if (text[i] === " ") {
+                //空格按0增加
+                len += 0.5;
+            } else {
+                len += 1;
+            }
+            if (len > max) {
+                break;
+            }
+            idx = i;
+        }
+        return idx;
+    }
+
+    split_text = (text: any, max: any, index: any, token: token): any => {
+        var maxIdx = this.get_max_idx(text, max);
+        if (text.length <= maxIdx + 1) {
             var tmpText;
 
             if (token.type === "character" && this.printTakeNumbers) {
@@ -28,26 +51,41 @@ export class Liner {
                 end: index + text.length - 1
             })];
         }
-        var pointer = text.substr(0, max + 1).lastIndexOf(" ");
 
-        if (pointer === -1) {
-            pointer = max - 1;
+        var thisEndIdx = maxIdx;
+        var nextStarIdx = maxIdx + 1;
+
+        //处理英语单词，不截断单词
+        if (text.charCodeAt(maxIdx) <= 255) {
+            for (var i = maxIdx; i >= 0; i--) {
+                if (text[i] === " ") {
+                    if (i > 0) {
+                        thisEndIdx = i - 1;
+                        nextStarIdx = i + 1;
+                    }
+                    break;
+                } else if (text.charCodeAt(i) > 255) {
+                    thisEndIdx = i;
+                    nextStarIdx = i + 1;
+                    break;
+                }
+            }
         }
 
         return [this.h.create_line({
             type: token.type,
             token: token,
-            text: text.substr(0, pointer),
+            text: text.substr(0, thisEndIdx + 1),
             start: index,
-            end: index + pointer
-        })].concat(this.split_text(text.substr(pointer + 1), max, index + pointer, token));
+            end: index + thisEndIdx
+        })].concat(this.split_text(text.substr(nextStarIdx), max, index + nextStarIdx, token));
     };
 
-    split_token = (token:any, max:number) => {
+    split_token = (token: any, max: number) => {
         token.lines = this.split_text(token.text || "", max, token.start, token);
     };
 
-    default_breaker = (index:number, lines:any, cfg:any) => {
+    default_breaker = (index: number, lines: any, cfg: any) => {
         var CONTD = cfg.text_contd || "(CONT'D)";
         var MORE = cfg.text_more || "(MORE)";
 
@@ -85,14 +123,14 @@ export class Liner {
         else if (token_on_break.is("action") &&
             token_on_break.token.lines.length >= 4 &&
             (token_on_break.token.lines.indexOf(token_on_break) === 0 ||
-            token_on_break.token.lines.indexOf(token_on_break) === token_on_break.token.lines.length - 2)) {
+                token_on_break.token.lines.indexOf(token_on_break) === token_on_break.token.lines.length - 2)) {
             return false;
         } else if (cfg.split_dialogue && token_on_break.is("dialogue") && token_after && token_after.is("dialogue") && token_before.is("dialogue") && !(token_on_break.dual)) {
             var new_page_character;
             for (var character = before; lines[character] && lines[character].type !== "character"; character--) {
             }
             var charactername = "";
-            if(lines[character]) charactername = lines[character].text;
+            if (lines[character]) charactername = lines[character].text;
 
             let moreitem = {
                 type: "more",
@@ -112,14 +150,14 @@ export class Liner {
             if (lines[character] && lines[character].right_column) {
                 var dialogue_on_page_length = index - character;
                 var right_lines_on_this_page = lines[character].right_column.slice(0, dialogue_on_page_length).concat([
-                        this.h.create_line({
-                            type: "more",
-                            text: MORE,
-                            start: token_on_break.start,
-                            end: token_on_break.end,
-                            token: token_on_break.token
-                        })
-                    ]),
+                    this.h.create_line({
+                        type: "more",
+                        text: MORE,
+                        start: token_on_break.start,
+                        end: token_on_break.end,
+                        token: token_on_break.token
+                    })
+                ]),
                     right_lines_for_next_page = [this.h.create_line({
                         type: "character",
                         text: right_lines_on_this_page[0].text.trim() + " " + (right_lines_on_this_page[0].text.indexOf(CONTD) !== -1 ? "" : CONTD),
@@ -142,7 +180,7 @@ export class Liner {
         return true;
     };
 
-    break_lines = (lines:any, max:number, breaker:any, cfg:any):any => {
+    break_lines = (lines: any, max: number, breaker: any, cfg: any): any => {
         while (lines.length && !(lines[0].text)) {
             lines.shift();
         }
@@ -196,7 +234,7 @@ export class Liner {
         return page.concat(append);
     };
 
-    fold_dual_dialogue = (lines:any) => {
+    fold_dual_dialogue = (lines: any) => {
         var any_unfolded_dual_dialogue_exists = true;
 
         var get_first_unfolded_dual_left = () => {
@@ -210,7 +248,7 @@ export class Liner {
             }
             return -1;
         };
-        var get_first_unfolded_dual_right_index_from = (index:number) => {
+        var get_first_unfolded_dual_right_index_from = (index: number) => {
             for (var i = index; i < lines.length; i++) {
                 if (lines[i].token &&
                     lines[i].token.type === "character" &&
@@ -220,38 +258,38 @@ export class Liner {
             }
             return -1;
         };
-        var count_dialogue_tokens = (i:number) => {
+        var count_dialogue_tokens = (i: number) => {
             var result = 0;
             var canbeCharacter = true;
-            while (lines[i] && (lines[i].type == "parenthetical" || lines[i].type=="dialogue" || (canbeCharacter && lines[i].type=="character")) ) {
-                if(lines[i].type != "character") canbeCharacter=false;
+            while (lines[i] && (lines[i].type == "parenthetical" || lines[i].type == "dialogue" || (canbeCharacter && lines[i].type == "character"))) {
+                if (lines[i].type != "character") canbeCharacter = false;
                 result++;
                 i++;
             }
             return result;
         };
-        var fold_dual_dialogue = (left_index:number, right_index:number) => {
+        var fold_dual_dialogue = (left_index: number, right_index: number) => {
             var dialogue_tokens = count_dialogue_tokens(right_index);
             var left_tokens = count_dialogue_tokens(left_index);
             var right_lines = lines.splice(right_index, dialogue_tokens);
             lines[left_index].right_column = right_lines;
 
-            if(dialogue_tokens > left_tokens){
+            if (dialogue_tokens > left_tokens) {
                 //There's more dialogue lines on the right than on the left:
                 //Insert dummy lines onto the left so it's the same length as the right.
-                let insertLength = dialogue_tokens-left_tokens;
-                let insertArray:any[] = [];
-                while(insertLength>0){
+                let insertLength = dialogue_tokens - left_tokens;
+                let insertArray: any[] = [];
+                while (insertLength > 0) {
                     insertArray.push(this.h.create_line({
-                        type:  lines[left_index+left_tokens].type,
-                        token: lines[left_index+left_tokens].token,
+                        type: lines[left_index + left_tokens].type,
+                        token: lines[left_index + left_tokens].token,
                         text: '',
-                        start: lines[left_index+left_tokens].start,
-                        end: lines[left_index+left_tokens].end
+                        start: lines[left_index + left_tokens].start,
+                        end: lines[left_index + left_tokens].end
                     }));
                     insertLength--;
                 }
-                lines.splice(left_index+left_tokens, 0, ...insertArray);
+                lines.splice(left_index + left_tokens, 0, ...insertArray);
             }
         };
 
@@ -267,32 +305,32 @@ export class Liner {
     };
 
 
-    line = (tokens:any, cfg:any):any => {
+    line = (tokens: any, cfg: any): any => {
 
-        var lines:any[] = [],
+        var lines: any[] = [],
             global_index = 0;
 
         this._state = "normal";
 
-        tokens.forEach((token:any) => {
-            if(!token.hide){
+        tokens.forEach((token: any) => {
+            if (!token.hide) {
                 var max = (cfg.print[token.type] || {}).max || cfg.print.action.max;
 
                 //Replace tabs with 4 spaces
-                if(token.text)
-                    token.text = token.text.replace('\t','    ');
+                if (token.text)
+                    token.text = token.text.replace('\t', '    ');
 
                 if (token.dual) {
                     max *= cfg.print.dual_max_factor;
                 }
-    
+
                 this.split_token(token, max);
-    
+
                 if (token.is("scene_heading") && lines.length) {
                     token.lines[0].number = token.number;
                 }
-    
-                token.lines.forEach((line:any, index:any)=>{
+
+                token.lines.forEach((line: any, index: any) => {
                     line.local_index = index;
                     line.global_index = global_index++;
                     lines.push(line);

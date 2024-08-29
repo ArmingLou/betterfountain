@@ -137,7 +137,7 @@
       "match": "===(=+)?"
     },
     "scene_headings": {
-      "match": "(?i)^[ \\t]*([.](?![.])|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[. ])(.+?)(#[-.0-9a-z]+#)?$",
+      "match": "(?i)^[ \\t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.])(.+?)(#[^\\s]+#)?$",
       "captures": {
         "1": {
           "name": "keyword.other.class"

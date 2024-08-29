@@ -9,7 +9,7 @@ export class FountainCommandTreeDataProvider implements vscode.TreeDataProvider<
 	getChildren(): vscode.ProviderResult<vscode.TreeItem[]> {
 		const elements: vscode.TreeItem[] = [];
 		const treeExportPdf = new vscode.TreeItem("Export PDF");
-		treeExportPdf.iconPath = new vscode.ThemeIcon("export");
+		treeExportPdf.iconPath = new vscode.ThemeIcon("live-share");
 		//const treeExportPdfDebug = new vscode.TreeItem("Export PDF with default name");
 		const treeExportPdfCustom= new vscode.TreeItem("Export PDF with highlighted characters");
 		treeExportPdfCustom.iconPath = new vscode.ThemeIcon("export");
@@ -30,7 +30,7 @@ export class FountainCommandTreeDataProvider implements vscode.TreeDataProvider<
 		numberScenesUpdate.iconPath = new vscode.ThemeIcon("list-ordered");
 		numberScenesUpdate.tooltip = 'Retains existing numbers as much as possible. Fills gaps and re-numbers moved scenes.';
 		const statistics = new vscode.TreeItem("Calculate screenplay statistics");
-		statistics.iconPath = new vscode.ThemeIcon("pulse");
+		statistics.iconPath = new vscode.ThemeIcon("graph");
 		treeExportPdf.command = {
 			command: 'fountain.exportpdf',
 			title: ''

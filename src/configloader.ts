@@ -1,11 +1,13 @@
 import * as vscode from 'vscode';
 
 export class FountainConfig{
+    calculate_duration: number;
     refresh_stats_on_save: boolean;
     refresh_pdfpreview_on_save:boolean;
     number_scenes_on_save: boolean;
     embolden_scene_headers:boolean;
     embolden_character_names:boolean;
+    emitalic_dialog:boolean;
     show_page_numbers:boolean;
     split_dialogue:boolean;
     print_title_page:boolean;
@@ -85,11 +87,13 @@ export var getFountainConfig = function(docuri:vscode.Uri):FountainConfig{
     var pdfConfig = vscode.workspace.getConfiguration("fountain.pdf", docuri);
     var generalConfig = vscode.workspace.getConfiguration("fountain.general", docuri);
     return {
+        calculate_duration: generalConfig.calculateDuration,
         number_scenes_on_save: generalConfig.numberScenesOnSave,
         refresh_stats_on_save: generalConfig.refreshStatisticsOnSave,
         refresh_pdfpreview_on_save: generalConfig.refreshPdfPreviewOnSave,
         embolden_scene_headers: pdfConfig.emboldenSceneHeaders,
         embolden_character_names: pdfConfig.emboldenCharacterNames,
+        emitalic_dialog: pdfConfig.emitalicDialog,
         show_page_numbers: pdfConfig.showPageNumbers,
         split_dialogue: pdfConfig.splitDialog,
         print_title_page: pdfConfig.printTitlePage,
