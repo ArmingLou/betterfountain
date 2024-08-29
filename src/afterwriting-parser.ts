@@ -33,7 +33,7 @@ Array.prototype.pushSorted = function(el, compareFn) {
 
 //Unicode uppercase letters:
 export const regex: { [index: string]: RegExp } = {
-    title_page: /(title|credit|author[s]?|source|notes|draft date|date|watermark|contact( info)?|revision|copyright|font|tl|tc|tr|cc|br|bl|header|footer)\:.*/i,
+    title_page: /(title|credit|author[s]?|source|notes|draft date|date|watermark|contact( info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:.*/i,
 
     section: /^[ \t]*(#+)(?: *)(.*)/,
     synopsis: /^[ \t]*(?:\=(?!\=+) *)(.*)/,
@@ -82,6 +82,9 @@ export const titlePageDisplay: {[index:string]:titleKeywordFormat} = {
 
     watermark:{position:'hidden', index:-1},
     font:{position:'hidden', index:-1},
+    font_italic:{position:'hidden', index:-1},
+    font_bold:{position:'hidden', index:-1},
+    font_bold_italic:{position:'hidden', index:-1},
     header:{position:'hidden', index:-1},
     footer:{position:'hidden', index:-1},
 
@@ -434,6 +437,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 thistoken.text = thistoken.text.substr(index + 1).trim();
                 last_title_page_token = thistoken;
                 let keyformat = titlePageDisplay[thistoken.type];
+                if(result.properties.titleKeys.indexOf(thistoken.type) == -1){
+                    result.properties.titleKeys.push(thistoken.type);
+                }
                 if(keyformat){
                     thistoken.index = keyformat.index;
                     result.title_page[keyformat.position].push(thistoken);

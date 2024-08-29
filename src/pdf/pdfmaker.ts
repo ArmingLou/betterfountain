@@ -19,6 +19,9 @@ export class Options {
     print: print.PrintProfile;
     font: string;
     exportconfig: fountainconfig.ExportConfig;
+    font_italic: string;
+    font_bold: string;
+    font_bold_italic: string;
 }
 var PDFDocument = require('pdfkit'),
     //helper = require('../helpers'),
@@ -117,7 +120,7 @@ async function initDoc(opts: Options) {
      }
      else {*/
     const fontFinder = require('font-finder');
-
+    // TODO Arming (2024-08-29) : 
     //Load Courier Prime by default, and replace the variants if requested and available
     var fp = __dirname.slice(0, __dirname.lastIndexOf(path.sep)) + path.sep + 'courierprime' + path.sep
     doc.registerFont('ScriptNormal', fp + 'courier-prime.ttf');
@@ -195,6 +198,84 @@ async function initDoc(opts: Options) {
                     doc.registerFont('ScriptBoldOblique', pat);
                 }
             }
+        }
+    }
+    if (opts.font_italic !== '') {
+        var variants = await fontFinder.listVariants(opts.font_italic);
+        var pat = '';
+        var patDf = '';
+        var hit = false;
+        variants.forEach((variant: any) => {
+            switch (variant.style) {
+                case "regular":
+                    pat = variant.path;
+                    break;
+                case "italic":
+                    hit = true;
+                    doc.registerFont('ScriptOblique', variant.path);
+                    break;
+                default:
+                    patDf = variant.path;
+                    break
+            }
+        });
+        if (!hit && pat !== '') {
+            doc.registerFont('ScriptOblique', pat);
+        }
+        else if (!hit && patDf !== '') {
+            doc.registerFont('ScriptOblique', patDf);
+        }
+    }
+    if (opts.font_bold !== '') {
+        var variants = await fontFinder.listVariants(opts.font_bold);
+        var pat = '';
+        var patDf = '';
+        var hit = false;
+        variants.forEach((variant: any) => {
+            switch (variant.style) {
+                case "regular":
+                    pat = variant.path;
+                    break;
+                case "bold":
+                    hit = true;
+                    doc.registerFont('ScriptBold', variant.path);
+                    break;
+                default:
+                    patDf = variant.path;
+                    break
+            }
+        });
+        if (!hit && pat !== '') {
+            doc.registerFont('ScriptBold', pat);
+        }
+        else if (!hit && patDf !== '') {
+            doc.registerFont('ScriptBold', patDf);
+        }
+    }
+    if (opts.font_bold_italic !== '') {
+        var variants = await fontFinder.listVariants(opts.font_bold_italic);
+        var pat = '';
+        var patDf = '';
+        var hit = false;
+        variants.forEach((variant: any) => {
+            switch (variant.style) {
+                case "regular":
+                    pat = variant.path;
+                    break;
+                case "boldItalic":
+                    hit = true;
+                    doc.registerFont('ScriptBoldOblique', variant.path);
+                    break;
+                default:
+                    patDf = variant.path;
+                    break
+            }
+        });
+        if (!hit && pat !== '') {
+            doc.registerFont('ScriptBoldOblique', pat);
+        }
+        else if (!hit && patDf !== '') {
+            doc.registerFont('ScriptBoldOblique', patDf);
         }
     }
 
@@ -329,20 +410,20 @@ async function initDoc(opts: Options) {
                         // elem = elem.slice(0, j + 1) + '\n' + elem.slice(j);
                         // j++;
                         var enSplit = false;
-                        if(elem.charCodeAt(j) < 255){
+                        if (elem.charCodeAt(j) < 255) {
                             // 处理英文单词，不截断单词
                             for (var k = j; k >= 0; k--) {
                                 if (elem[k] === " ") {
                                     if (k > 0) {
-                                        elem = elem.slice(0, k) + '\n' + elem.slice(k+1);
+                                        elem = elem.slice(0, k) + '\n' + elem.slice(k + 1);
                                         j = k - 1;
                                     }
                                     enSplit = true;
                                     break;
                                 } else if (elem.charCodeAt(k) > 255) {
                                     if (k > 0) {
-                                        elem = elem.slice(0, k + 1) + '\n' + elem.slice(k+1);
-                                        j = k ;
+                                        elem = elem.slice(0, k + 1) + '\n' + elem.slice(k + 1);
+                                        j = k;
                                     }
                                     enSplit = true;
                                     break;
@@ -350,11 +431,11 @@ async function initDoc(opts: Options) {
                                     break;
                                 }
                             }
-                        } 
+                        }
                         if (!enSplit) {
                             elem = elem.slice(0, j + 1) + '\n' + elem.slice(j);
                         }
-                        
+
                     }
                 }
                 textobjects.push({
@@ -787,7 +868,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 return new_text_properties
             }
             // TODO Arming (2024-08-29) : 
-            function wrapCharAndDialog(intput:any,lline = line):any{
+            function wrapCharAndDialog(intput: any, lline = line): any {
                 if (lline.type === "character") {
                     if (cfg.embolden_character_names) {
                         if (intput.endsWith(cfg.text_contd)) {
@@ -864,7 +945,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                 }
 
-                
+
                 if (line.type === "scene_heading") {
                     if (cfg.create_bookmarks) {
                         getOutlineChild(outline, outlineDepth, 0).addItem(text);
@@ -878,7 +959,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     }
                 }
 
-                text = wrapCharAndDialog(text,line)
+                text = wrapCharAndDialog(text, line)
 
                 if (line.type === 'synopsis') {
                     feed += print.synopsis.padding || 0;
@@ -902,7 +983,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             feed_right -= (feed_right - print.left_margin) / 2;
                             feed_right += (print.page_width - print.right_margin - print.left_margin) / 2;
                             var right_text_properties = get_text_properties(right_line);
-                            var tx = wrapCharAndDialog(right_line.text,right_line);
+                            var tx = wrapCharAndDialog(right_line.text, right_line);
                             doc.text2(tx, feed_right, print.top_margin + print.font_height * y_right++, right_text_properties);
                         });
                     }

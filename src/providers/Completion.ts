@@ -127,27 +127,33 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 			if (currentline.indexOf(":") == -1) {
 				if (parsedDocument.properties.titleKeys.indexOf("title") == -1)
 					// completes.push({ label: "Title: **《》**", insertText: new vscode.SnippetString('Title: **《$1》**'), sortText: "0A", kind: vscode.CompletionItemKind.Snippet });
-					completes.push(TitlePageKey({ name: "Title", detail: "The title of the screenplay", sort: "A", triggerIntellisense: true, position: titlePageDisplay['title'].position }));
+					completes.push(TitlePageKey({ name: "Title", detail: "The title of the screenplay", sort: "0A", triggerIntellisense: true, position: titlePageDisplay['title'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("credit") == -1)
-					completes.push(TitlePageKey({ name: "Credit", detail: "How the author is credited", triggerIntellisense: true, documentation: 'Inserted between the title and the author. Good practice is to simply use "Written by" (avoid "Created by" etc...).', sort: "B", position: titlePageDisplay['credit'].position }));
+					completes.push(TitlePageKey({ name: "Credit", detail: "How the author is credited", triggerIntellisense: true, documentation: 'Inserted between the title and the author. Good practice is to simply use "Written by" (avoid "Created by" etc...).', sort: "0B", position: titlePageDisplay['credit'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("author") == -1)
-					completes.push(TitlePageKey({ name: "Author", detail: "The name of the author", sort: "C", triggerIntellisense: true, documentation: "This is you! If there are several authors, you can optionally use the 'authors' tag instead.", position: titlePageDisplay['author'].position }));
+					completes.push(TitlePageKey({ name: "Author", detail: "The name of the author", sort: "0C", triggerIntellisense: true, documentation: "This is you! If there are several authors, you can optionally use the 'authors' tag instead.", position: titlePageDisplay['author'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("source") == -1)
-					completes.push(TitlePageKey({ name: "Source", detail: "An additional source for the screenplay", triggerIntellisense: true, documentation: "This will be inserted below the author, and is useful if the story has an additional source (such as 'Original story by x', 'Based on the novel by x', etc...)", sort: "D", position: titlePageDisplay['source'].position }));
+					completes.push(TitlePageKey({ name: "Source", detail: "An additional source for the screenplay", triggerIntellisense: true, documentation: "This will be inserted below the author, and is useful if the story has an additional source (such as 'Original story by x', 'Based on the novel by x', etc...)", sort: "0D", position: titlePageDisplay['source'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("notes") == -1)
-					completes.push(TitlePageKey({ name: "Notes", detail: "Additional notes", sort: "E", documentation: 'Any additional notes you wish to include in the title page', position: titlePageDisplay['notes'].position }));
+					completes.push(TitlePageKey({ name: "Notes", detail: "Additional notes", sort: "0E", documentation: 'Any additional notes you wish to include in the title page', position: titlePageDisplay['notes'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("draft_date") == -1)
-					completes.push(TitlePageKey({ name: "Draft Date", detail: "The date of the current draft", triggerIntellisense: true, documentation: 'Useful if you have several drafts and need to keep track of when they were written', sort: "F", position: titlePageDisplay['draft_date'].position }));
+					completes.push(TitlePageKey({ name: "Draft Date", detail: "The date of the current draft", triggerIntellisense: true, documentation: 'Useful if you have several drafts and need to keep track of when they were written', sort: "0F", position: titlePageDisplay['draft_date'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("date") == -1)
-					completes.push(TitlePageKey({ name: "Date", detail: "The date of the screenplay", triggerIntellisense: true, documentation: 'Only include the date it if necessary for production purposes. Someone reading your screenplay does not generally need to know when it was written.', sort: "G", position: titlePageDisplay['date'].position }));
+					completes.push(TitlePageKey({ name: "Date", detail: "The date of the screenplay", triggerIntellisense: true, documentation: 'Only include the date it if necessary for production purposes. Someone reading your screenplay does not generally need to know when it was written.', sort: "0G", position: titlePageDisplay['date'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("contact") == -1 || parsedDocument.properties.titleKeys.indexOf("contact_info") == -1)
-					completes.push(TitlePageKey({ name: "Contact", detail: "Contact details", sort: "H", documentation: 'Your contact details (Address, email, etc...)', position: titlePageDisplay['contact'].position }));
+					completes.push(TitlePageKey({ name: "Contact", detail: "Contact details", sort: "0H", documentation: 'Your contact details (Address, email, etc...)', position: titlePageDisplay['contact'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("copyright") == -1)
-					completes.push(TitlePageKey({ name: "Copyright", detail: "Copyright information", triggerIntellisense: true, documentation: "**Warning:** Including copyright information tends to be unecessary, and may even seem unprofessional in some cases.", sort: "I", deprecated: true, position: titlePageDisplay['copyright'].position }));
+					completes.push(TitlePageKey({ name: "Copyright", detail: "Copyright information", triggerIntellisense: true, documentation: "**Warning:** Including copyright information tends to be unecessary, and may even seem unprofessional in some cases.", sort: "0I", deprecated: true, position: titlePageDisplay['copyright'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("watermark") == -1)
-					completes.push(TitlePageKey({ name: "Watermark", detail: "A watermark displayed on every page", documentation: 'A watermark displayed diagonally on every single page', sort: "J", position: 'watermark' }));
+					completes.push(TitlePageKey({ name: "Watermark", detail: "A watermark displayed on every page", documentation: 'A watermark displayed diagonally on every single page', sort: "0J", position: 'watermark' }));
 				if (parsedDocument.properties.titleKeys.indexOf("font") == -1)
-					completes.push(TitlePageKey({ name: "Font", detail: "The font used in the screenplay", triggerIntellisense: true, documentation: `Generally a monospace courier-type font. BetterFountain's default is [Courier Prime](https://quoteunquoteapps.com/courierprime/), with added support for cyrillic.`, sort: "K", position: titlePageDisplay['font'].position }));
+					completes.push(TitlePageKey({ name: "Font", detail: "The font used in the screenplay", triggerIntellisense: true, documentation: `Generally a monospace courier-type font. BetterFountain's default is [Courier Prime](https://quoteunquoteapps.com/courierprime/), with added support for cyrillic.`, sort: "0K0", position: titlePageDisplay['font'].position }));
+				if (parsedDocument.properties.titleKeys.indexOf("font_italic") == -1)
+					completes.push(TitlePageKey({ name: "Font Italic", detail: "The italic font used in the screenplay", triggerIntellisense: true, documentation: `Generally a monospace courier-type font. BetterFountain's default is [Courier Prime](https://quoteunquoteapps.com/courierprime/), with added support for cyrillic.`, sort: "0K1", position: titlePageDisplay['font_italic'].position }));
+				if (parsedDocument.properties.titleKeys.indexOf("font_bold") == -1)
+					completes.push(TitlePageKey({ name: "Font Bold", detail: "The bold font used in the screenplay", triggerIntellisense: true, documentation: `Generally a monospace courier-type font. BetterFountain's default is [Courier Prime](https://quoteunquoteapps.com/courierprime/), with added support for cyrillic.`, sort: "0K2", position: titlePageDisplay['font_bold'].position }));
+				if (parsedDocument.properties.titleKeys.indexOf("font_bold_italic") == -1)
+					completes.push(TitlePageKey({ name: "Font Bold Italic", detail: "The bold_italic font used in the screenplay", triggerIntellisense: true, documentation: `Generally a monospace courier-type font. BetterFountain's default is [Courier Prime](https://quoteunquoteapps.com/courierprime/), with added support for cyrillic.`, sort: "0K3", position: titlePageDisplay['font_bold_italic'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("revision") == -1)
 					completes.push(TitlePageKey({
 						name: "Revision", detail: "The name of the current and past revisions", documentation: `New revisions are generally printed on different-colored paper, and named accordingly. The WGA order for revisions is:
@@ -167,14 +173,14 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 * Second Goldenrod Revision
 * Second Buff Revision
 * Second Salmon Revision
-* Second Cherry Revision`, sort: "L", position: titlePageDisplay['revision'].position
+* Second Cherry Revision`, sort: "0L", position: titlePageDisplay['revision'].position
 					}));
-				completes.push(TitlePageKey({ name: "TL", detail: "Top Left", documentation: "Additional content in the top left of the title page", sort: "M", position: titlePageDisplay['tl'].position }));
-				completes.push(TitlePageKey({ name: "TC", detail: "Top Center", documentation: "Additional content in the top center of the title page", sort: "N", position: titlePageDisplay['tc'].position }));
-				completes.push(TitlePageKey({ name: "TR", detail: "Top Right", documentation: "Additional content in the top right of the title page", sort: "O", position: titlePageDisplay['tr'].position }));
-				completes.push(TitlePageKey({ name: "CC", detail: "Center Center", documentation: "Additional content in the center of the title page", sort: "P", position: titlePageDisplay['cc'].position }));
-				completes.push(TitlePageKey({ name: "BL", detail: "Bottom Left", documentation: "Additional content in the bottom left of the title page", sort: "Q", position: titlePageDisplay['bl'].position }));
-				completes.push(TitlePageKey({ name: "BR", detail: "Bottom Right", documentation: "Additional content in the bottom right of the title page", sort: "R", position: titlePageDisplay['br'].position }));
+				completes.push(TitlePageKey({ name: "TL", detail: "Top Left", documentation: "Additional content in the top left of the title page", sort: "0M", position: titlePageDisplay['tl'].position }));
+				completes.push(TitlePageKey({ name: "TC", detail: "Top Center", documentation: "Additional content in the top center of the title page", sort: "0N", position: titlePageDisplay['tc'].position }));
+				completes.push(TitlePageKey({ name: "TR", detail: "Top Right", documentation: "Additional content in the top right of the title page", sort: "0O", position: titlePageDisplay['tr'].position }));
+				completes.push(TitlePageKey({ name: "CC", detail: "Center Center", documentation: "Additional content in the center of the title page", sort: "0P", position: titlePageDisplay['cc'].position }));
+				completes.push(TitlePageKey({ name: "BL", detail: "Bottom Left", documentation: "Additional content in the bottom left of the title page", sort: "0Q", position: titlePageDisplay['bl'].position }));
+				completes.push(TitlePageKey({ name: "BR", detail: "Bottom Right", documentation: "Additional content in the bottom right of the title page", sort: "0R", position: titlePageDisplay['br'].position }));
 				completes.push(TitlePageKey({ name: 'Header', detail: "Header used throughout the document", documentation: "This will be printed in the top left of every single page, excluding the title page. Can also be set globally by the 'Page Header' setting", sort: "S", position: 'header' }))
 				completes.push(TitlePageKey({ name: 'Footer', detail: "Header used throughout the document", documentation: "This will be printed in the bottom left of every single page, excluding the title page. Can also be set globally by the 'Page Footer' setting", sort: "T", position: 'footer' }))
 			}
@@ -186,8 +192,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 				else if (currentkey == "date:" || currentkey == "draft date:") {
 					var datestring1 = new Date().toLocaleDateString('zh-Hans-CN');
 					var datestring2 = new Date().toDateString();
-					completes.push({ label: datestring1, insertText: datestring1 + "\n", kind: vscode.CompletionItemKind.Text, sortText: "A", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
-					completes.push({ label: datestring2, insertText: datestring2 + "\n", kind: vscode.CompletionItemKind.Text, sortText: "B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+					completes.push({ label: datestring1, insertText: datestring1 + "\n", kind: vscode.CompletionItemKind.Text, sortText: "0A", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+					completes.push({ label: datestring2, insertText: datestring2 + "\n", kind: vscode.CompletionItemKind.Text, sortText: "0B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 				}
 				else if (currentkey == "author:" || currentkey == "author") {
 					completes.push({ label: userfullname, insertText: userfullname, kind: vscode.CompletionItemKind.Text });
@@ -205,7 +211,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 				else if (currentkey == "copyright:") {
 					completes.push({ label: "(c)" + new Date().getFullYear() + " ", sortText: "0A", kind: vscode.CompletionItemKind.Text });
 				}
-				else if (currentkey == "font:") {
+				else if (currentkey == "font:" || currentkey == "font italic:" || currentkey == "font bold:" || currentkey == "font bold italic:") {
 					fontnames.forEach((fontname: string) => {
 						completes.push({ label: fontname, insertText: fontname + "\n", kind: vscode.CompletionItemKind.Text });
 					})

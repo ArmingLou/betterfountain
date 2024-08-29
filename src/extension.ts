@@ -269,7 +269,7 @@ export function parseDocument(document: TextDocument) {
   var tokenlength = 0;
   const decorsDialogue: vscode.DecorationOptions[] = [];
   tokenlength = 0;
-  parsedDocuments.get(document.uri.toString()).properties.titleKeys = [];
+  // parsedDocuments.get(document.uri.toString()).properties.titleKeys = [];
   var fontTokenExists = false;
   if (output.title_page) {
     while (tokenlength < output.title_page['hidden'].length) {

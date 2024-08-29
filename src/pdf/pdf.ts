@@ -14,6 +14,9 @@ export var GeneratePdf = function (outputpath: string, config: FountainConfig, e
     var header = undefined;
     var footer = undefined;
     var font = "Courier Prime";
+    var font_bold = "";
+    var font_italic = "";
+    var font_bold_italic = "";
     if(parsedDocument.title_page){
         for (let index = 0; index < parsedDocument.title_page['hidden'].length; index++) {
             if (parsedDocument.title_page['hidden'][index].type == "watermark")
@@ -24,6 +27,12 @@ export var GeneratePdf = function (outputpath: string, config: FountainConfig, e
             footer = parsedDocument.title_page['hidden'][index].text;
             if (parsedDocument.title_page['hidden'][index].type == "font")
                 font = parsedDocument.title_page['hidden'][index].text;
+            if (parsedDocument.title_page['hidden'][index].type == "font_italic")
+                font_italic = parsedDocument.title_page['hidden'][index].text;
+            if (parsedDocument.title_page['hidden'][index].type == "font_bold")
+                font_bold = parsedDocument.title_page['hidden'][index].text;
+            if (parsedDocument.title_page['hidden'][index].type == "font_bold_italic")
+                font_bold_italic = parsedDocument.title_page['hidden'][index].text;
         }
     }
     var current_index = 0, previous_type: string = null;
@@ -90,7 +99,10 @@ export var GeneratePdf = function (outputpath: string, config: FountainConfig, e
         print: print.print_profiles[config.print_profile || "a4"],
         config: config,
         font: font,
-        exportconfig:exportconfig
+        exportconfig:exportconfig,
+        font_italic: font_italic,
+        font_bold: font_bold,
+        font_bold_italic: font_bold_italic
     }
 
     if(outputpath=="$STATS$") 
