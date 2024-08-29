@@ -148,6 +148,7 @@ async function initDoc(opts: Options) {
                 case "italic":
                     doc.registerFont('ScriptOblique', variant.path);
                     initedMap.set('ScriptOblique', variant.weight);
+                    weightPathMap.set(variant.weight, variant.path);
                     break;
                 case "boldItalic":
                     doc.registerFont('ScriptBoldOblique', variant.path);
@@ -159,6 +160,28 @@ async function initDoc(opts: Options) {
                     break
             }
         });
+        if (pat === '') {
+            var min = 10000;
+            var mid = 0;
+            weightPathMap.forEach((_path: string, weight: number) => {
+                if (weight < 500 && weight > 300) {
+                    mid = weight;
+                }
+                if (weight < min) {
+                    min = weight;
+                }
+            })
+            if (mid > 0) {
+                doc.registerFont('ScriptNormal', weightPathMap.get(mid));
+                pat = weightPathMap.get(mid);
+            } else {
+                var p = weightPathMap.get(min);
+                if(p){
+                    doc.registerFont('ScriptNormal', p);
+                    pat = p;
+                }
+            }
+        }
         if (pat !== '') {
             weightPathMap.forEach((path: string, weight: number) => {
                 if (!initedMap.get('ScriptOblique')) {
