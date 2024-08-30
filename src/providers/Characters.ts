@@ -32,13 +32,16 @@ export class FountainCharacterTreeDataProvider implements vscode.TreeDataProvide
 }
 
 function buildCharacterTree(): CharacterTreeItem {
-  const characters = activeParsedDocument().properties.characters;
   const root = new CharacterTreeItem("Characters", [], null);
   root.children = [];
 
-  for (const [character, scenes] of characters.entries()) {
-    const child = new CharacterTreeItem(FSFormat.nameToNatural(character), scenes, root);
-    root.children.push(child);
+  const doc = activeParsedDocument();
+  if (doc) {
+    const characters = doc.properties.characters;
+    for (const [character, scenes] of characters.entries()) {
+      const child = new CharacterTreeItem(FSFormat.nameToNatural(character), scenes, root);
+      root.children.push(child);
+    }
   }
   return root;
 }
@@ -49,11 +52,14 @@ class CharacterTreeItem extends vscode.TreeItem {
   constructor(label: string, public scenes: number[], public parent: CharacterTreeItem) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
     this.description = `${scenes.length} scenes`;
-    for (const scene of scenes) {
-      const properties = activeParsedDocument().properties;
-      const sceneName = properties.sceneNames[scene-2];
-      const sceneLineNumber = properties.sceneLines[scene-2];
-      this.children.push(new SceneTreeItem(sceneName, sceneLineNumber, this));
+    const doc = activeParsedDocument();
+    if (doc) {
+      for (const scene of scenes) {
+        const properties = doc.properties;
+        const sceneName = properties.sceneNames[scene - 2];
+        const sceneLineNumber = properties.sceneLines[scene - 2];
+        this.children.push(new SceneTreeItem(sceneName, sceneLineNumber, this));
+      }
     }
   }
 }

@@ -178,22 +178,24 @@ function scrollTo(topLine: number, resource:vscode.Uri) {
 
 
 vscode.workspace.onDidChangeConfiguration(change => {
-    previews.forEach(p => {
-        var config = getFountainConfig(vscode.Uri.parse(p.uri));
-        if (change.affectsConfiguration("fountain"))
+    if (change.affectsConfiguration("fountain")){
+        previews.forEach(p => {
+            var config = getFountainConfig(vscode.Uri.parse(p.uri));
             p.panel.webview.postMessage({ command: 'updateconfig', content: config })
-    });
+        });
+    }
 })
 
 vscode.window.onDidChangeTextEditorSelection(change => {
-	if(change.textEditor.document.languageId == "fountain")
+	if(change.textEditor.document.languageId !== "fountain") return;
 	var config = getFountainConfig(change.textEditor.document.uri);
 	if (config.synchronized_markup_and_preview) {
         var selection = change.selections[0];
         previews.forEach(p => {
-            if(p.uri == change.textEditor.document.uri.toString())
+            if(p.uri == change.textEditor.document.uri.toString()){
                 isScrolling = true;
                 p.panel.webview.postMessage({ command: 'showsourceline', content: selection.active.line, linescount: change.textEditor.document.lineCount, source: "click" });
+            }
         });
 	}
 })

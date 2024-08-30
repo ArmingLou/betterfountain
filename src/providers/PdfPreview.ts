@@ -53,7 +53,7 @@ export async function refreshPdfPanel(pdfpanel: vscode.WebviewPanel, document: v
 
 export function createPdfPreviewPanel(): vscode.WebviewPanel {
   let editor = getEditor(getActiveFountainDocument());
-  if (editor.document.languageId != "fountain") {
+  if (!editor || editor.document.languageId != "fountain") {
     vscode.window.showErrorMessage("You can only view the PDF Preview of Fountain documents!");
     return undefined;
   }
@@ -113,9 +113,6 @@ async function loadWebView(docuri: vscode.Uri, pdfpanel: vscode.WebviewPanel) {
   pdfpanel.webview.postMessage({ command: 'setstate', uri: docuri.toString() });
   pdfpanel.webview.postMessage({ command: 'updateconfig', content: config });
 
-  const editor = getEditor(getActiveFountainDocument());
-  config = getFountainConfig(getActiveFountainDocument());
-
   pdfpanel.webview.onDidReceiveMessage(async message => {
     if (message.command == "revealLine") {
       const sourceLine = message.content;
@@ -157,6 +154,8 @@ async function loadWebView(docuri: vscode.Uri, pdfpanel: vscode.WebviewPanel) {
       //save ui persistence
     }
     if (message.command == "refresh") {
+      const editor = getEditor(getActiveFountainDocument());
+      if(!editor) return;
       refreshPdfPanel(pdfpanel, editor.document, getFountainConfig(docuri));
     }
     if (message.command = "openstats") {
@@ -167,7 +166,9 @@ async function loadWebView(docuri: vscode.Uri, pdfpanel: vscode.WebviewPanel) {
     removePdfPreviewPanel(id);
   })
 
-
+  const editor = getEditor(getActiveFountainDocument());
+  if(!editor) return;
+  config = getFountainConfig(getActiveFountainDocument());
   refreshPdfPanel(pdfpanel, editor.document, config);
 }
 
@@ -185,7 +186,7 @@ let previousCaretLine = 0;
 let previousSelectionStart = 0;
 let previousSelectionEnd = 0;
 vscode.window.onDidChangeTextEditorSelection(change => {
-  if (change.textEditor.document.languageId == "fountain")
+  if (change.textEditor.document.languageId !== "fountain") return;
     var selection = change.selections[0];
   pdfPanels.forEach(p => {
     if (p.uri == change.textEditor.document.uri.toString()) {

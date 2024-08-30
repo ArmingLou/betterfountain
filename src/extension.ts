@@ -97,6 +97,9 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('fountain.shiftScenesDown', () => commands.shiftScenesUpDn(1)));
 
   vscode.workspace.onWillSaveTextDocument(e => {
+    if(e.document.languageId !== "fountain") {
+      return;
+    }
     const config = getFountainConfig(e.document.uri);
     if (config.number_scenes_on_save === true) {
       overwriteSceneNumbers();
@@ -212,7 +215,7 @@ vscode.workspace.onDidChangeConfiguration(change => {
 })
 
 export var parsedDocuments = new Map<string, afterparser.parseoutput>();
-let lastParsedUri = "";
+// let lastParsedUri = "";
 
 export function activeParsedDocument(): afterparser.parseoutput {
   var texteditor = getEditor(getActiveFountainDocument());
@@ -220,7 +223,8 @@ export function activeParsedDocument(): afterparser.parseoutput {
     return parsedDocuments.get(texteditor.document.uri.toString());
   }
   else {
-    return parsedDocuments.get(lastParsedUri);
+    // return parsedDocuments.get(lastParsedUri);
+    return undefined;
   }
 }
 
@@ -264,8 +268,8 @@ export function parseDocument(document: TextDocument) {
       }
     }
   }
-  lastParsedUri = document.uri.toString();
-  parsedDocuments.set(lastParsedUri, output);
+  // lastParsedUri = document.uri.toString();
+  parsedDocuments.set(document.uri.toString(), output);
   var tokenlength = 0;
   const decorsDialogue: vscode.DecorationOptions[] = [];
   tokenlength = 0;
@@ -312,15 +316,24 @@ export function parseDocument(document: TextDocument) {
   if (parseTelemetryLimiter == 0) parseTelemetryLimiter = parseTelemetryFrequency;
 }
 
+let lastWasFountainDocument: boolean = false;
 vscode.window.onDidChangeActiveTextEditor(change => {
   if (change == undefined || change.document == undefined) return;
   if (change.document.languageId == "fountain") {
+    lastWasFountainDocument = true;
     parseDocument(change.document);
     /*if(previewpanels.has(change.document.uri.toString())){
       var preview = previewpanels.get(change.document.uri.toString());
       if(!preview.visible && preview.viewColumn!=undefined)
         preview.reveal(preview.viewColumn);
     }*/
+  } else {
+    if(lastWasFountainDocument){
+      outlineViewProvider.update();
+      charactersViewProvider.update();
+      locationsViewProvider.update();
+      lastWasFountainDocument = false;
+    }
   }
 })
 

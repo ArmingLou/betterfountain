@@ -33,13 +33,16 @@ export class FountainLocationTreeDataProvider implements vscode.TreeDataProvider
 }
 
 function buildLocationTree(): LocationTreeItem {
-  const locations = activeParsedDocument().properties.locations;
   const root = new LocationTreeItem("", [], null);
   root.children = [];
 
-  for (const [name, scenes] of locations) {
-    const child = new LocationTreeItem(FSFormat.locationToNatural(name), scenes, root);
-    root.children.push(child);
+  const doc = activeParsedDocument();
+  if (doc) {
+    const locations = doc.properties.locations;
+    for (const [name, scenes] of locations) {
+      const child = new LocationTreeItem(FSFormat.locationToNatural(name), scenes, root);
+      root.children.push(child);
+    }
   }
   return root;
 }

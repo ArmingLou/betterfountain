@@ -30,6 +30,11 @@ export async function exportPdf(uri: vscode.Uri | undefined | null, showSaveDial
     doc = getActiveFountainDocument()
   }
 
+  if(!doc){
+    vscode.window.showErrorMessage("Not a fountain document !");
+    return
+  }
+
   // var editor = getEditor(doc);
   // get text form vscode.uri
   var by = await vscode.workspace.fs.readFile(doc);
@@ -84,6 +89,7 @@ var lastShiftedParseId = "";
 
 export function shiftScenesUpDn(direction: number) {
   var editor = getEditor(getActiveFountainDocument());
+  if(!editor) return;
   var parsed = parsedDocuments.get(editor.document.uri.toString());
 
   /* prevent the shiftScenes() being processed again before the document is reparsed from the previous 
@@ -98,6 +104,7 @@ export function shiftScenesUpDn(direction: number) {
 
 export function debugTokens() {
   const uri = getActiveFountainDocument();
+  if (!uri) return;
   const fountain = getEditor(uri).document.getText();
   vscode.workspace.openTextDocument({ language: "json" })
     .then(doc => vscode.window.showTextDocument(doc))
@@ -160,14 +167,16 @@ export function visibleItems() {
 
 export function jumpTo(args: any) {
   const editor = getEditor(getActiveFountainDocument());
+  if (!editor) return;
   const range = editor.document.lineAt(Number(args)).range;
   editor.selection = new vscode.Selection(range.start, range.start);
   editor.revealRange(range, vscode.TextEditorRevealType.AtTop);
   //If live screenplay is visible scroll to it with
   if (getFountainConfig(editor.document.uri).synchronized_markup_and_preview) {
     previews.forEach(p => {
-      if (p.uri == editor.document.uri.toString())
+      if (p.uri == editor.document.uri.toString()){
         p.panel.webview.postMessage({ command: 'scrollTo', content: args });
+      }
     });
   }
   telemetry.reportTelemetry("command:fountain.jumpto");

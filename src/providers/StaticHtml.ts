@@ -8,6 +8,10 @@ import * as path from "path";
 
 export async function exportHtml(){
 	let editor = getEditor(getActiveFountainDocument());
+    if(!editor || editor.document.languageId != "fountain"){
+        vscode.window.showErrorMessage("You can only export HTML from Fountain documents!");
+        return;
+    }
 	var filename = editor.document.fileName.replace(/(\.(((better)?fountain)|spmd|txt))$/, '');
 	var saveuri = vscode.Uri.file(filename);
 	let filepath = await vscode.window.showSaveDialog(
@@ -15,6 +19,9 @@ export async function exportHtml(){
 				filters: { "HTML File": ["html"] },
 				defaultUri: saveuri
 			});
+    if (!filepath) {
+        return;
+    }
     var fountainconfig = getFountainConfig(editor.document.uri);
 	var output = afterparser.parse(editor.document.getText(), fountainconfig , true);
 

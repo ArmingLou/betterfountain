@@ -47,7 +47,7 @@ export async function refreshStatsPanel(statspanel: vscode.WebviewPanel, documen
 
 export function createStatisticsPanel(): vscode.WebviewPanel {
   let editor = getEditor(getActiveFountainDocument());
-  if (editor.document.languageId != "fountain") {
+  if (!editor || editor.document.languageId != "fountain") {
     vscode.window.showErrorMessage("You can only view statistics of Fountain documents!");
     return undefined;
   }
@@ -95,8 +95,6 @@ async function loadWebView(docuri: vscode.Uri, statspanel: vscode.WebviewPanel) 
   statspanel.webview.postMessage({ command: 'setstate', uri: docuri.toString() });
   statspanel.webview.postMessage({ command: 'updateconfig', content: config });
 
-  const editor = getEditor(getActiveFountainDocument());
-  config = getFountainConfig(getActiveFountainDocument());
 
   statspanel.webview.onDidReceiveMessage(async message => {
     if (message.command == "revealLine") {
@@ -139,6 +137,8 @@ async function loadWebView(docuri: vscode.Uri, statspanel: vscode.WebviewPanel) 
       //save ui persistence
     }
     if (message.command == "refresh") {
+      const editor = getEditor(getActiveFountainDocument());
+      if (!editor) return;
       refreshStatsPanel(statspanel, editor.document, getFountainConfig(docuri));
     }
   });
@@ -147,6 +147,9 @@ async function loadWebView(docuri: vscode.Uri, statspanel: vscode.WebviewPanel) 
     removeStatisticsPanel(id);
   })
 
+  const editor = getEditor(getActiveFountainDocument());
+  if(!editor) return;
+  config = getFountainConfig(getActiveFountainDocument())
   refreshStatsPanel(statspanel, editor.document, config);
 }
 
@@ -164,8 +167,8 @@ let previousCaretLine = 0;
 let previousSelectionStart = 0;
 let previousSelectionEnd = 0;
 vscode.window.onDidChangeTextEditorSelection(change => {
-  if (change.textEditor.document.languageId == "fountain")
-    var selection = change.selections[0];
+  if (change.textEditor.document.languageId !== "fountain") return;
+  var selection = change.selections[0];
   statsPanels.forEach(p => {
     if (p.uri == change.textEditor.document.uri.toString()) {
       if (selection.active.line != previousCaretLine) {

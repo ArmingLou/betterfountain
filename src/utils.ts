@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { previews } from "./providers/Preview";
+// import { previews } from "./providers/Preview";
 import { FountainStructureProperties } from "./extension";
 import * as parser from "./afterwriting-parser";
 import * as path from "path";
@@ -12,22 +12,22 @@ import { getFountainConfig } from "./configloader";
  * @returns {vscode.Uri} relevant fountain document for the currently selected preview or text editor
  */
 export function getActiveFountainDocument(): vscode.Uri {
-  //first check if any previews have focus
-  for (let i = 0; i < previews.length; i++) {
-    if (previews[i].panel.active)
-      return vscode.Uri.parse(previews[i].uri);
-  }
-  //no previews were active, is activeTextEditor a fountain document?
-  if (vscode.window.activeTextEditor != undefined && vscode.window.activeTextEditor.document.languageId == "fountain") {
-    return vscode.window.activeTextEditor.document.uri;
-  }
-  //As a last resort, check if there are any visible fountain text editors
-  for (let i = 0; i < vscode.window.visibleTextEditors.length; i++) {
-    if (vscode.window.visibleTextEditors[i].document.languageId == "fountain")
-      return vscode.window.visibleTextEditors[i].document.uri;
-  }
-  //all hope is lost
-  return undefined;
+	//first check if any previews have focus
+	// for (let i = 0; i < previews.length; i++) {
+	// 	if (previews[i].panel.active)
+	// 		return vscode.Uri.parse(previews[i].uri);
+	// }
+	//no previews were active, is activeTextEditor a fountain document?
+	if (vscode.window.activeTextEditor != undefined && vscode.window.activeTextEditor.document.languageId == "fountain") {
+		return vscode.window.activeTextEditor.document.uri;
+	}
+	//As a last resort, check if there are any visible fountain text editors
+	for (let i = 0; i < vscode.window.visibleTextEditors.length; i++) {
+		if (vscode.window.visibleTextEditors[i].document.languageId == "fountain")
+			return vscode.window.visibleTextEditors[i].document.uri;
+	}
+	//all hope is lost
+	return undefined;
 }
 
 /**
@@ -35,25 +35,25 @@ export function getActiveFountainDocument(): vscode.Uri {
  * @returns the editor that is currently displaying the fountain document with the given uri
  */
 export function getEditor(uri: vscode.Uri): vscode.TextEditor {
-  //search visible text editors
-  for (let i = 0; i < vscode.window.visibleTextEditors.length; i++) {
-    if (vscode.window.visibleTextEditors[i].document.uri.toString() == uri.toString())
-      return vscode.window.visibleTextEditors[i];
-  }
-  //the editor was not visible,
-  return undefined;
+	if (!uri) return undefined;
+	//search visible text editors
+	for (let i = 0; i < vscode.window.visibleTextEditors.length; i++) {
+		if (vscode.window.visibleTextEditors[i].document.uri.toString() == uri.toString())
+			return vscode.window.visibleTextEditors[i];
+	}
+	//the editor was not visible,
+	return undefined;
 }
 
 //var syllable = require('syllable');
 
-export function slugify(text: string): string
-{
-  return text.toString().toLowerCase()
-    .replace(/\s+/g, '-')           // Replace spaces with -
-    // .replace(/[^\w-]+/g, '')       // Remove all non-word chars
-    .replace(/-{2,}/g, '-')         // Replace multiple - with single -
-    .replace(/^-+/, '')             // Trim - from start of text
-    .replace(/-+$/, '');            // Trim - from end of text
+export function slugify(text: string): string {
+	return text.toString().toLowerCase()
+		.replace(/\s+/g, '-')           // Replace spaces with -
+		// .replace(/[^\w-]+/g, '')       // Remove all non-word chars
+		.replace(/-{2,}/g, '-')         // Replace multiple - with single -
+		.replace(/^-+/, '')             // Trim - from start of text
+		.replace(/-+$/, '');            // Trim - from end of text
 }
 
 /**
@@ -61,21 +61,21 @@ export function slugify(text: string): string
  */
 export const trimCharacterExtension = (character: string): string => character.replace(/[ \t]*(\(.*\))[ \t]*([ \t]*\^)?$/, "");
 
-export const parseLocationInformation = (scene_heading:RegExpMatchArray) => {
+export const parseLocationInformation = (scene_heading: RegExpMatchArray) => {
 	//input group 1 is int/ext, group 2 is location and time, group 3 is scene number
 	let splitLocationFromTime = scene_heading[2].match(/(.*)[-–—−](.*)/)
-	if (scene_heading != null && scene_heading.length>=3) {
+	if (scene_heading != null && scene_heading.length >= 3) {
 		var i = scene_heading[1].indexOf('I') != -1;
-		var e = scene_heading[1].indexOf('EX') != -1|| scene_heading[1].indexOf('E.')!= -1;
+		var e = scene_heading[1].indexOf('EX') != -1 || scene_heading[1].indexOf('E.') != -1;
 		var n = splitLocationFromTime ? splitLocationFromTime[1].trim() : scene_heading[2].trim();
-		if(n.startsWith('(室内)')) {
+		if (n.startsWith('(室内)')) {
 			n = n.substring(4).trim();
-			if(!i){
+			if (!i) {
 				i = true;
 			}
-		} else if( n.startsWith('(室外)')) {
+		} else if (n.startsWith('(室外)')) {
 			n = n.substring(4).trim();
-			if(!e){
+			if (!e) {
 				e = true;
 			}
 		}
@@ -98,37 +98,37 @@ export const trimCharacterForceSymbol = (character: string): string => character
  * Character names containing lowercase letters need to be prefixed with an `@` symbol
  */
 export const addForceSymbolToCharacter = (characterName: string): string => {
-	const containsLowerCase = (text: string): boolean =>((/[\p{Ll}]/u).test(text));
+	const containsLowerCase = (text: string): boolean => ((/[\p{Ll}]/u).test(text));
 	return containsLowerCase(characterName) ? `@${characterName}` : characterName;
 }
 
-export const getCharactersWhoSpokeBeforeLast = (parsedDocument:any, position:vscode.Position) => {
+export const getCharactersWhoSpokeBeforeLast = (parsedDocument: any, position: vscode.Position) => {
 
 	let searchIndex = 0;
-	if(parsedDocument.tokenLines[position.line-1]){
-		searchIndex = parsedDocument.tokenLines[position.line-1];
+	if (parsedDocument.tokenLines[position.line - 1]) {
+		searchIndex = parsedDocument.tokenLines[position.line - 1];
 	}
 	let stopSearch = false;
-	let previousCharacters:string[] = []
+	let previousCharacters: string[] = []
 	let lastCharacter = undefined;
-	while(searchIndex>0 && !stopSearch){
-		var token = parsedDocument.tokens[searchIndex-1];
-		if(token===undefined){
-		}else if(token.type=="character"){
-			var name =  trimCharacterForceSymbol(trimCharacterExtension(token.text)).trim();
-			if(lastCharacter==undefined){
+	while (searchIndex > 0 && !stopSearch) {
+		var token = parsedDocument.tokens[searchIndex - 1];
+		if (token === undefined) {
+		} else if (token.type == "character") {
+			var name = trimCharacterForceSymbol(trimCharacterExtension(token.text)).trim();
+			if (lastCharacter == undefined) {
 				lastCharacter = name;
 			}
-			else if(name != lastCharacter && previousCharacters.indexOf(name)==-1){
+			else if (name != lastCharacter && previousCharacters.indexOf(name) == -1) {
 				previousCharacters.push(name);
 			}
 		}
-		else if(token.type=="scene_heading"){
-			stopSearch=true;
+		else if (token.type == "scene_heading") {
+			stopSearch = true;
 		}
 		searchIndex--;
 	}
-	if(lastCharacter!=undefined)
+	if (lastCharacter != undefined)
 		previousCharacters.push(lastCharacter);
 	return previousCharacters;
 }
@@ -137,7 +137,7 @@ export const findCharacterThatSpokeBeforeTheLast = (
 	document: vscode.TextDocument,
 	position: vscode.Position,
 	fountainDocProps: FountainStructureProperties,
-	): string => {
+): string => {
 
 	const isAlreadyMentionedCharacter = (text: string): boolean => fountainDocProps.characters.has(text);
 
@@ -166,33 +166,33 @@ export const findCharacterThatSpokeBeforeTheLast = (
 /**
  * Calculate an approximation of how long a line of dialogue would take to say
  */
-export const calculateDialogueDuration = (dialogue:string): number =>{
+export const calculateDialogueDuration = (dialogue: string): number => {
 	var duration = 0;
 
 	const config = getFountainConfig(getActiveFountainDocument());
 	var x = 0.1945548;
-	if(config.calculate_duration){
+	if (config.calculate_duration) {
 		x = config.calculate_duration
 	}
 
 	//According to this paper: http://www.office.usp.ac.jp/~klinger.w/2010-An-Analysis-of-Articulation-Rates-in-Movies.pdf
 	//The average amount of syllables per second in the 14 movies analysed is 5.13994 (0.1945548s/syllable)
 	var sanitized = dialogue.replace(/[\s]/gi, '');
-	duration+=((sanitized.length)/3)*x;// TODO Arming (2024-08-29) : 时间预估算法
+	duration += ((sanitized.length) / 3) * x;// TODO Arming (2024-08-29) : 时间预估算法
 	//duration += syllable(dialogue)*0.1945548;
 
 	//According to a very crude analysis involving watching random movie scenes on youtube and measuring pauses with a stopwatch
 	//A comma in the middle of a sentence adds 0.4sec and a full stop/excalmation/question mark adds 0.8 sec.
-	var punctuationMatches=dialogue.match(/(\.|\?|\!|\:) |(\, )/g);
-	if(punctuationMatches){
-		if(punctuationMatches[0]) duration+=0.75*punctuationMatches[0].length;
-		if(punctuationMatches[1]) duration+=0.3*punctuationMatches[1].length;
+	var punctuationMatches = dialogue.match(/(\.|\?|\!|\:) |(\, )/g);
+	if (punctuationMatches) {
+		if (punctuationMatches[0]) duration += 0.75 * punctuationMatches[0].length;
+		if (punctuationMatches[1]) duration += 0.3 * punctuationMatches[1].length;
 	}
 	return duration
 }
 
-export const isMonologue = (seconds:number): boolean => {
-	if(seconds>30) return true;
+export const isMonologue = (seconds: number): boolean => {
+	if (seconds > 30) return true;
 	else return false;
 }
 
@@ -203,7 +203,7 @@ function padZero(i: any) {
 	return i;
 }
 
-export function secondsToString(seconds:number):string{
+export function secondsToString(seconds: number): string {
 	var time = new Date(null);
 	time.setHours(0);
 	time.setMinutes(0);
@@ -211,22 +211,27 @@ export function secondsToString(seconds:number):string{
 	return padZero(time.getHours()) + ":" + padZero(time.getMinutes()) + ":" + padZero(time.getSeconds());
 }
 
-export function secondsToMinutesString(seconds:number):string{
-	if(seconds<1) return undefined;
+export function secondsToMinutesString(seconds: number): string {
+	if (seconds < 1) return undefined;
 	var time = new Date(null);
 	time.setHours(0);
 	time.setMinutes(0);
 	time.setSeconds(seconds);
-	if(seconds>=3600)
+	if (seconds >= 3600)
 		return padZero(time.getHours()) + ":" + padZero(time.getMinutes()) + ":" + padZero(time.getSeconds());
 	else
-		return padZero(time.getHours()*60 + time.getMinutes()) + ":" + padZero(time.getSeconds());
-	
+		return padZero(time.getHours() * 60 + time.getMinutes()) + ":" + padZero(time.getSeconds());
+
 }
 
 export const overwriteSceneNumbers = () => {
 	telemetry.reportTelemetry("command:fountain.overwriteSceneNumbers");
-	const fullText = vscode.window.activeTextEditor.document.getText()
+	const doc = vscode.window.activeTextEditor;
+	if(!doc) return
+	const dm = doc.document;
+	if(!dm) return
+	if(dm.languageId != "fountain") return
+	const fullText = dm.getText()
 	const clearedText = clearSceneNumbers(fullText);
 	writeSceneNumbers(clearedText);
 	/* done like this because using vscode.window.activeTextEditor.edit()
@@ -236,7 +241,12 @@ export const overwriteSceneNumbers = () => {
 
 export const updateSceneNumbers = () => {
 	telemetry.reportTelemetry("command:fountain.updateSceneNumbers");
-	const fullText = vscode.window.activeTextEditor.document.getText()
+	const doc = vscode.window.activeTextEditor;
+	if(!doc) return
+	const dm = doc.document;
+	if(!dm) return
+	if(dm.languageId != "fountain") return
+	const fullText = dm.getText()
 	writeSceneNumbers(fullText);
 }
 
@@ -367,39 +377,39 @@ export const last = function (array: any[]): any {
 	return array[array.length - 1];
 }
 
-export function fileToBase64(fspath:string){
-    let data = fs.readFileSync(fspath);
+export function fileToBase64(fspath: string) {
+	let data = fs.readFileSync(fspath);
 	return data.toString('base64');
 }
 
-export function openFile(p:string){
+export function openFile(p: string) {
 	let cmd = "xdg-open"
-	switch (process.platform) { 
-		case 'darwin' : cmd = 'open'; break;
-		case 'win32' : cmd = ''; break;
-		default : cmd = 'xdg-open';
+	switch (process.platform) {
+		case 'darwin': cmd = 'open'; break;
+		case 'win32': cmd = ''; break;
+		default: cmd = 'xdg-open';
 	}
 	var exec = require('child_process').exec;
-	exec(`${cmd} "${p}"`); 
+	exec(`${cmd} "${p}"`);
 }
-export function revealFile(p:string){
+export function revealFile(p: string) {
 	var cmd = "";
-	if(process.platform == "win32"){
+	if (process.platform == "win32") {
 		cmd = `explorer.exe /select,${p}`
 	}
-	else if(process.platform == "darwin"){
+	else if (process.platform == "darwin") {
 		cmd = `open -r ${p}`
 	}
-	else{
+	else {
 		p = path.parse(p).dir;
 		cmd = `open "${p}"`
 	}
 	var exec = require('child_process').exec;
-	exec(cmd); 
+	exec(cmd);
 }
 
-export function assetsPath(): string{
-    return __dirname;
+export function assetsPath(): string {
+	return __dirname;
 }
 interface IPackageInfo {
 	name: string;
@@ -421,7 +431,7 @@ export function getPackageInfo(): IPackageInfo | null {
 function nPearsonHash(message: string, n = 8): number {
 	// Ideally, this table would be shuffled...
 	// 256 will be the highest value provided by this hashing function
-	var table = [...new Array(2**n)].map((_, i) => i)
+	var table = [...new Array(2 ** n)].map((_, i) => i)
 
 
 	return message.split('').reduce((hash, c) => {
@@ -431,8 +441,8 @@ function nPearsonHash(message: string, n = 8): number {
 }
 
 function HSVToRGB(h: number, s: number, v: number): Array<number> {
-	var [r, g, b] = [0, 0 ,0];
-    
+	var [r, g, b] = [0, 0, 0];
+
 	var i = Math.floor(h * 6);
 	var f = h * 6 - i;
 	var p = v * (1 - s);
@@ -446,47 +456,47 @@ function HSVToRGB(h: number, s: number, v: number): Array<number> {
 		case 4: r = t, g = p, b = v; break;
 		case 5: r = v, g = p, b = q; break;
 	}
-	return [Math.round(r * 255),Math.round(g * 255),Math.round(b * 255)]
+	return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)]
 }
 
 //We are using colors with same value and saturation as highlighters
-export function wordToColor(word: string, s:number = 0.5, v:number = 1): Array<number> {
+export function wordToColor(word: string, s: number = 0.5, v: number = 1): Array<number> {
 	const n = 5; //so that colors are spread apart
-	const h = nPearsonHash(word, n)/2**(8-n);
+	const h = nPearsonHash(word, n) / 2 ** (8 - n);
 	return HSVToRGB(h, s, v)
 }
 
 const extensionpath = vscode.extensions.getExtension("Arming.betterfountain").extensionPath;
-export function resolveAsUri(panel:vscode.WebviewPanel,...p: string[]):string {
-    const uri = vscode.Uri.file(path.join(extensionpath, ...p));
-    return panel.webview.asWebviewUri(uri).toString();
-  }
-
-export function getAssetsUri(iconName:string):vscode.Uri{
-	return vscode.Uri.file(path.join(extensionpath, "assets", iconName+".svg"));
-}
-export function mapToObject(map:any):any{
-    let jsonObject:any = {};  
-    map.forEach((value:any, key:any) => {  
-        jsonObject[key] = value  
-    });  
-    return jsonObject;
+export function resolveAsUri(panel: vscode.WebviewPanel, ...p: string[]): string {
+	const uri = vscode.Uri.file(path.join(extensionpath, ...p));
+	return panel.webview.asWebviewUri(uri).toString();
 }
 
-function componentToHex(c:number) {
-  var hex = c.toString(16);
-  return hex.length == 1 ? "0" + hex : hex;
+export function getAssetsUri(iconName: string): vscode.Uri {
+	return vscode.Uri.file(path.join(extensionpath, "assets", iconName + ".svg"));
 }
-export function rgbToHex(rgb:number[]):string {
-  return "#" + componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
+export function mapToObject(map: any): any {
+	let jsonObject: any = {};
+	map.forEach((value: any, key: any) => {
+		jsonObject[key] = value
+	});
+	return jsonObject;
 }
 
-export function median (values:number[]):number {
-	if(values.length == 0) return 0;
-    values.sort( function(a,b) {return a - b;} );
-    var half = Math.floor(values.length/2);
-    if(values.length % 2)
-        return values[half];
-    else
-		return (values[half-1] + values[half]) / 2.0;
+function componentToHex(c: number) {
+	var hex = c.toString(16);
+	return hex.length == 1 ? "0" + hex : hex;
+}
+export function rgbToHex(rgb: number[]): string {
+	return "#" + componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
+}
+
+export function median(values: number[]): number {
+	if (values.length == 0) return 0;
+	values.sort(function (a, b) { return a - b; });
+	var half = Math.floor(values.length / 2);
+	if (values.length % 2)
+		return values[half];
+	else
+		return (values[half - 1] + values[half]) / 2.0;
 }
