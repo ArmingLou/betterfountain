@@ -83,16 +83,16 @@
       "end": "^$",
       "beginCaptures": {
         "3": {
-          "name": "entity.name.type"
+          "name": "variable.parameter.url.css"
         },
         "6": {
-          "name": "constant.character.escape"
+          "name": "comment.block.fountain"
         },
         "7": {
-          "name": "variable.other"
+          "name": "comment.block.fountain"
         },
         "8": {
-          "name": "constant.character.escape"
+          "name": "comment.block.fountain"
         }
       },
       "applyEndPatternLast": 1,
@@ -103,7 +103,7 @@
           "end": "\\*/"
         },
         {
-          "name": "constant.character.escape",
+          "name": "entity.name.tag",
           "match": "^[ \\t]*\\(.*\\)$",
           "patterns": [
             {
@@ -133,50 +133,64 @@
       "match": "(?:\\[{2}(?!\\[+))([\\s\\S]+?)(?:\\]{2}(?!\\[+))"
     },
     "pagebreaks": {
-      "name": "entity.other.pagebreak.fountain",
+      "name": "variable.other.constant",
       "match": "===(=+)?"
     },
     "scene_headings": {
-      "match": "(?i)^[ \\t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.])(.+?)(#[^\\s]+#)?$",
+      "match": "(?i)^[ \\t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.])(.+?)(?:(#)([^\\n#]+)(#))?$",
       "captures": {
         "1": {
           "name": "keyword.other.class"
         },
         "2": {
-          "name": "keyword.other.class"
+          "name": "token.error-token"
         },
         "3": {
+          "name": "comment.block.fountain"
+        },
+        "4": {
           "name": "constant.numeric.scene.fountain"
+        },
+        "5": {
+          "name": "comment.block.fountain"
         }
       }
     },
     "sections": {
-      "begin": "\\G(#{1,6})(?!#)\\s*(?=\\S)",
-      "captures": {
+      "begin": "(#{1,6})\\s*",
+      "beginCaptures": {
         "1": {
-          "name": "punctuation.definition.section.fountain"
+          "name": "comment.block.fountain"
         }
       },
-      "contentName": "entity.name.section.fountain",
+      "contentName": "variable.other.constant",
       "end": "\\s*(#*)$\\n?",
-      "name": "markup.section.fountain",
-      "patterns": [
-        {
-          "include": "#inline"
-        }
-      ]
+      "name": "comment.block.fountain"
     },
     "synopses": {
       "name": "comment.block.fountain.synopses",
       "match": "^={1}([^<>=][^<>]+?)$"
     },
     "center": {
-      "name": "markup.bold",
-      "match": "^>[^<>\\n]+<$"
+      "name": "token.warn-token",
+      "match": "^(>)[^<>\\n]+(<)$",
+      "captures": {
+        "1": {
+          "name": "comment.block.fountain"
+        },
+        "2": {
+          "name": "comment.block.fountain"
+        }
+      }
     },
     "transitions": {
-      "name": "constant.numeric",
-      "match": "^\\s*(>[^<\\n\\r]*|[A-Z ]+ TO:)$"
+      "name": "variable.other.constant",
+      "match": "^\\s*(?:(>)[^<\\n\\r]*|[A-Z ]+TO:)$",
+      "captures": {
+        "1": {
+          "name": "comment.block.fountain"
+        }
+      }
     },
     "markup": {
       "patterns": [
@@ -305,10 +319,10 @@
       "name":"string.other.title-page.fountain",
       "captures": {
         "1": {
-          "name": "keyword.other.title-page.fountain"
+          "name": "keyword.control"
         },
         "2":{
-          "name":"punctuation.definition.tag"
+          "name":"keyword.operator"
         },
         "3":{
           "patterns":[
