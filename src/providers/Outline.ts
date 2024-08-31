@@ -72,6 +72,8 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem): 
 			item = new NoteTreeItem({ note: token.text, line: token.id.substring(1) }, parent);
 		else
 			return undefined;
+	else if (token.ischartor)
+		return undefined; // don't show 角色名 in outline
 	else
 		item = new SceneTreeItem(token, parent);
 
@@ -80,10 +82,12 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem): 
 	item.children = [];
 
 	if (token.children) {
-		if (passthrough)
+		if (passthrough){
 			parent.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, parent)));
-		else
+		}
+		else if(!token.isscene){
 			item.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, item)));
+		}
 	}
 
 

@@ -13,13 +13,16 @@ export class FountainSymbolProvider implements vscode.DocumentSymbolProvider{
 		function symbolFromStruct(token:afterparser.StructToken, nexttoken:afterparser.StructToken, hierarchyend:number):{symbol:vscode.DocumentSymbol, length:number}{
 			var returnvalue:{symbol:vscode.DocumentSymbol, length:number} = {symbol:undefined, length:0};
 			var start = token.range.start;
+			if(token.ischartor){
+				hierarchyend = token.dialogueEndLine
+			}
 			var end = document.lineAt(hierarchyend-1).range.end;
 			var details = undefined;
 			if(hierarchyend==start.line) end = document.lineAt(hierarchyend).range.end;
-			if(nexttoken!=undefined){
+			if(nexttoken!=undefined&&!token.ischartor){
 				end = nexttoken.range.start;
 			}
-			if(!token.section){
+			if(!token.section&&!token.ischartor){
 				var sceneLength = parsedDocuments.get(document.uri.toString()).properties.scenes[scenecounter].actionLength + parsedDocuments.get(document.uri.toString()).properties.scenes[scenecounter].dialogueLength;
 				details = secondsToMinutesString(sceneLength);
 				returnvalue.length = sceneLength;
@@ -48,9 +51,11 @@ export class FountainSymbolProvider implements vscode.DocumentSymbolProvider{
 		}
 
 		let doc = parsedDocuments.get(document.uri.toString());
-		for (let index = 0; index < doc.properties.structure.length; index++) {
-			if(!doc.properties.structure[index].isnote){
-				symbols.push(symbolFromStruct(doc.properties.structure[index], doc.properties.structure[index+1], document.lineCount).symbol);
+		if(doc){
+			for (let index = 0; index < doc.properties.structure.length; index++) {
+				if(!doc.properties.structure[index].isnote){
+					symbols.push(symbolFromStruct(doc.properties.structure[index], doc.properties.structure[index+1], document.lineCount).symbol);
+				}
 			}
 		}
 		return symbols;

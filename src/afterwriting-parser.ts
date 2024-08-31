@@ -182,6 +182,9 @@ export class StructToken {
     section: boolean; // true->section, false->scene
     synopses: { synopsis: string; line: number }[];
     notes: { note: string; line: number }[];
+    isscene: boolean;
+    ischartor: boolean;
+    dialogueEndLine: number;
 }
 export class screenplayProperties {
     scenes: { scene: string; text:string, line: number, actionLength: number, dialogueLength: number }[];
@@ -211,6 +214,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     var lastFountainEditor: vscode.Uri;
     var config = getFountainConfig(lastFountainEditor);
     var emptytitlepage = true;
+    var lastScenStructureToken: StructToken;
+    var lastChartorStructureToken: StructToken;
     var script = original_script,
         result: parseoutput = {
             title_page: {
@@ -320,7 +325,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             }
             else {
                 var prevSection = latestSectionOrScene(depth - 1, condition)
-                if (prevSection.children != null) {
+                if (prevSection.children != null && !prevSection.isscene) {
                     var lastChild = last(prevSection.children.filter(condition))
                     if (lastChild) return lastChild
                 }
@@ -350,7 +355,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             else{
                 for(let i = 0; i < match.length; i++){
                     match[i] = match[i].slice(2, match[i].length - 2);
-                    result.properties.structure.push({text: match[i], id:'/' + linenumber, isnote:true, children:[],level:0,notes:[],range:new Range(new Position(linenumber, 0), new Position(linenumber, match[i].length+4)), section:false,synopses:[] })
+                    result.properties.structure.push({text: match[i], id:'/' + linenumber, isnote:true,isscene:false,ischartor:false,dialogueEndLine:0, children:[],level:0,notes:[],range:new Range(new Position(linenumber, 0), new Position(linenumber, match[i].length+4)), section:false,synopses:[] })
                     irrelevantTextLength += match[i].length+4;
                 }
             }
@@ -405,10 +410,18 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
 
             if(ignoredLastToken) ignoredLastToken=false;
 
-            if (state == "dialogue")
+            if (state == "dialogue"){
+                if(lastChartorStructureToken){
+                    lastChartorStructureToken.dialogueEndLine = i;
+                }
                 pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_end"));
-            if (state == "dual_dialogue")
+            }
+            if (state == "dual_dialogue"){
+                if(lastChartorStructureToken){
+                    lastChartorStructureToken.dialogueEndLine = i;
+                }
                 pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_end"));
+            }
             state = "normal";
 
 
@@ -454,6 +467,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         }
 
         const latestSection = (depth: number): StructToken => latestSectionOrScene(depth, token => token.section)
+        // const latestScene = (): StructToken => latestSectionOrScene(1, token => token.isscene)
 
 
         
@@ -481,8 +495,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 }
                 let cobj: StructToken = new StructToken();
                 cobj.text = thistoken.text;
-                cobj.children = null;
+                cobj.children = [];
                 cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
+                cobj.isscene = true;
 
 
 
@@ -501,6 +516,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         result.properties.structure.push(cobj);
                     }
                 }
+                lastScenStructureToken = cobj;
 
                 updatePreviousSceneLength();
                 result.properties.scenes.push({ scene: thistoken.number, text:thistoken.text, line: thistoken.line, actionLength: 0, dialogueLength: 0 })
@@ -567,6 +583,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     cobj.id = level.id + '/' + thistoken.line;
                     level.children.push(cobj);
                 }
+                
             } else if (thistoken.text.match(regex.page_break)) {
                 thistoken.text = "";
                 thistoken.type = "page_break";
@@ -635,6 +652,30 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     result.properties.characters.set(character, [scene_number]);
                 }
                 last_character_index = result.tokens.length;
+
+                // todo 对话角色加入结构树
+                if(lastScenStructureToken){
+                    let cobj: StructToken = new StructToken();
+                    cobj.text = thistoken.text;
+                    cobj.children = null;
+                    cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
+                    cobj.id = lastScenStructureToken.id + '/' + thistoken.line;
+                    cobj.ischartor = true;
+                    lastScenStructureToken.children.push(cobj);
+                    lastChartorStructureToken = cobj;
+                }
+
+
+
+                    // var level = latestScene();
+                    // if(level){
+                    //     cobj.id = level.id + '/' + thistoken.line;
+                    //     // level.children.push(cobj);
+                    // }
+                    // else{
+                    //     cobj.id = '/' + thistoken.line;
+                    //     // result.properties.structure.push(cobj);
+                    // }
             }
             else {
                 thistoken.type = "action";
