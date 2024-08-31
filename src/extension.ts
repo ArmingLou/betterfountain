@@ -68,11 +68,11 @@ export function activate(context: ExtensionContext) {
 
   //Register Commands
   context.subscriptions.push(vscode.commands.registerCommand('fountain.livepreview', () => {
-    createPreviewPanel(vscode.window.activeTextEditor, true);
+    createPreviewPanel(true);
     telemetry.reportTelemetry("command:fountain.livepreview");
   }));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.livepreviewstatic', () => {
-    createPreviewPanel(vscode.window.activeTextEditor, false);
+    createPreviewPanel(false);
     telemetry.reportTelemetry("command:fountain.livepreviewstatic");
   }));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.pdfpreview', createPdfPreviewPanel));

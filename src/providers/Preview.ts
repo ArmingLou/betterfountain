@@ -4,7 +4,7 @@ import * as fs from "fs";
 import { parsedDocuments, diagnostics, diagnosticCollection, parseDocument } from "../extension";
 import { getFountainConfig } from "../configloader";
 import { TopmostLineMonitor, getVisibleLine } from "../utils/topMostLineMonitor";
-import { assetsPath, getEditor } from "../utils";
+import { assetsPath, getActiveFountainDocument, getEditor } from "../utils";
 
 interface preview{
     uri:string;
@@ -41,8 +41,9 @@ export function getPreviewsToUpdate(docuri:vscode.Uri):preview[]{
     return selectedPreviews;
 }
 
-export function createPreviewPanel(editor:vscode.TextEditor, dynamic:boolean): vscode.WebviewPanel{
-	if(editor.document.languageId!="fountain"){
+export function createPreviewPanel(dynamic:boolean): vscode.WebviewPanel{
+    let editor = getEditor(getActiveFountainDocument());
+	if(!editor ||editor.document.languageId!="fountain"){
 		vscode.window.showErrorMessage("You can only preview Fountain documents as a screenplay!");
 		return undefined;
     }
