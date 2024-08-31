@@ -12,7 +12,7 @@ export class FountainFoldingRangeProvider implements FoldingRangeProvider {
 				if (nextStructItem != undefined) //this is the last child, so the end of the folding range is the end of the parent
 					lastline = nextStructItem.range.start.line;
 				if (structItem.ischartor) {
-					ranges.push(new FoldingRange(structItem.range.start.line, structItem.dialogueEndLine-1));
+					ranges.push(new FoldingRange(structItem.range.start.line, structItem.dialogueEndLine));
 					// ranges.push(new FoldingRange( structItem.dialogueEndLine, lastline - 1));
 				} else {
 					ranges.push(new FoldingRange(structItem.range.start.line, lastline - 1));

@@ -412,13 +412,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
 
             if (state == "dialogue"){
                 if(lastChartorStructureToken){
-                    lastChartorStructureToken.dialogueEndLine = i;
+                    lastChartorStructureToken.dialogueEndLine = i-1;
                 }
                 pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_end"));
             }
             if (state == "dual_dialogue"){
                 if(lastChartorStructureToken){
-                    lastChartorStructureToken.dialogueEndLine = i;
+                    lastChartorStructureToken.dialogueEndLine = i-1;
                 }
                 pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_end"));
             }
@@ -587,7 +587,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             } else if (thistoken.text.match(regex.page_break)) {
                 thistoken.text = "";
                 thistoken.type = "page_break";
-            } else if (thistoken.text.match(regex.character) && i != lines_length && i != lines_length - 1 && ((lines[i + 1].trim().length == 0) ? (lines[i + 1] == "  ") : true)) {
+            } else if (thistoken.text.match(regex.character) && (!(lines_length>i+2 && lines[i + 1].trim().length == 0 )) && (i > 0 && lines[i - 1].trim().length == 0)) {
                 // The last part of the above statement ('(lines[i + 1].trim().length == 0) ? (lines[i+1] == "  ") : false)')
                 // means that if the trimmed length of the following line (i+1) is equal to zero, the statement will only return 'true',
                 // and therefore consider the token as a character, if the content of the line is exactly two spaces.
@@ -661,6 +661,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
                     cobj.id = lastScenStructureToken.id + '/' + thistoken.line;
                     cobj.ischartor = true;
+                    cobj.dialogueEndLine = lines_length-1;
                     lastScenStructureToken.children.push(cobj);
                     lastChartorStructureToken = cobj;
                 }
