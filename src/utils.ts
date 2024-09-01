@@ -92,7 +92,7 @@ export const parseLocationInformation = (scene_heading: RegExpMatchArray) => {
 /**
  * Trims the `@` symbol necessary in character names if they contain lower-case letters, i.e. `@McCONNOR`
  */
-export const trimCharacterForceSymbol = (character: string): string => character.replace(/^[ \t]*@/, "");
+export const trimCharacterForceSymbol = (character: string): string => character.replace(/^[ \t]*@/, "").trim();
 
 /**
  * Character names containing lowercase letters need to be prefixed with an `@` symbol

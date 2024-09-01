@@ -84,11 +84,12 @@
       "name": "meta.paragraph.text",
       "match": "^[ \\t]*(?![#!]|(\\[\\[)|(SUPERIMPOSE:))(((?!@)[^\\p{Ll}\\r\\n]*?\\p{Lu}[^\\p{Ll}\\r\\n]*?)|((@)[^\\r\\n]*?))(\\(.*\\))?(\\s*\\^)?\\n\\s*\\n"
     },
+    
     "dialogue": {
       "include": "#characters_fake",
       "contentName": "string",
-      "begin": "^[ \\t]*(?![#!]|(\\[\\[)|(SUPERIMPOSE:))(((?!@)[^\\p{Ll}\\r\\n]*?\\p{Lu}[^\\p{Ll}\\r\\n]*?)|((@)[^\\r\\n]*?))(\\(.*\\))?(\\s*\\^)?$",
-      "end": "^$",
+      "begin": "^[ \\t]*(?![#!]|(\\[\\[)|(SUPERIMPOSE:))(((?!@)[^\\p{Ll}\\r\\n]*?\\p{Lu}[^\\p{Ll}\\r\\n]*?)|((@)[^\\r\\n]*?))(\\(.*\\))?(\\s*\\^)?\\s*$",
+      "end": "^\\s*$",
       "beginCaptures": {
         "3": {
           "name": "variable.parameter.url.css"
@@ -112,7 +113,7 @@
         },
         {
           "name": "entity.name.tag",
-          "match": "^[ \\t]*\\(.*\\)$",
+          "match": "^[ \\t]*\\(.*\\)\\s*$",
           "patterns": [
             {
               "include": "#nested_parens"
@@ -145,7 +146,7 @@
       "match": "===(=+)?"
     },
     "scene_headings": {
-      "match": "(?i)^[ \\t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.])(.+?)(?:(#)([^\\n#]+)(#))?$",
+      "match": "(?i)^[ \\t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.])(.+?)(?:(#)([^\\n#]+)(#))?\\s*$",
       "captures": {
         "1": {
           "name": "keyword.other.class"
@@ -291,64 +292,68 @@
       ]
     },
     "link-inline": {
-			"captures": {
+      "captures": {
         "1": {
-					"name": "punctuation.definition.tag"
-				},
+          "name": "punctuation.definition.tag"
+        },
         "3": {
-					"name": "punctuation.definition.tag"
-				},
+          "name": "punctuation.definition.tag"
+        },
         "5": {
-					"name": "punctuation.definition.tag"
-				},
+          "name": "punctuation.definition.tag"
+        },
         "6": {
-					"name": "punctuation.definition.tag"
-				},
+          "name": "punctuation.definition.tag"
+        },
         "10": {
-					"name": "punctuation.definition.tag"
-				},
-				"4": {
-					"name": "markup.underline.link.fountain",
-          "patterns":[
-            {"include":"#markup"},
-            {"include":"#link-inline"}
+          "name": "punctuation.definition.tag"
+        },
+        "4": {
+          "name": "markup.underline.link.fountain",
+          "patterns": [
+            {
+              "include": "#markup"
+            },
+            {
+              "include": "#link-inline"
+            }
           ]
-				},
-				"7": {
-					"name": "keyword"
-				}
-			},
+        },
+        "7": {
+          "name": "keyword"
+        }
+      },
       "match": "(!)?(\\[?(\\[)([^\\]\\[]*\\[?[^\\]\\[]*\\]?[^\\]\\[]*)(\\])(\\()(.+?)(?:\\s+([\"'])(.*?)\\4)?(\\)))",
-			"name": "meta.link.inline.fountain"
-		},
+      "name": "meta.link.inline.fountain"
+    },
     "title_page": {
       "begin": "^(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)(:)(.*(?:\\n   .*|\\n[^:\\n]+$)*)",
       "end": "^(?=(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)|$)",
-      "name":"string.other.title-page.fountain",
+      "name": "string.other.title-page.fountain",
       "captures": {
         "1": {
           "name": "keyword.control"
         },
-        "2":{
-          "name":"keyword.operator"
+        "2": {
+          "name": "keyword.operator"
         },
-        "3":{
-          "patterns":[
+        "3": {
+          "patterns": [
             {
-              "include":"#markup"
+              "include": "#markup"
             },
             {
-              "include":"#link-inline"
+              "include": "#link-inline"
             }
           ]
         }
       },
-      "patterns":[
+      "patterns": [
         {
-          "include":"#markup"
+          "include": "#markup"
         },
         {
-          "include":"#link-inline"
+          "include": "#link-inline"
         }
       ]
     }

@@ -38,15 +38,15 @@ export const regex: { [index: string]: RegExp } = {
     section: /^[ \t]*(#+)(?: *)(.*)/,
     synopsis: /^[ \t]*(?:\=(?!\=+) *)(.*)/,
 
-    scene_heading: /^[ \t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.])(.+?)(#[^\\s]+#)?$/i,
+    scene_heading: /^[ \t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.])(.+?)(#[^\\s]+#)?\s*$/i,
     scene_number: /#(.+)#/,
 
     transition: /^[ \t]*((?:FADE (?:TO BLACK|OUT)|CUT TO BLACK)\.|.+ TO\:|^TO\:$)|^(?:> *)(.+)/,
 
     dialogue: /^[ \t]*([*_]+[^\p{Ll}\p{Lo}\p{So}\r\n]*)(\^?)?(?:\n(?!\n+))([\s\S]+)/u,
 
-    character: /^[ \t]*(?![#!]|(\[\[)|(SUPERIMPOSE:))(((?!@)[^\p{Ll}\r\n]*?\p{Lu}[^\p{Ll}\r\n]*?)|((@)[^\r\n]*?))(\(.*\))?(\s*\^)?$/u,
-    parenthetical: /^[ \t]*(\(.+\))$/,
+    character: /^[ \t]*(?![#!]|(\[\[)|(SUPERIMPOSE:))(((?!@)[^\p{Ll}\r\n]*?\p{Lu}[^\p{Ll}\r\n]*?)|((@)[^\r\n]*?))(\(.*\))?(\s*\^\s*)?$/u,
+    parenthetical: /^[ \t]*(\(.+\))\s*$/,
 
     action: /^(.+)/g,
     centered: /^[ \t]*(?:> *)(.+)(?: *<)(\n.+)*/g,
@@ -405,7 +405,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         current = thistoken.end + 1;
 
         
-        if (text.trim().length === 0 && text !== "  ") {
+        if (text.trim().length === 0) {
             var skip_separator = (cfg.merge_multiple_empty_lines && last_was_separator) || (ignoredLastToken && result.tokens.length>1 && result.tokens[result.tokens.length-1].type == "separator");
 
             if(ignoredLastToken) ignoredLastToken=false;
@@ -479,7 +479,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             }
             let sceneHeadingMatch = thistoken.text.match(regex.scene_heading);
             if (sceneHeadingMatch) {
-                thistoken.text = thistoken.text.replace(/^\./, "");
+                thistoken.text = thistoken.text.replace(/^[ \t]*\./, "");
                 if (cfg.each_scene_on_new_page && scene_number !== 1) {
                     var page_break = create_token();
                     page_break.type = "page_break";
