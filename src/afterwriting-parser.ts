@@ -389,16 +389,16 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // replace inline comments
         text = text.split(/(\/\*){1}|(\*\/){1}|([^\/\*]+)/g).filter(if_not_empty).reduce(reduce_comment, "");
 
-        if (nested_comments && state !== "ignore") {
-            cache_state_for_comment = state;
-            state = "ignore";
-        } else if (state === "ignore") {
-            state = cache_state_for_comment;
-        }
+        // if (nested_comments && state !== "ignore") {
+        //     cache_state_for_comment = state;
+        //     state = "ignore";
+        // } else if (state === "ignore") {
+        //     state = cache_state_for_comment;
+        // }
 
-        if (nested_comments === 0 && state === "ignore") {
-            state = cache_state_for_comment;
-        }
+        // if (nested_comments === 0 && state === "ignore") {
+        //     state = cache_state_for_comment;
+        // }
 
 
         thistoken = create_token(text, current, i, new_line_length);
