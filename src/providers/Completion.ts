@@ -119,8 +119,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 		var currentline = document.getText(new vscode.Range(new vscode.Position(position.line, 0), position));
 		var prevLine = document.getText(new vscode.Range(new vscode.Position(position.line - 1, 0), position)).trimRight();
 		const hasCharacters = parsedDocument.properties.characters.size > 0;
-		const currentLineIsEmpty = currentline === "";
-		const previousLineIsEmpty = prevLine === "";
+		const currentLineIsEmpty = currentline.trim() === "";
+		const previousLineIsEmpty = prevLine.trim() === "";
 
 		//Title page autocomplete
 		if (parsedDocument.properties.firstTokenLine >= position.line) {
@@ -233,7 +233,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 				completes.push(TimeofDayCompletion("DAWN", addspace, "H"));
 			}
 			else {
-				var scenematch = currentline.match(/^((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(室内\)|\(室外\))?)\s*$/gi);
+				var scenematch = currentline.match(/^[ \t]*((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(室内\)|\(室外\))?)\s*$/gi);
 				if (scenematch) {
 					// var previousLabels: string[] = []
 					parsedDocument.properties.locations.forEach((_location, name) => {
@@ -264,7 +264,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 			}
 		}
 		//Other autocompletes
-		else if ((position.line > 0 && currentLineIsEmpty && previousLineIsEmpty) || currentline === '@') {
+		else if ((position.line > 0 && currentLineIsEmpty && previousLineIsEmpty) || currentline.trim() === '@') {
 			//We aren't on the first line, and the previous line is empty
 
 			//Get current scene number
@@ -284,7 +284,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 					var index = 0;
 					charactersWhoSpokeBeforeLast.forEach(character => {
 						// var charWithForceSymbolIfNecessary = addForceSymbolToCharacter(character);
-						var charWithForceSymbolIfNecessary = currentline === '@' ? character : '@' + character;
+						var charWithForceSymbolIfNecessary = currentline.trim() === '@' ? character : '@' + character;
 						charactersFromCurrentSceneHash.add(character);
 						completes.push({ label: charWithForceSymbolIfNecessary, kind: vscode.CompletionItemKind.Keyword, sortText: "0A" + index, documentation: "Character from the current scene", command: { command: "type", arguments: [{ "text": "\n" }], title: "newline" } });
 						index++;
@@ -295,7 +295,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 				}
 			}
 
-			if (currentline !== '@') {
+			if (currentline.trim() !== '@') {
 				completes.push({ label: ".(室内) ", documentation: "室内", sortText: "1B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 				completes.push({ label: ".(室外) ", documentation: "室外", sortText: "1C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 				completes.push({ label: "INT. ", documentation: "Interior", sortText: "1D", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
@@ -310,12 +310,12 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 				}
 				parsedDocument.properties.characters.forEach((_value: number[], key: string) => {
 					if (!charactersFromCurrentSceneHash.has(key)) {
-						var charWithForceSymbolIfNecessary = currentline === '@' ? key : '@' + key;
+						var charWithForceSymbolIfNecessary = currentline.trim() === '@' ? key : '@' + key;
 						completes.push({ label: charWithForceSymbolIfNecessary, documentation: "Character", sortText: sortText, kind: vscode.CompletionItemKind.Text, command: { command: "type", arguments: [{ "text": "\n" }], title: "newline" } });
 					}
 				});
 			}
-		} else if (currentline === ".") {
+		} else if (currentline.trimLeft() === ".") {
 			completes.push({ label: "(室内) ", documentation: "室内", sortText: "1B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 			completes.push({ label: "(室外) ", documentation: "室外", sortText: "1C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 		}
