@@ -47,6 +47,8 @@ export const regex: { [index: string]: RegExp } = {
 
     character: /^[ \t]*(?![#!]|(\[\[)|(SUPERIMPOSE:))(((?!@)[^\p{Ll}\r\n]*?\p{Lu}[^\p{Ll}\r\n]*?)|((@)[^\r\n]*?))(\(.*\))?(\s*\^\s*)?$/u,
     parenthetical: /^[ \t]*(\(.+\))\s*$/,
+    parenthetical_start: /^[ \t]*\([^\)]*$/,
+    parenthetical_end: /^[^\(]*\)\s*$/,
 
     action: /^(.+)/g,
     centered: /^[ \t]*(?:> *)(.+)(?: *<)(\n.+)*/g,
@@ -277,9 +279,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         dual_right,
         state = "normal",
         previousCharacter,
-        cache_state_for_comment,
+        // cache_state_for_comment,
         nested_comments = 0,
-        title_page_started = false
+        title_page_started = false,
+        parenthetical_open = false,
 
 
     var reduce_comment = function (prev: any, current: any) {
@@ -414,12 +417,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 if(lastChartorStructureToken){
                     lastChartorStructureToken.dialogueEndLine = i-1;
                 }
+                parenthetical_open = false;
                 pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_end"));
             }
             if (state == "dual_dialogue"){
                 if(lastChartorStructureToken){
                     lastChartorStructureToken.dialogueEndLine = i-1;
                 }
+                parenthetical_open = false;
                 pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_end"));
             }
             state = "normal";
@@ -684,6 +689,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             }
         } else {
             if (thistoken.text.match(regex.parenthetical)) {
+                thistoken.type = "parenthetical";
+            } else if(thistoken.text.match(regex.parenthetical_start)){
+                thistoken.type = "parenthetical";
+                parenthetical_open = true;
+            } else if(thistoken.text.match(regex.parenthetical_end)){
+                thistoken.type = "parenthetical";
+                parenthetical_open = false;
+            } else if(parenthetical_open){
                 thistoken.type = "parenthetical";
             } else {
                 thistoken.type = "dialogue";
