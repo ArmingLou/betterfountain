@@ -48,7 +48,7 @@ export const regex: { [index: string]: RegExp } = {
     character: /^[ \t]*(?![#!]|(\[\[)|(SUPERIMPOSE:))(((?!@)[^\p{Ll}\r\n]*?\p{Lu}[^\p{Ll}\r\n]*?)|((@)[^\r\n]*?))(\(.*\))?(\s*\^\s*)?$/u,
     parenthetical: /^[ \t]*(\(.+\))\s*$/,
     parenthetical_start: /^[ \t]*\([^\)]*$/,
-    parenthetical_end: /^[^\(]*\)\s*$/,
+    parenthetical_end: /^.*\)\s*$/,
 
     action: /^(.+)/g,
     centered: /^[ \t]*(?:> *)(.+)(?: *<)(\n.+)*/g,
@@ -688,20 +688,24 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 processActionBlock(thistoken);
             }
         } else {
-            if (thistoken.text.match(regex.parenthetical)) {
-                thistoken.type = "parenthetical";
-            } else if(thistoken.text.match(regex.parenthetical_start)){
-                thistoken.type = "parenthetical";
-                parenthetical_open = true;
-            } else if(thistoken.text.match(regex.parenthetical_end)){
-                thistoken.type = "parenthetical";
-                parenthetical_open = false;
-            } else if(parenthetical_open){
-                thistoken.type = "parenthetical";
+            if (parenthetical_open) {
+                if(thistoken.text.match(regex.parenthetical_end)){
+                    thistoken.type = "parenthetical";
+                    parenthetical_open = false;
+                } else {
+                    thistoken.type = "parenthetical";
+                }
             } else {
-                thistoken.type = "dialogue";
-                processDialogueBlock(thistoken);
-                thistoken.character = previousCharacter;
+                if (thistoken.text.match(regex.parenthetical)) {
+                    thistoken.type = "parenthetical";
+                } else if(thistoken.text.match(regex.parenthetical_start)){
+                    thistoken.type = "parenthetical";
+                    parenthetical_open = true;
+                } else {
+                    thistoken.type = "dialogue";
+                    processDialogueBlock(thistoken);
+                    thistoken.character = previousCharacter;
+                }
             }
             if (dual_right) {
                 thistoken.dual = "right";
