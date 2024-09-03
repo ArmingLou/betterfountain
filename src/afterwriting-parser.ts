@@ -282,7 +282,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // cache_state_for_comment,
         nested_comments = 0,
         title_page_started = false,
-        parenthetical_open = false,
+        parenthetical_open = false
 
 
     var reduce_comment = function (prev: any, current: any) {
@@ -290,6 +290,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             nested_comments++;
         } else if (current === "*/") {
             nested_comments--;
+            if(nested_comments < 0) {
+                nested_comments = 0;
+                prev = prev + current;
+            }
         } else if (!nested_comments) {
             prev = prev + current;
         }
@@ -389,8 +393,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     for (var i = 0; i < lines_length; i++) {
         text = lines[i];
 
+        var beforNotEmpty = text.trim().length > 0;
+
         // replace inline comments
         text = text.split(/(\/\*){1}|(\*\/){1}|([^\/\*]+)/g).filter(if_not_empty).reduce(reduce_comment, "");
+
+        if(text.trim().length === 0 && beforNotEmpty){
+            continue;
+        }
 
         // if (nested_comments && state !== "ignore") {
         //     cache_state_for_comment = state;

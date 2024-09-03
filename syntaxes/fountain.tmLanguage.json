@@ -7,88 +7,21 @@
   "uuid": "BA0B1FEB-1E9C-4283-8F3B-E80E7879EA91",
   "patterns": [
     {
-      "include": "#comments"
-    },
-    {
-      "include": "#title_page"
-    },
-    {
-      "include": "#scene_headings"
-    },
-    {
-      "include": "#sections"
-    },
-    {
-      "include": "#synopses"
-    },
-    {
-      "include": "#transitions"
-    },
-    {
-      "include": "#center"
-    },
-    {
       "include": "#dialogue"
     },
     {
-      "include": "#characters_fake"
-    },
-    {
-      "include": "#characters"
-    },
-    {
-      "include": "#markup"
-    },
-    {
-      "include": "#notes"
-    },
-    {
-      "include": "#pagebreaks"
-    },
-    {
-      "include": "#action"
-    },
-    {
-      "include": "#lyrics"
+      "include": "#block_except_dialogue"
     }
   ],
   "repository": {
-    "action": {
-      "begin": "^([ \\t]*)(?=\\S)",
-      "contentName": "meta.paragraph.text",
-      "end": "^(?!\\1(?=\\S))",
-      "patterns": [
-        {
-          "match": "(?x)\r\n                  ( (https?|s?ftp|ftps|file|smb|afp|nfs|(x-)?man|gopher|txmt)://|mailto:)\r\n                  [-:@a-zA-Z0-9_.,~%+/?=&#]+(?<![.,?:])\r\n               ",
-          "name": "markup.underline.link.text"
-        },
-        {
-          "include": "#markup"
-        },
-        {
-          "include": "#lyrics"
-        }
-      ]
-    },
-    "comments": {
-      "name": "comment.block.fountain",
-      "begin": "/\\*",
-      "end": "\\*/"
-    },
-    "lyrics": {
-      "name": "markup.italic string",
-      "begin": "^\\s*~.*",
-      "end": "$"
-    },
-    "characters_fake": {
+    "dialogue_fake": {
       "name": "meta.paragraph.text",
-      "match": "^[ \\t]*(?![#!]|(\\[\\[)|(SUPERIMPOSE:))(((?!@)[^\\p{Ll}\\r\\n]*?\\p{Lu}[^\\p{Ll}\\r\\n]*?)|((@)[^\\r\\n]*?))(\\(.*\\))?(\\s*\\^)?\\n\\s*\\n"
-    },
-    
-    "dialogue": {
-      "include": "#characters_fake",
-      "contentName": "string",
       "begin": "^[ \\t]*(?![#!]|(\\[\\[)|(SUPERIMPOSE:))(((?!@)[^\\p{Ll}\\r\\n]*?\\p{Lu}[^\\p{Ll}\\r\\n]*?)|((@)[^\\r\\n]*?))(\\(.*\\))?(\\s*\\^)?\\s*$",
+      "end": "^\\s*$"
+    },
+    "dialogue": {
+      "contentName": "string",
+      "begin": "^[ \\t]*(?![#!]|(\\[\\[)|(SUPERIMPOSE:)|(?:/\\*))(((?!@)[^\\p{Ll}\\r\\n]*?\\p{Lu}[^\\p{Ll}\\r\\n]*?)|((@)[^\\r\\n]*?))(\\(.*\\))?(\\s*\\^)?\\s*(?<!\\s*TO:\\s*)$",
       "end": "^\\s*$",
       "beginCaptures": {
         "3": {
@@ -104,21 +37,14 @@
           "name": "comment.block.fountain"
         }
       },
-      "applyEndPatternLast": 1,
       "patterns": [
         {
-          "name": "comment.block.fountain",
-          "begin": "/\\*",
-          "end": "\\*/"
+          "include": "#comments"
         },
         {
           "name": "entity.name.tag",
-          "match": "^[ \\t]*\\(.*\\)\\s*$",
-          "patterns": [
-            {
-              "include": "#nested_parens"
-            }
-          ]
+          "begin": "^[ \\t]*\\(",
+          "end": "(\\)\\s*$|(?=^\\s*$))"
         },
         {
           "include": "#markup"
@@ -128,22 +54,75 @@
         }
       ]
     },
-    "nested_parens": {
-      "begin": "(",
-      "end": ")",
+    "block_except_dialogue": {
+      "begin": "^(?=\\s*[^\\s]+.*$)",
+      "end": "^\\s*$",
       "patterns": [
         {
-          "include": "#nested_parens"
+          "include": "#comments"
+        },
+        {
+          "include": "#title_page"
+        },
+        {
+          "include": "#scene_headings"
+        },
+        {
+          "include": "#sections"
+        },
+        {
+          "include": "#synopses"
+        },
+        {
+          "include": "#transitions"
+        },
+        {
+          "include": "#center"
+        },
+        {
+          "include": "#markup"
+        },
+        {
+          "include": "#notes"
+        },
+        {
+          "include": "#pagebreaks"
+        },
+        {
+          "include": "#lyrics"
         }
       ]
     },
-    "notes": {
-      "name": "comment.block",
-      "match": "(?:\\[{2}(?!\\[+))([\\s\\S]+?)(?:\\]{2}(?!\\[+))"
+    "comments": {
+      "name": "comment.block.fountain",
+      "begin": "/\\*",
+      "end": "\\*/",
+      "patterns": [
+        {
+          "include": "#comments"
+        }
+      ]
     },
-    "pagebreaks": {
-      "name": "variable.other.constant",
-      "match": "===(=+)?"
+    "title_page": {
+      "begin": "^(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)(:)",
+      "end": "^((?=(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl))|(?=\\s*$))",
+      "name": "meta.paragraph.text",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control"
+        },
+        "2": {
+          "name": "keyword.operator"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#markup"
+        },
+        {
+          "include": "#link-inline"
+        }
+      ]
     },
     "scene_headings": {
       "match": "(?i)^[ \\t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.])(.+?)(?:(#)([^\\n#]+)(#))?\\s*$",
@@ -180,9 +159,18 @@
       "name": "comment.block.fountain.synopses",
       "match": "^={1}([^<>=][^<>]+?)$"
     },
+    "transitions": {
+      "name": "variable.other.constant",
+      "match": "^\\s*(?:(>)[^<\\n\\r]*|[A-Z ]+TO:)$",
+      "captures": {
+        "1": {
+          "name": "comment.block.fountain"
+        }
+      }
+    },
     "center": {
       "name": "token.warn-token",
-      "match": "^(>)[^<>\\n]+(<)$",
+      "match": "^\\s*(>)[^<>\\n]+(<)\\s*$",
       "captures": {
         "1": {
           "name": "comment.block.fountain"
@@ -192,14 +180,18 @@
         }
       }
     },
-    "transitions": {
+    "notes": {
+      "name": "comment.block",
+      "match": "(?:\\[{2}(?!\\[+))([\\s\\S]+?)(?:\\]{2}(?!\\[+))"
+    },
+    "pagebreaks": {
       "name": "variable.other.constant",
-      "match": "^\\s*(?:(>)[^<\\n\\r]*|[A-Z ]+TO:)$",
-      "captures": {
-        "1": {
-          "name": "comment.block.fountain"
-        }
-      }
+      "match": "===(=+)?"
+    },
+    "lyrics": {
+      "name": "markup.italic string",
+      "begin": "^\\s*~.*",
+      "end": "$"
     },
     "markup": {
       "patterns": [
@@ -326,36 +318,10 @@
       "match": "(!)?(\\[?(\\[)([^\\]\\[]*\\[?[^\\]\\[]*\\]?[^\\]\\[]*)(\\])(\\()(.+?)(?:\\s+([\"'])(.*?)\\4)?(\\)))",
       "name": "meta.link.inline.fountain"
     },
-    "title_page": {
-      "begin": "^(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)(:)(.*(?:\\n   .*|\\n[^:\\n]+$)*)",
-      "end": "^(?=(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)|$)",
-      "name": "string.other.title-page.fountain",
-      "captures": {
-        "1": {
-          "name": "keyword.control"
-        },
-        "2": {
-          "name": "keyword.operator"
-        },
-        "3": {
-          "patterns": [
-            {
-              "include": "#markup"
-            },
-            {
-              "include": "#link-inline"
-            }
-          ]
-        }
-      },
-      "patterns": [
-        {
-          "include": "#markup"
-        },
-        {
-          "include": "#link-inline"
-        }
-      ]
+    "test2": {
+      "name": "variable.other.constant",
+      "begin": "^(?!\\s*$).*$",
+      "while": "^(?!\\s*$).*$"
     }
   }
 }
