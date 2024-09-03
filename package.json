@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "3.7.5",
+	"version": "3.8.0",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -180,7 +180,17 @@
 					"fountain.general.calculateDuration": {
 						"type": "number",
 						"default": 0.1945548,
-						"description": "sec/char - 对白每字符耗时预估(不含标点)(不同语言的剧本,根据实际使用进行调整修改)"
+						"description": "sec/char - 对白中每字符耗时预估(不含标点)(不同语言的剧本,根据实际使用进行调整修改)"
+					},
+					"fountain.general.calculateDurationLong": {
+						"type": "number",
+						"default": 0.75,
+						"description": "sec/punc - 对白中每个长标点耗时预估(句号问号等)(可根据实际使用进行调整修改)"
+					},
+					"fountain.general.calculateDurationShort": {
+						"type": "number",
+						"default": 0.3,
+						"description": "sec/punc - 对白中每个短标点耗时预估(逗号顿号等)(可根据实际使用进行调整修改)"
 					}
 				}
 			},

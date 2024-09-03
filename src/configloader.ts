@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 
 export class FountainConfig{
     calculate_duration: number;
+    calculate_duration_long: number;
+    calculate_duration_short: number;
     refresh_stats_on_save: boolean;
     refresh_pdfpreview_on_save:boolean;
     number_scenes_on_save: boolean;
@@ -88,6 +90,8 @@ export var getFountainConfig = function(docuri:vscode.Uri):FountainConfig{
     var generalConfig = vscode.workspace.getConfiguration("fountain.general", docuri);
     return {
         calculate_duration: generalConfig.calculateDuration,
+        calculate_duration_long: generalConfig.calculateDurationLong,
+        calculate_duration_short: generalConfig.calculateDurationShort,
         number_scenes_on_save: generalConfig.numberScenesOnSave,
         refresh_stats_on_save: generalConfig.refreshStatisticsOnSave,
         refresh_pdfpreview_on_save: generalConfig.refreshPdfPreviewOnSave,

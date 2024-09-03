@@ -25,6 +25,8 @@ const exportConfig: ExportConfig  =  {
 
 const fountainConfig: FountainConfig  = {
     calculate_duration: 1,
+    calculate_duration_long: 1,
+    calculate_duration_short: 1,
     refresh_stats_on_save: false,
     number_scenes_on_save:  false,
     embolden_scene_headers: false,

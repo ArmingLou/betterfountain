@@ -171,8 +171,16 @@ export const calculateDialogueDuration = (dialogue: string): number => {
 
 	const config = getFountainConfig(getActiveFountainDocument());
 	var x = 0.1945548;
+	var long = 0.75;
+	var short = 0.3;
 	if (config.calculate_duration) {
 		x = config.calculate_duration
+	}
+	if (config.calculate_duration_long) {
+		long = config.calculate_duration_long
+	}
+	if (config.calculate_duration_short) {
+		short = config.calculate_duration_short
 	}
 
 	//According to this paper: http://www.office.usp.ac.jp/~klinger.w/2010-An-Analysis-of-Articulation-Rates-in-Movies.pdf
@@ -190,10 +198,10 @@ export const calculateDialogueDuration = (dialogue: string): number => {
 			break;
 		}
 		if (resu[1]) {
-			duration += 0.75;
+			duration += long; // 长标点耗时
 		}
 		if (resu[2]) {
-			duration += 0.3;
+			duration += short; // 短标点耗时
 		}
 		resu = rec.exec(dialogue);
 	}
