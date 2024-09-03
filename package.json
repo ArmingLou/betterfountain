@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "3.5.8",
+	"version": "3.6.5",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -180,7 +180,7 @@
 					"fountain.general.calculateDuration": {
 						"type": "number",
 						"default": 0.1945548,
-						"description": "时间预估系数(不同语言写作下,根据实际使用进行调整修改)"
+						"description": "sec/char - 对白每字符耗时预估(不同语言的剧本,根据实际使用进行调整修改)"
 					}
 				}
 			},

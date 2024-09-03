@@ -178,7 +178,7 @@ export const calculateDialogueDuration = (dialogue: string): number => {
 	//According to this paper: http://www.office.usp.ac.jp/~klinger.w/2010-An-Analysis-of-Articulation-Rates-in-Movies.pdf
 	//The average amount of syllables per second in the 14 movies analysed is 5.13994 (0.1945548s/syllable)
 	var sanitized = dialogue.replace(/[\s]/gi, '');
-	duration += ((sanitized.length) / 3) * x;// TODO Arming (2024-08-29) : 时间预估算法
+	duration += sanitized.length * x; // TODO Arming (2024-08-29) : 时间预估算法, 由统计已知道 0.1945548s / 每音节。 而一个中文字正好是一个音节，中文直接乘以字数就好了。
 	//duration += syllable(dialogue)*0.1945548;
 
 	//According to a very crude analysis involving watching random movie scenes on youtube and measuring pauses with a stopwatch
