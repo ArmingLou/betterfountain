@@ -177,16 +177,25 @@ export const calculateDialogueDuration = (dialogue: string): number => {
 
 	//According to this paper: http://www.office.usp.ac.jp/~klinger.w/2010-An-Analysis-of-Articulation-Rates-in-Movies.pdf
 	//The average amount of syllables per second in the 14 movies analysed is 5.13994 (0.1945548s/syllable)
-	var sanitized = dialogue.replace(/[\s]/gi, '');
+	var sanitized = dialogue.replace(/\s|\p{P}|\p{S}/giu, '');
 	duration += sanitized.length * x; // TODO Arming (2024-08-29) : 时间预估算法, 由统计已知道 0.1945548s / 每音节。 而一个中文字正好是一个音节，中文直接乘以字数就好了。
 	//duration += syllable(dialogue)*0.1945548;
 
 	//According to a very crude analysis involving watching random movie scenes on youtube and measuring pauses with a stopwatch
 	//A comma in the middle of a sentence adds 0.4sec and a full stop/excalmation/question mark adds 0.8 sec.
-	var punctuationMatches = dialogue.match(/(\.|\?|\!|\:) |(\, )/g);
-	if (punctuationMatches) {
-		if (punctuationMatches[0]) duration += 0.75 * punctuationMatches[0].length;
-		if (punctuationMatches[1]) duration += 0.3 * punctuationMatches[1].length;
+	var rec = /(\.|\?|\!|\:|。|？|！|：)|(\,|，|;|；|、)/g
+	var resu = rec.exec(dialogue);
+	while (resu) {
+		if(!resu[0]){
+			break;
+		}
+		if (resu[1]) {
+			duration += 0.75;
+		}
+		if (resu[2]) {
+			duration += 0.3;
+		}
+		resu = rec.exec(dialogue);
 	}
 	return duration
 }
