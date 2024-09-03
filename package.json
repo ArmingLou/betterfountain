@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "3.8.0",
+	"version": "3.8.1",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -176,6 +176,11 @@
 						"type": "boolean",
 						"default": true,
 						"description": "Noise texture on the live preview (absent from PDF)"
+					},
+					"fountain.general.calculateDurationAction": {
+						"type": "number",
+						"default": 0.15,
+						"description": "sec/char - action文本中每字符转化成影片时长预估(不含标点)(不同语言的剧本,根据实际使用进行调整修改)"
 					},
 					"fountain.general.calculateDuration": {
 						"type": "number",

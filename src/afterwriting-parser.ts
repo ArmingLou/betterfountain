@@ -1,4 +1,4 @@
-import { calculateDialogueDuration, trimCharacterExtension, last, trimCharacterForceSymbol, parseLocationInformation, slugify } from "./utils";
+import { calculateDialogueDuration, trimCharacterExtension, last, trimCharacterForceSymbol, parseLocationInformation, slugify, calculateActionDuration } from "./utils";
 import { token, create_token } from "./token";
 import { Range, Position } from "vscode";
 import { getFountainConfig } from "./configloader";
@@ -380,8 +380,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         result.lengthDialogue += token.time;
     }
     const processActionBlock = (token:token) => {
-        let irrelevantActionLength = processInlineNote(token.text, token.line);
-        token.time = (token.text.length - irrelevantActionLength) / 20;
+        processInlineNote(token.text, token.line);
+        // token.time = calculateActionDuration(token.text.length - irrelevantActionLength);
+        token.time = calculateActionDuration(token.text); 
         if (!cfg.print_notes) {
             token.text = token.text.replace(regex.note_inline, "");
             if(token.text.trim().length == 0) token.ignore = true;

@@ -32,7 +32,7 @@ export class FountainSymbolProvider implements vscode.DocumentSymbolProvider {
 				// end = document.lineAt(hierarchyend-1).range.end;
 			}
 
-			if (!token.section && !token.ischartor) {
+			if (token.isscene) {
 				var sceneLength = parsedDocuments.get(document.uri.toString()).properties.scenes[scenecounter].actionLength + parsedDocuments.get(document.uri.toString()).properties.scenes[scenecounter].dialogueLength;
 				details = secondsToMinutesString(sceneLength);
 				returnvalue.length = sceneLength;
