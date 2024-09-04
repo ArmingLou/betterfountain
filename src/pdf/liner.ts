@@ -1,3 +1,4 @@
+import { regex } from "../afterwriting-parser";
 import { token } from "../token";
 
 export class Liner {
@@ -317,13 +318,24 @@ export class Liner {
                 var max = (cfg.print[token.type] || {}).max || cfg.print.action.max;
 
                 //Replace tabs with 4 spaces
-                if (token.text)
+                if (token.text) {
                     token.text = token.text.replace('\t', '    ');
+                    token.text = token.text.replace(/(?<!\*)\*{2}(?!\*)/g, '↭'); // 双 ** 换成当个特殊符号 ↭ ，以防下面split_token分行截断。
+                    token.text = token.text.replace(/(?<!\*)\*{3}(?!\*)/g, '↯'); // 三 *** 换成当个特殊符号 ，以防下面split_token分行截断。
+                    while (token.text.match(regex.note_inline)) {
+                        let i = token.text.indexOf('[[');
+                        token.text = token.text.slice(0, i) + '↺' + token.text.slice(i + 2);
+                        i = token.text.indexOf(']]');
+                        token.text = token.text.slice(0, i) + '↻' + token.text.slice(i + 2);
+                    } // 假的 note ，比如只有半边 [[ ，让其保留
+                }
 
                 if (token.dual) {
                     max *= cfg.print.dual_max_factor;
                 }
 
+                // TODO Arming (2024-09-04) : note  [[ ]] 标签可能会被换行，导致 pdf 打印时判断 note [[]] 必须单行才能 按照预期打印会出问题
+                // pdf 打印 note [[ ]] 特殊处理。将其转换为 ↺↻
                 this.split_token(token, max);
 
                 if (token.is("scene_heading") && lines.length) {

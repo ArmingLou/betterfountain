@@ -56,7 +56,7 @@ export const regex: { [index: string]: RegExp } = {
     page_break: /^\={3,}$/,
     line_break: /^ {2}$/,
 
-    note_inline: /(?:\[{2}(?!\[+))([\s\S]+?)(?:\]{2}(?!\[+))/g,
+    note_inline: /(?:\[{2}(?!\[+))([\s\S]+?)(?:\]{2}(?!\]+))/g,
 
     emphasis: /(_|\*{1,3}|_\*{1,3}|\*{1,3}_)(.+)(_|\*{1,3}|_\*{1,3}|\*{1,3}_)/g,
     bold_italic_underline: /(_{1}\*{3}(?=.+\*{3}_{1})|\*{3}_{1}(?=.+_{1}\*{3}))(.+?)(\*{3}_{1}|_{1}\*{3})/g,
@@ -386,6 +386,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             lastChartorStructureToken.durationSec =  lastChartorStructureToken.durationSec? lastChartorStructureToken.durationSec + token.time : token.time;
         }
     }
+    const processParentheticalBlock = (token:token) => {
+        let textWithoutNotes = token.text.replace(regex.note_inline, "");
+        processInlineNote(token.text, token.line);
+        if (!cfg.print_notes) {
+            token.text = textWithoutNotes;
+            if(token.text.trim().length == 0) token.ignore = true;
+        }
+    }
     const processActionBlock = (token:token) => {
         processInlineNote(token.text, token.line);
         // token.time = calculateActionDuration(token.text.length - irrelevantActionLength);
@@ -712,17 +720,18 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             }
         } else {
             if (parenthetical_open) {
+                thistoken.type = "parenthetical";
+                processParentheticalBlock(thistoken);
                 if(thistoken.text.match(regex.parenthetical_end)){
-                    thistoken.type = "parenthetical";
                     parenthetical_open = false;
-                } else {
-                    thistoken.type = "parenthetical";
-                }
+                } 
             } else {
                 if (thistoken.text.match(regex.parenthetical)) {
                     thistoken.type = "parenthetical";
+                    processParentheticalBlock(thistoken);
                 } else if(thistoken.text.match(regex.parenthetical_start)){
                     thistoken.type = "parenthetical";
+                    processParentheticalBlock(thistoken);
                     parenthetical_open = true;
                 } else {
                     thistoken.type = "dialogue";

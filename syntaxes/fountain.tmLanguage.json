@@ -44,7 +44,12 @@
         {
           "name": "entity.name.tag",
           "begin": "^[ \\t]*\\(",
-          "end": "(\\)\\s*$|(?=^\\s*$))"
+          "end": "(\\)\\s*$|(?=^\\s*$))",
+          "patterns": [
+            {
+              "include": "#notes"
+            }
+          ]
         },
         {
           "include": "#markup"
@@ -182,7 +187,7 @@
     },
     "notes": {
       "name": "comment.block",
-      "match": "(?:\\[{2}(?!\\[+))([\\s\\S]+?)(?:\\]{2}(?!\\[+))"
+      "match": "(?:\\[{2}(?!\\[+))([\\s\\S]+?)(?:\\]{2}(?!\\]+))"
     },
     "pagebreaks": {
       "name": "variable.other.constant",

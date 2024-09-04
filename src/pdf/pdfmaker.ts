@@ -338,7 +338,7 @@ async function initDoc(opts: Options) {
         }
 
         if (print.note.italic) {
-            text = text.replace(/\[\[/g, '*[[').replace(/\]\]/g, ']]*');
+            text = text.replace(/↺/g, '*↺').replace(/↻/g, '↻*');
         }
         var links: { start: number, length: number, url: string }[] = [];
         if (options.links) {
@@ -373,7 +373,7 @@ async function initDoc(opts: Options) {
 
         //Further sub-split for bold, italic, underline, etc...
         for (let i = 0; i < split_for_formatting.length; i++) {
-            var innersplit = split_for_formatting[i].split(/(\\\*)|(\*{1,3})|(\\?_)|(\[\[)|(\]\])/g).filter(function (a) {
+            var innersplit = split_for_formatting[i].split(/(\\\*)|(\*)|(↭)|(↯)|(↺)|(↻)|(\\?_)/g).filter(function (a) {
                 return a;
             });
             split_for_formatting.splice(i, 1, ...innersplit);
@@ -387,18 +387,18 @@ async function initDoc(opts: Options) {
         var currentWidth = 0;
         for (var i = 0; i < split_for_formatting.length; i++) {
             var elem = split_for_formatting[i];
-            if (elem === '***') {
+            if (elem === '↯') {
                 doc.format_state.italic = !doc.format_state.italic;
                 doc.format_state.bold = !doc.format_state.bold;
-            } else if (elem === '**') {
+            } else if (elem === '↭') {
                 doc.format_state.bold = !doc.format_state.bold;
             } else if (elem === '*') {
                 doc.format_state.italic = !doc.format_state.italic;
             } else if (elem === '_') {
                 doc.format_state.underline = !doc.format_state.underline;
-            } else if (elem === '[[') {
+            } else if (elem === '↺') {
                 doc.format_state.override_color = (print.note && print.note.color) || '#000000';
-            } else if (elem === ']]') {
+            } else if (elem === '↻') {
                 doc.format_state.override_color = null;
             } else {
                 let font = 'ScriptNormal';
@@ -896,9 +896,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     if (cfg.embolden_character_names) {
                         if (intput.endsWith(cfg.text_contd)) {
                             intput = intput.substring(0, intput.length - cfg.text_contd.length);
-                            intput = '**' + intput + '**' + cfg.text_contd;
+                            intput = '↭' + intput + '↭' + cfg.text_contd;
                         } else {
-                            intput = '**' + intput + '**';
+                            intput = '↭' + intput + '↭';
                         }
                     }
                 }
@@ -975,7 +975,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     }
                     currentScene = text;
                     if (cfg.embolden_scene_headers) {
-                        text = '**' + text + '**';
+                        text = '↭' + text + '↭';
                     }
                     if (cfg.underline_scene_headers) {
                         text = '_' + text + '_';
@@ -1022,7 +1022,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     scene_number = String(line.number);
                     var scene_text_length = scene_number.length;
                     if (cfg.embolden_scene_headers) {
-                        scene_number = '**' + scene_number + '**';
+                        scene_number = '↭' + scene_number + '↭';
                     }
                     if (cfg.underline_scene_headers) {
                         scene_number = '_' + scene_number + '_';
