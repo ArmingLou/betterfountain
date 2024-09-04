@@ -162,7 +162,15 @@
     },
     "synopses": {
       "name": "comment.block.fountain.synopses",
-      "match": "^={1}([^<>=][^<>]+?)$"
+      "match": "^(={1})([^<>=][^<>]+?)$",
+      "captures": {
+        "1": {
+          "name": "comment.block.fountain"
+        },
+        "2": {
+          "name": "constant.numeric.scene.fountain"
+        }
+      }
     },
     "transitions": {
       "name": "variable.other.constant",
