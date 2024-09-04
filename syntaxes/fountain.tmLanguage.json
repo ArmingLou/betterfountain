@@ -195,7 +195,7 @@
     },
     "notes": {
       "name": "comment.block",
-      "match": "(?:\\[{2}(?!\\[+))([\\s\\S]+?)(?:\\]{2}(?!\\]+))"
+      "match": "(?:\\[{2}(?!\\[+))([\\s\\S]+?)(?:\\]{2})"
     },
     "pagebreaks": {
       "name": "variable.other.constant",
