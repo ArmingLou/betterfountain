@@ -1,5 +1,5 @@
 'use strict';
-import { getFountainConfig, initFountainUIPersistence } from "./configloader";
+import { cleanFountainConfig, getFountainConfig, initFountainUIPersistence } from "./configloader";
 import { ExtensionContext, languages, TextDocument } from 'vscode';
 import * as vscode from 'vscode';
 import * as afterparser from "./afterwriting-parser";
@@ -205,6 +205,7 @@ vscode.workspace.onDidChangeTextDocument(change => {
 });
 
 vscode.workspace.onDidChangeConfiguration(change => {
+  cleanFountainConfig();
   if (change.affectsConfiguration("fountain.general.parentheticalNewLineHelper")) {
     const config = getFountainConfig(getActiveFountainDocument());
     if (disposeTyping) disposeTyping.dispose();

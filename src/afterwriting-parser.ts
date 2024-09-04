@@ -187,6 +187,7 @@ export class StructToken {
     isscene: boolean;
     ischartor: boolean;
     dialogueEndLine: number;
+    durationSec: number;
 }
 export class screenplayProperties {
     scenes: { scene: string; text:string, line: number, actionLength: number, dialogueLength: number }[];
@@ -362,7 +363,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             else{
                 for(let i = 0; i < match.length; i++){
                     match[i] = match[i].slice(2, match[i].length - 2);
-                    result.properties.structure.push({text: match[i], id:'/' + linenumber, isnote:true,isscene:false,ischartor:false,dialogueEndLine:0, children:[],level:0,notes:[],range:new Range(new Position(linenumber, 0), new Position(linenumber, match[i].length+4)), section:false,synopses:[] })
+                    result.properties.structure.push({text: match[i], id:'/' + linenumber, isnote:true,isscene:false,ischartor:false,dialogueEndLine:0,durationSec:0, children:[],level:0,notes:[],range:new Range(new Position(linenumber, 0), new Position(linenumber, match[i].length+4)), section:false,synopses:[] })
                     irrelevantTextLength += match[i].length+4;
                 }
             }
@@ -378,6 +379,12 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             if(token.text.trim().length == 0) token.ignore = true;
         }
         result.lengthDialogue += token.time;
+        if(lastScenStructureToken){
+            lastScenStructureToken.durationSec =  lastScenStructureToken.durationSec? lastScenStructureToken.durationSec + token.time : token.time;
+        }
+        if(lastChartorStructureToken){
+            lastChartorStructureToken.durationSec =  lastChartorStructureToken.durationSec? lastChartorStructureToken.durationSec + token.time : token.time;
+        }
     }
     const processActionBlock = (token:token) => {
         processInlineNote(token.text, token.line);
@@ -388,6 +395,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             if(token.text.trim().length == 0) token.ignore = true;
         }
         result.lengthAction += token.time;
+        if(lastScenStructureToken){
+            lastScenStructureToken.durationSec =  lastScenStructureToken.durationSec? lastScenStructureToken.durationSec + token.time : token.time;
+        }
     }
 
     let ignoredLastToken = false;
@@ -671,15 +681,17 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
 
                 // todo 对话角色加入结构树
                 if(lastScenStructureToken){
-                    let cobj: StructToken = new StructToken();
-                    cobj.text = thistoken.text;
-                    cobj.children = null;
-                    cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
-                    cobj.id = lastScenStructureToken.id + '/' + thistoken.line;
-                    cobj.ischartor = true;
-                    cobj.dialogueEndLine = lines_length-1;
-                    lastScenStructureToken.children.push(cobj);
-                    lastChartorStructureToken = cobj;
+                    if(config.dialogue_foldable){
+                        let cobj: StructToken = new StructToken();
+                        cobj.text = thistoken.text;
+                        cobj.children = null;
+                        cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
+                        cobj.id = lastScenStructureToken.id + '/' + thistoken.line;
+                        cobj.ischartor = true;
+                        cobj.dialogueEndLine = lines_length-1;
+                        lastScenStructureToken.children.push(cobj);
+                        lastChartorStructureToken = cobj;
+                    }
                 }
 
 

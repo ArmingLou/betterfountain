@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as afterparser from '../afterwriting-parser';
 import { activeParsedDocument } from '../extension';
-import { getActiveFountainDocument, getEditor } from '../utils';
+import { getActiveFountainDocument, getEditor, secondsToMinutesString } from '../utils';
 import * as config from '../configloader';
 
 export class FountainOutlineTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -65,28 +65,47 @@ function buildTree(): OutlineTreeItem {
 
 function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem): OutlineTreeItem {
 	var item: OutlineTreeItem;
-	if (token.section)
+	if (token.section) {
 		item = new SectionTreeItem(token, parent);
-	else if (token.isnote)
-		if (config.uiPersistence.outline_visibleNotes)
+	}
+	else if (token.isnote) {
+		if (config.uiPersistence.outline_visibleNotes) {
 			item = new NoteTreeItem({ note: token.text, line: token.id.substring(1) }, parent);
-		else
+		}
+		else {
 			return undefined;
-	else if (token.ischartor)
-		return undefined; // don't show 角色名 in outline
-	else
+		}
+	}
+	else if (token.ischartor) {
+		item = new DialogueTreeItem(token, parent);
+	}
+	else {
 		item = new SceneTreeItem(token, parent);
+	}
 
-	let passthrough = (token.section && !config.uiPersistence.outline_visibleSections) || (!token.section && !config.uiPersistence.outline_visibleScenes);
+	let passthrough = (token.section && !config.uiPersistence.outline_visibleSections) ||
+		(token.isscene && !config.uiPersistence.outline_visibleScenes) ||
+		(token.ischartor && !config.uiPersistence.outline_visibleDialogue);
 
 	item.children = [];
 
 	if (token.children) {
-		if (passthrough){
+		if (passthrough) {
+			if(!parent.children){
+				parent.children = []
+			}
 			parent.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, parent)));
 		}
-		else if(!token.isscene){
+		else {
 			item.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, item)));
+			// if (token.section) {
+			// 	item.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, item)));
+			// } else if (token.isscene) {
+			// 	var conf = getFountainConfig(getActiveFountainDocument());
+			// 	if (conf.dialogue_foldable) {
+			// 		item.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, item)));
+			// 	}
+			// }
 		}
 	}
 
@@ -98,6 +117,9 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem): 
 				item.children.push(...token.notes.map(note => new NoteTreeItem(note, item)));
 			}
 			else {
+				if(!parent.children){
+					parent.children = []
+				}
 				parent.children.push(...token.notes.map(note => new NoteTreeItem(note, parent)));
 			}
 		}
@@ -106,22 +128,34 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem): 
 				item.children.push(...token.synopses.map(syn => new SynopsisTreeItem(syn, item)));
 			}
 			else {
+				if(!parent.children){
+					parent.children = []
+				}
 				parent.children.push(...token.synopses.map(syn => new SynopsisTreeItem(syn, parent)));
 			}
 		}
 
 	}
 
-	if (item.children.length > 0)
+	if (item.children &&item.children.length > 0){
 		item.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+	}
 
 
 	if (passthrough) {
-		parent.children = parent.children.sort((a, b) => a.lineNumber - b.lineNumber);
+		if(parent.children && parent.children.length > 0){
+			parent.children = parent.children.sort((a, b) => a.lineNumber - b.lineNumber);
+		} else if(parent.children){
+			parent.children = undefined;
+		}
 		return undefined;
 	}
 	else {
-		item.children = item.children.sort((a, b) => a.lineNumber - b.lineNumber);
+		if(item.children &&item.children.length > 0){
+			item.children = item.children.sort((a, b) => a.lineNumber - b.lineNumber);
+		} else if(item.children){
+			item.children = undefined;
+		}
 		return item;
 	}
 }
@@ -174,12 +208,21 @@ class SectionTreeItem extends OutlineTreeItem {
 
 class SceneTreeItem extends OutlineTreeItem {
 	constructor(token: afterparser.StructToken, parent: OutlineTreeItem) {
-		super(token.text, token.id, parent)
+		super(token.text , token.id, parent)
 
-		this.iconPath = __filename + '/../../../assets/scene.svg';
+		this.iconPath = __filename + '/../../../assets/device-camera-video.svg';
 		if (token.synopses && token.synopses.length > 0) {
 			this.tooltip = token.synopses.map(s => s.synopsis).join('\n');
 		}
+		this.description =  '[' + secondsToMinutesString(token.durationSec) + ']';
+	}
+}
+class DialogueTreeItem extends OutlineTreeItem {
+	constructor(token: afterparser.StructToken, parent: OutlineTreeItem) {
+		super(token.text , token.id, parent)
+
+		this.iconPath = __filename + '/../../../assets/comment.svg';
+		this.description =  '[' + secondsToMinutesString(token.durationSec) + ']';
 	}
 }
 
@@ -188,8 +231,8 @@ class NoteTreeItem extends OutlineTreeItem {
 		super("", token.line.toString(), parent)
 
 		this.iconPath = {
-			light: __filename + '/../../../assets/note_light_offset.svg',
-			dark: __filename + '/../../../assets/note_dark_offset.svg'
+			light: __filename + '/../../../assets/bookmark_light.svg',
+			dark: __filename + '/../../../assets/bookmark_dark.svg'
 		};
 		this.description = token.note;
 		this.tooltip = this.description;

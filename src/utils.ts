@@ -242,7 +242,8 @@ export function secondsToString(seconds: number): string {
 }
 
 export function secondsToMinutesString(seconds: number): string {
-	if (seconds < 1) return undefined;
+	if (!seconds) return '00:00';
+	if (seconds < 1) return '00:01-';
 	var time = new Date(null);
 	time.setHours(0);
 	time.setMinutes(0);

@@ -7,7 +7,7 @@ export class FountainSymbolProvider implements vscode.DocumentSymbolProvider {
 	provideDocumentSymbols(document: vscode.TextDocument): vscode.DocumentSymbol[] {
 
 		var symbols: vscode.DocumentSymbol[] = []
-		var scenecounter = 0;
+		// var scenecounter = 0;
 
 		//hierarchyend is the last line of the token's hierarchy. Last line of document for the root, last line of current section, etc...
 		function symbolFromStruct(token: afterparser.StructToken, nexttoken: afterparser.StructToken, hierarchyend: number): { symbol: vscode.DocumentSymbol, length: number } {
@@ -32,11 +32,12 @@ export class FountainSymbolProvider implements vscode.DocumentSymbolProvider {
 				// end = document.lineAt(hierarchyend-1).range.end;
 			}
 
-			if (token.isscene) {
-				var sceneLength = parsedDocuments.get(document.uri.toString()).properties.scenes[scenecounter].actionLength + parsedDocuments.get(document.uri.toString()).properties.scenes[scenecounter].dialogueLength;
-				details = secondsToMinutesString(sceneLength);
-				returnvalue.length = sceneLength;
-				scenecounter++;
+			if (token.isscene || token.ischartor) {
+				// var sceneLength = parsedDocuments.get(document.uri.toString()).properties.scenes[scenecounter].actionLength + parsedDocuments.get(document.uri.toString()).properties.scenes[scenecounter].dialogueLength;
+				// details = secondsToMinutesString(sceneLength);
+				details = secondsToMinutesString(token.durationSec);
+				returnvalue.length = token.durationSec;
+				// scenecounter++;
 			}
 			var symbolname = " ";
 			if (token.text != "")

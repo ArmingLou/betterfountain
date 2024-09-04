@@ -9,7 +9,7 @@ export class FountainCommandTreeDataProvider implements vscode.TreeDataProvider<
 	getChildren(): vscode.ProviderResult<vscode.TreeItem[]> {
 		const elements: vscode.TreeItem[] = [];
 		const treeExportPdf = new vscode.TreeItem("Export PDF");
-		treeExportPdf.iconPath = new vscode.ThemeIcon("live-share");
+		treeExportPdf.iconPath = new vscode.ThemeIcon("link-external");
 		//const treeExportPdfDebug = new vscode.TreeItem("Export PDF with default name");
 		const treeExportPdfCustom= new vscode.TreeItem("Export PDF with highlighted characters");
 		treeExportPdfCustom.iconPath = new vscode.ThemeIcon("export");

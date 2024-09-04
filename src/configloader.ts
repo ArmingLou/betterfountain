@@ -5,6 +5,7 @@ export class FountainConfig{
     calculate_duration_long: number;
     calculate_duration_short: number;
     calculate_duration_action: number;
+    dialogue_foldable: boolean;
     refresh_stats_on_save: boolean;
     refresh_pdfpreview_on_save:boolean;
     number_scenes_on_save: boolean;
@@ -54,12 +55,14 @@ export type FountainUIPersistence = {
     outline_visibleNotes:boolean
     outline_visibleSections:boolean;
     outline_visibleScenes:boolean;
+    outline_visibleDialogue:boolean;
 }
 export let uiPersistence:FountainUIPersistence = {
     outline_visibleSynopses: true,
     outline_visibleNotes: true,
     outline_visibleScenes: true,
-    outline_visibleSections: true
+    outline_visibleSections: true,
+    outline_visibleDialogue: true
 }
 
 let extensionContext:vscode.ExtensionContext = undefined;
@@ -76,7 +79,7 @@ export var initFountainUIPersistence = function(context:vscode.ExtensionContext)
     }
 }
 
-export var changeFountainUIPersistence = function(key:"outline_visibleSynopses"|"outline_visibleNotes"|"outline_visibleSections"|"outline_visibleScenes", value:any){
+export var changeFountainUIPersistence = function(key:"outline_visibleSynopses"|"outline_visibleNotes"|"outline_visibleSections"|"outline_visibleScenes"|"outline_visibleDialogue", value:any){
     if(extensionContext){
         extensionContext.globalState.update(key, value);
         uiPersistence[key] = value;
@@ -84,16 +87,33 @@ export var changeFountainUIPersistence = function(key:"outline_visibleSynopses"|
     }
 }
 
+const configMap = new Map<string, FountainConfig>();
+
+export var cleanFountainConfig = function(){
+    configMap.clear();
+}
+
 export var getFountainConfig = function(docuri:vscode.Uri):FountainConfig{
+    let uriStr = '';
     if(!docuri && vscode.window.activeTextEditor != undefined) 
         docuri = vscode.window.activeTextEditor.document.uri;
+
+    if(docuri){
+        uriStr = docuri.toString();
+    }
+
+    if(configMap.has(uriStr)){
+        return configMap.get(uriStr);
+    }
+    
     var pdfConfig = vscode.workspace.getConfiguration("fountain.pdf", docuri);
     var generalConfig = vscode.workspace.getConfiguration("fountain.general", docuri);
-    return {
+    const res = {
         calculate_duration: generalConfig.calculateDuration,
         calculate_duration_long: generalConfig.calculateDurationLong,
         calculate_duration_short: generalConfig.calculateDurationShort,
         calculate_duration_action: generalConfig.calculateDurationAction,
+        dialogue_foldable: generalConfig.dialogueFoldable,
         number_scenes_on_save: generalConfig.numberScenesOnSave,
         refresh_stats_on_save: generalConfig.refreshStatisticsOnSave,
         refresh_pdfpreview_on_save: generalConfig.refreshPdfPreviewOnSave,
@@ -132,4 +152,6 @@ export var getFountainConfig = function(docuri:vscode.Uri):FountainConfig{
         preview_texture: generalConfig.previewTexture,
         parenthetical_newline_helper:  generalConfig.parentheticalNewLineHelper
     }
+    configMap.set(uriStr, res);
+    return res;
 }

@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "3.8.1",
+	"version": "4.0.2",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -196,6 +196,11 @@
 						"type": "number",
 						"default": 0.3,
 						"description": "sec/punc - 对白中每个短标点耗时预估(逗号顿号等)(可根据实际使用进行调整修改)"
+					},
+					"fountain.general.dialogueFoldable": {
+						"type": "boolean",
+						"default": false,
+						"description": "对话内容是否可折叠及可在OUTLINE面板中"
 					}
 				}
 			},
@@ -399,7 +404,7 @@
 				"command": "fountain.exportpdf",
 				"title": "Export screenplay PDF",
 				"category": "Fountain",
-				"icon": "$(live-share)"
+				"icon": "$(link-external)"
 			},
 			{
 				"command": "fountain.exporthtml",

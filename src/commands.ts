@@ -14,12 +14,12 @@ export async function exportPdf(uri: vscode.Uri | undefined | null, showSaveDial
   if (canceled) return;
   let doc;
   if (uri) {
-    if (uri.scheme == 'file' && (uri.path.endsWith('.fountain')||uri.path.endsWith('.spmd'))) {
+    if (uri.scheme == 'file' && (uri.path.endsWith('.fountain') || uri.path.endsWith('.spmd'))) {
       doc = uri
     } else if (uri.scheme == 'webview-panel') {
       // 从 pdf 预览 webviewPannel 导出
       for (let i = 0; i < pdfPanels.length; i++) {
-        if (pdfPanels[i].panel.active){
+        if (pdfPanels[i].panel.active) {
           doc = vscode.Uri.parse(pdfPanels[i].uri);
           break
         }
@@ -30,7 +30,7 @@ export async function exportPdf(uri: vscode.Uri | undefined | null, showSaveDial
     doc = getActiveFountainDocument()
   }
 
-  if(!doc){
+  if (!doc) {
     vscode.window.showErrorMessage("Not a fountain document !");
     return
   }
@@ -89,7 +89,7 @@ var lastShiftedParseId = "";
 
 export function shiftScenesUpDn(direction: number) {
   var editor = getEditor(getActiveFountainDocument());
-  if(!editor) return;
+  if (!editor) return;
   var parsed = parsedDocuments.get(editor.document.uri.toString());
 
   /* prevent the shiftScenes() being processed again before the document is reparsed from the previous 
@@ -123,7 +123,7 @@ export function visibleItems() {
   const quickpick = vscode.window.createQuickPick();
   quickpick.canSelectMany = true;
 
-  quickpick.items = [{
+  let its = [{
     alwaysShow: true,
     label: "Notes",
     detail: "[[Text enclosed between two brackets]]",
@@ -144,22 +144,38 @@ export function visibleItems() {
     detail: "Any line starting with INT. or EXT. is a scene. Can also be forced by starting a line with '.'",
     picked: uiPersistence.outline_visibleScenes
   }];
+  var conf = getFountainConfig(getActiveFountainDocument());
+  if (conf.dialogue_foldable) {
+    its.push(
+      {
+        alwaysShow: true,
+        label: "Dialogue",
+        detail: "Any dialogue starting with someone Character",
+        picked: uiPersistence.outline_visibleDialogue
+      }
+    )
+  }
+  quickpick.items = its;
+
   quickpick.selectedItems = quickpick.items.filter(item => item.picked);
   quickpick.onDidChangeSelection((e) => {
     let visibleScenes = false;
     let visibleSections = false;
     let visibleSynopses = false;
     let visibleNotes = false;
+    let visibleDialogue = false;
     for (let i = 0; i < e.length; i++) {
       if (e[i].label == "Notes") visibleNotes = true;
       if (e[i].label == "Scenes") visibleScenes = true;
       if (e[i].label == "Sections") visibleSections = true;
       if (e[i].label == "Synopses") visibleSynopses = true;
+      if (e[i].label == "Dialogue") visibleDialogue = true;
     }
     changeFountainUIPersistence("outline_visibleNotes", visibleNotes);
     changeFountainUIPersistence("outline_visibleScenes", visibleScenes);
     changeFountainUIPersistence("outline_visibleSections", visibleSections);
     changeFountainUIPersistence("outline_visibleSynopses", visibleSynopses);
+    changeFountainUIPersistence("outline_visibleDialogue", visibleDialogue);
     outlineViewProvider.update();
   });
   quickpick.show();
@@ -174,7 +190,7 @@ export function jumpTo(args: any) {
   //If live screenplay is visible scroll to it with
   if (getFountainConfig(editor.document.uri).synchronized_markup_and_preview) {
     previews.forEach(p => {
-      if (p.uri == editor.document.uri.toString()){
+      if (p.uri == editor.document.uri.toString()) {
         p.panel.webview.postMessage({ command: 'scrollTo', content: args });
       }
     });

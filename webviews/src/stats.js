@@ -353,8 +353,8 @@ function updateStats(){
         columns: [
             { data:'name', name:"name", title:"Name", alwaysvisible:true },
             { data:'secondsSpoken', name:"duration", title:"Duration", render:renderDuration },
-            { data:'speakingParts', name:"lines", title:"Lines", render:renderInvert },
-            { data:'wordsSpoken', name:"chars", title:"chars", render:renderInvert },
+            { data:'speakingParts', name:"lines", title:"Dialogues", render:renderInvert },
+            { data:'wordsSpoken', name:"chars", title:"Chars", render:renderInvert },
             { data:'averageComplexity', name:"complexity", title:"Complexity", render:renderComplexity},
             { data:'monologues', name:"monologues", title:"Monologues", render:renderInvert }
         ],
