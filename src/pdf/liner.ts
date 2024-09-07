@@ -1,3 +1,4 @@
+import { charOfStyleTag } from "../cons";
 import { token } from "../token";
 
 export class Liner {
@@ -32,7 +33,9 @@ export class Liner {
         return idx;
     }
 
-    split_text = (text: any, max: any, index: any, token: token): any => {
+    split_text = (text: any, max: any, index: any, token: token, from_break: boolean = false): any => {
+        var endFix = charOfStyleTag.underline + charOfStyleTag.bold_italic + charOfStyleTag.bold + charOfStyleTag.italic;
+        var beginFix = charOfStyleTag.italic + charOfStyleTag.bold + charOfStyleTag.bold_italic + charOfStyleTag.underline;
         var maxIdx = this.get_max_idx(text, max);
         if (text.length <= maxIdx + 1) {
             var tmpText;
@@ -78,7 +81,7 @@ export class Liner {
             text: text.substr(0, thisEndIdx + 1),
             start: index,
             end: index + thisEndIdx
-        })].concat(this.split_text(text.substr(nextStarIdx), max, index + nextStarIdx, token));
+        })].concat(this.split_text(text.substr(nextStarIdx), max, index + nextStarIdx, token, true));
     };
 
     split_token = (token: any, max: number) => {
@@ -145,7 +148,7 @@ export class Liner {
                 var charactername = "";
                 if (lines[character]) charactername = lines[character].text;
 
-                if(after_is_fake){
+                if (after_is_fake) {
                     let moreitem = {
                         type: "more",
                         text: " ",
@@ -153,14 +156,14 @@ export class Liner {
                         end: token_on_break.end,
                         token: token_on_break.token
                     };
-                    lines.splice( index+1, 0, new_page_character = this.h.create_line({
+                    lines.splice(index + 1, 0, new_page_character = this.h.create_line({
                         type: "character",
                         text: " ", // 必须是有长度的空格，否则渲染会被忽略掉删除。
                         start: token_after2.start,
                         end: token_after2.end,
                         token: token_on_break.token
                     }), this.h.create_line(moreitem));
-                }else {
+                } else {
                     let moreitem = {
                         type: "more",
                         text: MORE,
@@ -180,7 +183,7 @@ export class Liner {
 
                 if (lines[character] && lines[character].right_column) {
                     var dialogue_on_page_length = index - character;
-                    if(lines[character].right_column.length > dialogue_on_page_length){
+                    if (lines[character].right_column.length > dialogue_on_page_length) {
 
                         var right_lines_on_this_page = lines[character].right_column.slice(0, dialogue_on_page_length).concat([
                             this.h.create_line({
@@ -199,7 +202,7 @@ export class Liner {
                                 token: token_on_break.token
                             })
                             ].concat(lines[character].right_column.slice(dialogue_on_page_length));
-    
+
                         lines[character].right_column = right_lines_on_this_page;
                         if (right_lines_for_next_page.length > 1) {
                             new_page_character.right_column = right_lines_for_next_page;

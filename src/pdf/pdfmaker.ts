@@ -309,6 +309,7 @@ async function initDoc(opts: Options) {
     // convert points to inches for text
     doc.reset_format = function () {
         doc.format_state = {
+            bold_italic: false,
             bold: false,
             italic: false,
             underline: false,
@@ -391,8 +392,8 @@ async function initDoc(opts: Options) {
         for (var i = 0; i < split_for_formatting.length; i++) {
             var elem = split_for_formatting[i];
             if (elem === charOfStyleTag.bold_italic) {
-                doc.format_state.italic = !doc.format_state.italic;
-                doc.format_state.bold = !doc.format_state.bold;
+                // doc.format_state.italic = !doc.format_state.italic;
+                doc.format_state.bold_italic = !doc.format_state.bold_italic;
             } else if (elem === charOfStyleTag.bold) {
                 doc.format_state.bold = !doc.format_state.bold;
             } else if (elem === charOfStyleTag.italic) {
@@ -405,7 +406,7 @@ async function initDoc(opts: Options) {
                 doc.format_state.override_color = null;
             } else {
                 let font = 'ScriptNormal';
-                if (doc.format_state.bold && doc.format_state.italic) {
+                if (doc.format_state.bold_italic) {
                     font = 'ScriptBoldOblique';
                 } else if (doc.format_state.bold || options.bold) {
                     font = 'ScriptBold';
