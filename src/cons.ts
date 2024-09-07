@@ -10,6 +10,8 @@ export const charOfStyleTag: { [index: string]: string } = {
     bold_underline: "☍",
     bold_italic_underline: "☋",
     link: "𓆡",
+    style_stash: "↷",
+    style_pop: "↶",
 }
 
 export const blockRegex: { [index: string]: RegExp } = {

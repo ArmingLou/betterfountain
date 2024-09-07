@@ -185,7 +185,7 @@ export function jumpTo(args: any) {
   const editor = getEditor(getActiveFountainDocument());
   if (!editor) return;
   const range = editor.document.lineAt(Number(args)).range;
-  editor.selection = new vscode.Selection(range.end, range.end);
+  editor.selection = new vscode.Selection(range.start, range.end);
   editor.revealRange(range, vscode.TextEditorRevealType.AtTop);
   //If live screenplay is visible scroll to it with
   if (getFountainConfig(editor.document.uri).synchronized_markup_and_preview) {

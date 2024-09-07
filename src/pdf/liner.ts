@@ -1,4 +1,3 @@
-import { charOfStyleTag } from "../cons";
 import { token } from "../token";
 
 export class Liner {
@@ -33,9 +32,7 @@ export class Liner {
         return idx;
     }
 
-    split_text = (text: any, max: any, index: any, token: token, from_break: boolean = false): any => {
-        var endFix = charOfStyleTag.underline + charOfStyleTag.bold_italic + charOfStyleTag.bold + charOfStyleTag.italic;
-        var beginFix = charOfStyleTag.italic + charOfStyleTag.bold + charOfStyleTag.bold_italic + charOfStyleTag.underline;
+    split_text = (text: any, max: any, index: any, token: token): any => {
         var maxIdx = this.get_max_idx(text, max);
         if (text.length <= maxIdx + 1) {
             var tmpText;
@@ -81,7 +78,7 @@ export class Liner {
             text: text.substr(0, thisEndIdx + 1),
             start: index,
             end: index + thisEndIdx
-        })].concat(this.split_text(text.substr(nextStarIdx), max, index + nextStarIdx, token, true));
+        })].concat(this.split_text(text.substr(nextStarIdx), max, index + nextStarIdx, token));
     };
 
     split_token = (token: any, max: number) => {

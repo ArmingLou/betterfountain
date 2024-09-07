@@ -28,6 +28,14 @@ var PDFDocument = require('pdfkit'),
     //helper = require('../helpers'),
     Blob = require('blob');
 
+var stash_styple= {
+    bold_italic: false,
+    bold: false,
+    italic: false,
+    underline: false,
+    override_color: ""
+}
+
 var create_simplestream = function (filepath: string) {
     var simplestream: any = {
         chunks: [],
@@ -377,7 +385,7 @@ async function initDoc(opts: Options) {
 
         //Further sub-split for bold, italic, underline, etc...
         for (let i = 0; i < split_for_formatting.length; i++) {
-            var innersplit = split_for_formatting[i].split(/(☄)|(☈)|(↭)|(↯)|(↺)|(↻)|(↬)|(☍)|(☋)/g).filter(function (a) {
+            var innersplit = split_for_formatting[i].split(/(☄)|(☈)|(↭)|(↯)|(↺)|(↻)|(↬)|(☍)|(☋)|(↷)|(↶)/g).filter(function (a) {
                 return a;
             });
             split_for_formatting.splice(i, 1, ...innersplit);
@@ -391,7 +399,27 @@ async function initDoc(opts: Options) {
         var currentWidth = 0;
         for (var i = 0; i < split_for_formatting.length; i++) {
             var elem = split_for_formatting[i];
-            if (elem === charOfStyleTag.bold_italic) {
+            if (elem === charOfStyleTag.style_stash) {
+                stash_styple = {
+                    bold_italic: doc.format_state.bold_italic,
+                    bold: doc.format_state.bold,
+                    italic: doc.format_state.italic,
+                    underline: doc.format_state.underline,
+                    override_color: doc.format_state.override_color
+                }
+                doc.format_state.bold_italic = false;
+                doc.format_state.bold = false;
+                doc.format_state.italic = false;
+                doc.format_state.underline = false;
+                doc.format_state.override_color = null;
+                color = options.color || 'black';
+            }else if (elem === charOfStyleTag.style_pop) {
+                doc.format_state.bold_italic = stash_styple.bold_italic;
+                doc.format_state.bold = stash_styple.bold;
+                doc.format_state.italic = stash_styple.italic;
+                doc.format_state.underline = stash_styple.underline;
+                doc.format_state.override_color = stash_styple.override_color;
+            }else if (elem === charOfStyleTag.bold_italic) {
                 // doc.format_state.italic = !doc.format_state.italic;
                 doc.format_state.bold_italic = !doc.format_state.bold_italic;
             } else if (elem === charOfStyleTag.bold) {
@@ -404,6 +432,7 @@ async function initDoc(opts: Options) {
                 doc.format_state.override_color = (print.note && print.note.color) || '#000000';
             } else if (elem === charOfStyleTag.note_end) {
                 doc.format_state.override_color = null;
+                color = options.color || 'black';
             } else {
                 let font = 'ScriptNormal';
                 if (doc.format_state.bold_italic) {
@@ -905,6 +934,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             intput = charOfStyleTag.bold + intput + charOfStyleTag.bold;
                         }
                     }
+                    intput = charOfStyleTag.style_stash + intput + charOfStyleTag.style_pop;
+                }
+                if (lline.type === "more") {
+                    intput = charOfStyleTag.style_stash + intput + charOfStyleTag.style_pop;
                 }
                 // if (lline.type === "dialogue") {
                 //     if (cfg.emitalic_dialog) {
