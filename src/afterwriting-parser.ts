@@ -772,7 +772,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 thistoken.number = scene_number.toString();
                 if (match = thistoken.text.match(regex.scene_number)) {
                     thistoken.text = thistoken.text.replace(regex.scene_number, "");
-                    thistoken.number = match[1];
+                    thistoken.number = match[1].trim();
                 }
                 let cobj: StructToken = new StructToken();
                 cobj.text = thistoken.text;
