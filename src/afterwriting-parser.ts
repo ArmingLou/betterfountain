@@ -137,6 +137,7 @@ var htmlreplacements: LexerReplacements = {
     bold_italic: '<span class=\"bold italic\">$2</span>',
     bold: '<span class=\"bold\">$2</span>',
     italic: '<span class=\"italic\">$2</span>',
+    italic_global: '<span class=\"italic\">$2</span>',
     underline: '<span class=\"underline\">$2</span>',
 };
 export function lexer(s: string, type: string, replacer: LexerReplacements, titlepage: boolean = false) {
@@ -144,7 +145,7 @@ export function lexer(s: string, type: string, replacer: LexerReplacements, titl
         return s;
     }
 
-    var styles = ['underline', 'italic', 'bold', 'bold_italic', 'italic_underline', 'bold_underline', 'bold_italic_underline']
+    var styles = ['underline', 'italic', 'bold', 'bold_italic', 'italic_underline', 'bold_underline', 'bold_italic_underline', 'italic_global']
         , i = styles.length, style, match;
 
     if (titlepage) {
@@ -837,9 +838,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 var mt = thistoken.text.trimRight().match(blockRegex.lyric);
                 var ct = mt[4];
                 if (ct) {
-                    if (!ct.endsWith('*') || !ct.startsWith('*')) {
-                        ct = "*" + ct + "*";
-                    }
+                    ct = charOfStyleTag.italic_global_begin + ct + charOfStyleTag.italic_global_end;
                 } // 加斜体样式. 保留空格格式
                 thistoken.text = mt[1] + mt[3] + ct;
                 processTokenTextStyleChar(thistoken);
@@ -917,7 +916,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             last_character_index++;
                         }
 
-                        if(mod_last){
+                        if (mod_last) {
                             //update last dialogue_begin to be dual_dialogue_begin and remove last dialogue_end
                             var foundmatch = false;
                             var temp_index = result.tokens.length;
@@ -941,7 +940,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                                 }
                             }
                         }
-                        if(dual_str === "left"){
+                        if (dual_str === "left") {
                             pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_begin"));
                         } else {
                             // 删除之前 left 的 dual_dialogue_end
@@ -967,7 +966,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                                 }
                             }
                         }
-                        
+
                         // dual_right = true;
                         thistoken.dual = dual_str;
                     }
@@ -1058,12 +1057,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             if (dual_str) {
                 thistoken.dual = dual_str;
             }
-            if (cfg.emitalic_dialog) {
-                if (!thistoken.text.endsWith('*') || !thistoken.text.startsWith('*')) {
-                    thistoken.text = '*' + thistoken.text + '*';
-                }
-            } //根据配置，施加斜体样式，如果可以的话。
             processTokenTextStyleChar(thistoken);
+            if (cfg.emitalic_dialog) {
+                thistoken.text = charOfStyleTag.italic_global_begin + thistoken.text + charOfStyleTag.italic_global_end;
+            } //根据配置，施加斜体样式，如果可以的话。
         }
 
         if (thistoken.type != "action" && !(thistoken.type == "dialogue" && thistoken.text == "  ")) {

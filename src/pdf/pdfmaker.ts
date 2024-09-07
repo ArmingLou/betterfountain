@@ -23,18 +23,26 @@ export class Options {
     font_italic: string;
     font_bold: string;
     font_bold_italic: string;
+    stash_style_right_clumn: StyleStash;
+    stash_style_left_clumn: StyleStash;
+    italic_global: boolean;
+    italic_dynamic: boolean;
 }
+
+export class StyleStash {
+    bold_italic: boolean;
+    bold: boolean;
+    italic: boolean;
+    underline: boolean;
+    override_color: string;
+    italic_global: boolean;
+    italic_dynamic: boolean;
+}
+
 var PDFDocument = require('pdfkit'),
     //helper = require('../helpers'),
     Blob = require('blob');
 
-var stash_styple= {
-    bold_italic: false,
-    bold: false,
-    italic: false,
-    underline: false,
-    override_color: ""
-}
 
 var create_simplestream = function (filepath: string) {
     var simplestream: any = {
@@ -385,7 +393,7 @@ async function initDoc(opts: Options) {
 
         //Further sub-split for bold, italic, underline, etc...
         for (let i = 0; i < split_for_formatting.length; i++) {
-            var innersplit = split_for_formatting[i].split(/(☄)|(☈)|(↭)|(↯)|(↺)|(↻)|(↬)|(☍)|(☋)|(↷)|(↶)/g).filter(function (a) {
+            var innersplit = split_for_formatting[i].split(/(☄)|(☈)|(↭)|(↯)|(↺)|(↻)|(↬)|(☍)|(☋)|(↷)|(↶)|(⇂)|(↿)|(↝)|(↜)/g).filter(function (a) {
                 return a;
             });
             split_for_formatting.splice(i, 1, ...innersplit);
@@ -399,33 +407,77 @@ async function initDoc(opts: Options) {
         var currentWidth = 0;
         for (var i = 0; i < split_for_formatting.length; i++) {
             var elem = split_for_formatting[i];
-            if (elem === charOfStyleTag.style_stash) {
-                stash_styple = {
+            if (elem === charOfStyleTag.style_left_stash) {
+                opts.stash_style_left_clumn = {
                     bold_italic: doc.format_state.bold_italic,
                     bold: doc.format_state.bold,
                     italic: doc.format_state.italic,
                     underline: doc.format_state.underline,
-                    override_color: doc.format_state.override_color
+                    override_color: doc.format_state.override_color,
+                    italic_global: opts.italic_global,
+                    italic_dynamic: opts.italic_dynamic,
                 }
                 doc.format_state.bold_italic = false;
                 doc.format_state.bold = false;
                 doc.format_state.italic = false;
                 doc.format_state.underline = false;
+                opts.italic_global = false;
+                opts.italic_dynamic = false;
                 doc.format_state.override_color = null;
                 color = options.color || 'black';
-            }else if (elem === charOfStyleTag.style_pop) {
-                doc.format_state.bold_italic = stash_styple.bold_italic;
-                doc.format_state.bold = stash_styple.bold;
-                doc.format_state.italic = stash_styple.italic;
-                doc.format_state.underline = stash_styple.underline;
-                doc.format_state.override_color = stash_styple.override_color;
-            }else if (elem === charOfStyleTag.bold_italic) {
+
+            } else if (elem === charOfStyleTag.style_left_pop) {
+                doc.format_state.bold_italic = opts.stash_style_left_clumn.bold_italic;
+                doc.format_state.bold = opts.stash_style_left_clumn.bold;
+                doc.format_state.italic = opts.stash_style_left_clumn.italic;
+                doc.format_state.underline = opts.stash_style_left_clumn.underline;
+                doc.format_state.override_color = opts.stash_style_left_clumn.override_color;
+                opts.italic_global = opts.stash_style_left_clumn.italic_global;
+                opts.italic_dynamic = opts.stash_style_left_clumn.italic_dynamic;
+            } else if (elem === charOfStyleTag.style_right_stash) {
+                opts.stash_style_right_clumn = {
+                    bold_italic: doc.format_state.bold_italic,
+                    bold: doc.format_state.bold,
+                    italic: doc.format_state.italic,
+                    underline: doc.format_state.underline,
+                    override_color: doc.format_state.override_color,
+                    italic_global: opts.italic_global,
+                    italic_dynamic: opts.italic_dynamic,
+                }
+                doc.format_state.bold_italic = false;
+                doc.format_state.bold = false;
+                doc.format_state.italic = false;
+                doc.format_state.underline = false;
+                opts.italic_global = false;
+                opts.italic_dynamic = false;
+                doc.format_state.override_color = null;
+                color = options.color || 'black';
+            } else if (elem === charOfStyleTag.style_right_pop) {
+                doc.format_state.bold_italic = opts.stash_style_right_clumn.bold_italic;
+                doc.format_state.bold = opts.stash_style_right_clumn.bold;
+                doc.format_state.italic = opts.stash_style_right_clumn.italic;
+                doc.format_state.underline = opts.stash_style_right_clumn.underline;
+                doc.format_state.override_color = opts.stash_style_right_clumn.override_color;
+                opts.italic_global = opts.stash_style_right_clumn.italic_global;
+                opts.italic_dynamic = opts.stash_style_right_clumn.italic_dynamic;
+            } else if (elem === charOfStyleTag.italic_global_begin) {
+                opts.italic_dynamic = doc.format_state.italic; //记录 global 前状态， 在 global 期间记录 italic 的切换记数。
+                opts.italic_global = true;
+                doc.format_state.italic = true; // 强制在整个 global 中保持 italic 样式
+            } else if (elem === charOfStyleTag.italic_global_end) {
+                doc.format_state.italic = opts.italic_dynamic;
+                opts.italic_global = false;
+            } else if (elem === charOfStyleTag.bold_italic) {
                 // doc.format_state.italic = !doc.format_state.italic;
                 doc.format_state.bold_italic = !doc.format_state.bold_italic;
             } else if (elem === charOfStyleTag.bold) {
                 doc.format_state.bold = !doc.format_state.bold;
             } else if (elem === charOfStyleTag.italic) {
-                doc.format_state.italic = !doc.format_state.italic;
+                if (opts.italic_global) {
+                    opts.italic_dynamic = !opts.italic_dynamic;
+                } else {
+                    doc.format_state.italic = !doc.format_state.italic;
+                }
             } else if (elem === charOfStyleTag.underline) {
                 doc.format_state.underline = !doc.format_state.underline;
             } else if (elem === charOfStyleTag.note_begin) {
@@ -934,11 +986,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             intput = charOfStyleTag.bold + intput + charOfStyleTag.bold;
                         }
                     }
-                    intput = charOfStyleTag.style_stash + intput + charOfStyleTag.style_pop;
+                    // intput = charOfStyleTag.style_stash + intput + charOfStyleTag.style_pop;
                 }
-                if (lline.type === "more") {
-                    intput = charOfStyleTag.style_stash + intput + charOfStyleTag.style_pop;
-                }
+                // if (lline.type === "more") {
+                //     intput = charOfStyleTag.style_stash + intput + charOfStyleTag.style_pop;
+                // }
                 // if (lline.type === "dialogue") {
                 //     if (cfg.emitalic_dialog) {
                 //         if(!intput.endsWith('*') || !intput.startsWith('*')){

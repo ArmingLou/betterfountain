@@ -102,7 +102,27 @@ export var GeneratePdf = function (outputpath: string, config: FountainConfig, e
         exportconfig:exportconfig,
         font_italic: font_italic,
         font_bold: font_bold,
-        font_bold_italic: font_bold_italic
+        font_bold_italic: font_bold_italic,
+        stash_style_left_clumn : {
+            bold_italic: false,
+            bold: false,
+            italic: false,
+            underline: false,
+            override_color: "",
+            italic_global: false,
+            italic_dynamic: false
+        },
+        stash_style_right_clumn : {
+            bold_italic: false,
+            bold: false,
+            italic: false,
+            underline: false,
+            override_color: "",
+            italic_global: false,
+            italic_dynamic: false
+        },
+        italic_global: false, 
+        italic_dynamic: false
     }
 
     if(outputpath=="$STATS$") 

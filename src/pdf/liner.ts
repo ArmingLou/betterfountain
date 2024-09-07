@@ -1,3 +1,4 @@
+import { charOfStyleTag } from "../cons";
 import { token } from "../token";
 
 export class Liner {
@@ -168,6 +169,8 @@ export class Liner {
                         end: token_on_break.end,
                         token: token_on_break.token
                     };
+                    lines[index-1].text = lines[index-1].text + charOfStyleTag.style_left_stash; //加上样式 stash 标记
+                    lines[index].text = charOfStyleTag.style_left_pop + lines[index].text; // 加上样式 恢复 标记
                     lines.splice(index, 0, this.h.create_line(moreitem), new_page_character = this.h.create_line({
                         type: "character",
                         text: charactername.trim() + " " + (charactername.indexOf(CONTD) !== -1 ? "" : CONTD),
@@ -199,7 +202,11 @@ export class Liner {
                                 token: token_on_break.token
                             })
                             ].concat(lines[character].right_column.slice(dialogue_on_page_length));
-
+                            
+                            
+                        right_lines_on_this_page[right_lines_on_this_page.length - 2].text = right_lines_on_this_page[right_lines_on_this_page.length - 2].text + charOfStyleTag.style_right_stash; //加上样式 stash 标记
+                        right_lines_for_next_page[1].text = charOfStyleTag.style_right_pop + right_lines_for_next_page[1].text; // 加上样式 恢复 标记
+                        
                         lines[character].right_column = right_lines_on_this_page;
                         if (right_lines_for_next_page.length > 1) {
                             new_page_character.right_column = right_lines_for_next_page;
