@@ -1,4 +1,3 @@
-import { regex } from "../afterwriting-parser";
 import { token } from "../token";
 
 export class Liner {
@@ -90,21 +89,21 @@ export class Liner {
         var CONTD = cfg.text_contd || "(CONT'D)";
         var MORE = cfg.text_more || "(MORE)";
 
-        for (var before = index - 1; before && !(lines[before].text); before--) {
-        }
-        for (var after = index + 1; after < lines.length && !(lines[after].text); after++) {
-        }
 
         // possible break is after this token
         var token_on_break = lines[index];
 
+        for (var before = index - 1; before && !(lines[before].text); before--) {
+        }
+        for (var after = index + 1; after < lines.length && !(lines[after].text); after++) {
+        }
         var token_after = lines[after];
-        var token_before = lines[before];
+        // var token_before = lines[before];
 
         if (token_on_break.is("scene_heading") && token_after && !token_after.is("scene_heading")) {
-            return false;
+            return false; // TODO Arming (2024-09-06) :  如果页尾 是 scene 头，放到下一页去，所以此处返回false不在此行分页。外部回继续往前一行找再次判断是否应该截断分页。
         } else if (token_after && token_after.is("transition") && !token_on_break.is("transition")) {
-            return false;
+            return false; // todo 如果页面是 转场的前一行内容，放到下一页去，让下一页不至于一开头就是一个转场句子
         }
         // action block 1,2 or 3 lines.
         // don't break unless it's the last line
@@ -126,57 +125,90 @@ export class Liner {
             (token_on_break.token.lines.indexOf(token_on_break) === 0 ||
                 token_on_break.token.lines.indexOf(token_on_break) === token_on_break.token.lines.length - 2)) {
             return false;
-        } else if (cfg.split_dialogue && token_on_break.is("dialogue") && token_after && token_after.is("dialogue") && token_before.is("dialogue") && !(token_on_break.dual)) {
-            var new_page_character;
-            for (var character = before; lines[character] && lines[character].type !== "character"; character--) {
-            }
-            var charactername = "";
-            if (lines[character]) charactername = lines[character].text;
+        } else if (cfg.split_dialogue && token_on_break.is("dialogue", "character", "parenthetical") && !(token_on_break.dual)) {
+            // for (var before2 = index - 1; before2 && !(lines[before2].text) && lines[before2].type !== "separator" && lines[before2].type !== "page_break"; before--) {
+            // }
+            // for (var after2 = index + 1; after2 < lines.length && !(lines[after2].text) && lines[after2].type !== "separator" && lines[after2].type !== "page_break"; after++) {
+            // }
+            var token_after2 = lines[index + 1];
+            var token_before2 = lines[index - 1];
 
-            let moreitem = {
-                type: "more",
-                text: MORE,
-                start: token_on_break.start,
-                end: token_on_break.end,
-                token: token_on_break.token
-            };
-            lines.splice(index, 0, this.h.create_line(moreitem), new_page_character = this.h.create_line({
-                type: "character",
-                text: charactername.trim() + " " + (charactername.indexOf(CONTD) !== -1 ? "" : CONTD),
-                start: token_after.start,
-                end: token_after.end,
-                token: token_on_break.token
-            }));
+            if (!token_after2 || !token_after2.is("dialogue", "parenthetical")) {
+                return true;
+            } else if (!token_before2.is("dialogue", "parenthetical")) {
+                return false;
+            } else {
+                var after_is_fake = token_after2.type === 'dialogue_fake';
+                for (var character = index - 1; lines[character] && lines[character].type !== "character"; character--) {
+                }
+                var new_page_character;
+                var charactername = "";
+                if (lines[character]) charactername = lines[character].text;
 
-            if (lines[character] && lines[character].right_column) {
-                var dialogue_on_page_length = index - character;
-                var right_lines_on_this_page = lines[character].right_column.slice(0, dialogue_on_page_length).concat([
-                    this.h.create_line({
+                if(after_is_fake){
+                    let moreitem = {
+                        type: "more",
+                        text: " ",
+                        start: token_on_break.start,
+                        end: token_on_break.end,
+                        token: token_on_break.token
+                    };
+                    lines.splice( index+1, 0, new_page_character = this.h.create_line({
+                        type: "character",
+                        text: " ", // 必须是有长度的空格，否则渲染会被忽略掉删除。
+                        start: token_after2.start,
+                        end: token_after2.end,
+                        token: token_on_break.token
+                    }), this.h.create_line(moreitem));
+                }else {
+                    let moreitem = {
                         type: "more",
                         text: MORE,
                         start: token_on_break.start,
                         end: token_on_break.end,
                         token: token_on_break.token
-                    })
-                ]),
-                    right_lines_for_next_page = [this.h.create_line({
+                    };
+                    lines.splice(index, 0, this.h.create_line(moreitem), new_page_character = this.h.create_line({
                         type: "character",
-                        text: right_lines_on_this_page[0].text.trim() + " " + (right_lines_on_this_page[0].text.indexOf(CONTD) !== -1 ? "" : CONTD),
-                        start: token_after.start,
-                        end: token_after.end,
+                        text: charactername.trim() + " " + (charactername.indexOf(CONTD) !== -1 ? "" : CONTD),
+                        start: token_after2.start,
+                        end: token_after2.end,
                         token: token_on_break.token
-                    })
-                    ].concat(lines[character].right_column.slice(dialogue_on_page_length));
-
-                lines[character].right_column = right_lines_on_this_page;
-                if (right_lines_for_next_page.length > 1) {
-                    new_page_character.right_column = right_lines_for_next_page;
+                    }));
                 }
-            }
 
-            return true;
-        } else if (lines[index].is_dialogue() && lines[after] && lines[after].is("dialogue", "parenthetical")) {
-            return false; // or break
+
+                if (lines[character] && lines[character].right_column) {
+                    var dialogue_on_page_length = index - character;
+                    if(lines[character].right_column.length > dialogue_on_page_length){
+
+                        var right_lines_on_this_page = lines[character].right_column.slice(0, dialogue_on_page_length).concat([
+                            this.h.create_line({
+                                type: "more",
+                                text: MORE,
+                                start: token_on_break.start,
+                                end: token_on_break.end,
+                                token: token_on_break.token
+                            })
+                        ]),
+                            right_lines_for_next_page = [this.h.create_line({
+                                type: "character",
+                                text: right_lines_on_this_page[0].text.trim() + " " + (right_lines_on_this_page[0].text.indexOf(CONTD) !== -1 ? "" : CONTD),
+                                start: token_after2.start,
+                                end: token_after2.end,
+                                token: token_on_break.token
+                            })
+                            ].concat(lines[character].right_column.slice(dialogue_on_page_length));
+    
+                        lines[character].right_column = right_lines_on_this_page;
+                        if (right_lines_for_next_page.length > 1) {
+                            new_page_character.right_column = right_lines_for_next_page;
+                        }
+                    }
+                }
+
+                return true;
+            }
         }
         return true;
     };
@@ -280,15 +312,24 @@ export class Liner {
                 //Insert dummy lines onto the left so it's the same length as the right.
                 let insertLength = dialogue_tokens - left_tokens;
                 let insertArray: any[] = [];
+                let ii = 0;
                 while (insertLength > 0) {
+                    // insertArray.push(this.h.create_line({
+                    //     type: lines[left_index + left_tokens].type,
+                    //     token: lines[left_index + left_tokens].token,
+                    //     text: '',
+                    //     start: lines[left_index + left_tokens].start,
+                    //     end: lines[left_index + left_tokens].end
+                    // }));
                     insertArray.push(this.h.create_line({
-                        type: lines[left_index + left_tokens].type,
-                        token: lines[left_index + left_tokens].token,
-                        text: '',
+                        type: 'dialogue_fake',
+                        token: right_lines[ii + left_tokens].token,
+                        text: ' ', // 必须是有长度的空格，否则会被忽略，往前找断页行
                         start: lines[left_index + left_tokens].start,
                         end: lines[left_index + left_tokens].end
                     }));
                     insertLength--;
+                    ii++;
                 }
                 lines.splice(left_index + left_tokens, 0, ...insertArray);
             }
@@ -320,14 +361,6 @@ export class Liner {
                 //Replace tabs with 4 spaces
                 if (token.text) {
                     token.text = token.text.replace('\t', '    ');
-                    token.text = token.text.replace(/(?<!\*)\*{2}(?!\*)/g, '↭'); // 双 ** 换成当个特殊符号 ↭ ，以防下面split_token分行截断。
-                    token.text = token.text.replace(/(?<!\*)\*{3}(?!\*)/g, '↯'); // 三 *** 换成当个特殊符号 ，以防下面split_token分行截断。
-                    while (token.text.match(regex.note_inline)) {
-                        let i = token.text.indexOf('[[');
-                        token.text = token.text.slice(0, i) + '↺' + token.text.slice(i + 2);
-                        i = token.text.indexOf(']]');
-                        token.text = token.text.slice(0, i) + '↻' + token.text.slice(i + 2);
-                    } // 假的 note ，比如只有半边 [[ ，让其保留
                 }
 
                 if (token.dual) {

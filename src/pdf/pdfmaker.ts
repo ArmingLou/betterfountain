@@ -10,6 +10,7 @@ import * as he from 'he';
 import * as addTextbox from 'textbox-for-pdfkit';
 import { regex } from "../afterwriting-parser";
 import { Base64Encode } from "base64-stream";
+import { charOfStyleTag } from "../cons";
 
 // import * as blobUtil from "blob-util";
 export class Options {
@@ -176,7 +177,7 @@ async function initDoc(opts: Options) {
                 pat = weightPathMap.get(mid);
             } else {
                 var p = weightPathMap.get(min);
-                if(p){
+                if (p) {
                     doc.registerFont('ScriptNormal', p);
                     pat = p;
                 }
@@ -338,7 +339,9 @@ async function initDoc(opts: Options) {
         }
 
         if (print.note.italic) {
-            text = text.replace(/↺/g, '*↺').replace(/↻/g, '↻*');
+            // text = text.replace(/↺/g, '*↺').replace(/↻/g, '↻*');
+            text = text.replace(new RegExp(charOfStyleTag.note_begin, 'g'), charOfStyleTag.italic + charOfStyleTag.note_begin).
+                replace(new RegExp(charOfStyleTag.note_end, 'g'), charOfStyleTag.note_end + charOfStyleTag.italic);
         }
         var links: { start: number, length: number, url: string }[] = [];
         if (options.links) {
@@ -373,7 +376,7 @@ async function initDoc(opts: Options) {
 
         //Further sub-split for bold, italic, underline, etc...
         for (let i = 0; i < split_for_formatting.length; i++) {
-            var innersplit = split_for_formatting[i].split(/(\\\*)|(\*)|(↭)|(↯)|(↺)|(↻)|(\\?_)/g).filter(function (a) {
+            var innersplit = split_for_formatting[i].split(/(☄)|(☈)|(↭)|(↯)|(↺)|(↻)|(↬)|(☍)|(☋)/g).filter(function (a) {
                 return a;
             });
             split_for_formatting.splice(i, 1, ...innersplit);
@@ -387,18 +390,18 @@ async function initDoc(opts: Options) {
         var currentWidth = 0;
         for (var i = 0; i < split_for_formatting.length; i++) {
             var elem = split_for_formatting[i];
-            if (elem === '↯') {
+            if (elem === charOfStyleTag.bold_italic) {
                 doc.format_state.italic = !doc.format_state.italic;
                 doc.format_state.bold = !doc.format_state.bold;
-            } else if (elem === '↭') {
+            } else if (elem === charOfStyleTag.bold) {
                 doc.format_state.bold = !doc.format_state.bold;
-            } else if (elem === '*') {
+            } else if (elem === charOfStyleTag.italic) {
                 doc.format_state.italic = !doc.format_state.italic;
-            } else if (elem === '_') {
+            } else if (elem === charOfStyleTag.underline) {
                 doc.format_state.underline = !doc.format_state.underline;
-            } else if (elem === '↺') {
+            } else if (elem === charOfStyleTag.note_begin) {
                 doc.format_state.override_color = (print.note && print.note.color) || '#000000';
-            } else if (elem === '↻') {
+            } else if (elem === charOfStyleTag.note_end) {
                 doc.format_state.override_color = null;
             } else {
                 let font = 'ScriptNormal';
@@ -409,9 +412,9 @@ async function initDoc(opts: Options) {
                 } else if (doc.format_state.italic) {
                     font = 'ScriptOblique';
                 }
-                if (elem === '\\_' || elem === '\\*') {
-                    elem = elem.substr(1, 1);
-                }
+                // if (elem === '\\_' || elem === '\\*') {
+                //     elem = elem.substr(1, 1);
+                // }
                 var linkurl = undefined;
                 for (const link of links) {
                     if (link.start <= currentIndex && currentIndex < link.start + link.length) {
@@ -896,9 +899,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     if (cfg.embolden_character_names) {
                         if (intput.endsWith(cfg.text_contd)) {
                             intput = intput.substring(0, intput.length - cfg.text_contd.length);
-                            intput = '↭' + intput + '↭' + cfg.text_contd;
+                            intput = charOfStyleTag.bold + intput + charOfStyleTag.bold + cfg.text_contd;
                         } else {
-                            intput = '↭' + intput + '↭';
+                            intput = charOfStyleTag.bold + intput + charOfStyleTag.bold;
                         }
                     }
                 }
@@ -975,10 +978,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     }
                     currentScene = text;
                     if (cfg.embolden_scene_headers) {
-                        text = '↭' + text + '↭';
+                        text = charOfStyleTag.bold + text + charOfStyleTag.bold;
                     }
                     if (cfg.underline_scene_headers) {
-                        text = '_' + text + '_';
+                        text = charOfStyleTag.underline + text + charOfStyleTag.underline;
                     }
                 }
 
@@ -995,7 +998,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
 
                 if (print[line.type] && print[line.type].italic && text) {
-                    text = '*' + text + '*';
+                    text = charOfStyleTag.italic + text + charOfStyleTag.italic;
                 }
 
                 if (line.token && line.token.dual) {
@@ -1022,10 +1025,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     scene_number = String(line.number);
                     var scene_text_length = scene_number.length;
                     if (cfg.embolden_scene_headers) {
-                        scene_number = '↭' + scene_number + '↭';
+                        scene_number = charOfStyleTag.bold + scene_number + charOfStyleTag.bold;
                     }
                     if (cfg.underline_scene_headers) {
-                        scene_number = '_' + scene_number + '_';
+                        scene_number = charOfStyleTag.underline + scene_number + charOfStyleTag.underline;
                     }
 
                     var shift_scene_number;

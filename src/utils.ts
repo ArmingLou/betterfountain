@@ -7,7 +7,6 @@ import * as telemetry from "./telemetry";
 import * as sceneNumbering from './scenenumbering';
 import * as fs from "fs";
 import { getFountainConfig } from "./configloader";
-import { regex } from "./afterwriting-parser";
 
 /**
  * @returns {vscode.Uri} relevant fountain document for the currently selected preview or text editor
@@ -171,8 +170,8 @@ export const calculateActionDuration = (actionText: string): number => {
 	if (config.calculate_duration_action) {
 		x = config.calculate_duration_action
 	}
-	var sanitized = actionText.replace(new RegExp(regex.note_inline, 'g'), '');
-	sanitized = sanitized.replace(/\s|\p{P}|\p{S}/giu, '');
+	// var sanitized = actionText.replace(new RegExp(regex.note_inline, 'g'), '');
+	var sanitized = actionText.replace(/\s|\p{P}|\p{S}/giu, '');
 	duration += sanitized.length * x; // TODO Arming (2024-09-03) : 动作时长预估
 	return duration
 }

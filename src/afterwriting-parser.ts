@@ -5,38 +5,39 @@ import { getFountainConfig } from "./configloader";
 import * as vscode from 'vscode';
 import { AddDialogueNumberDecoration } from "./providers/Decorations";
 import helpers from "./helpers";
+import { blockRegex, charOfStyleTag, tokenRegex } from "./cons";
 
 declare global {
     interface Array<T> {
-        pushSorted(el:any, compareFn:Function):number
+        pushSorted(el: any, compareFn: Function): number
     }
 }
-Array.prototype.pushSorted = function(el, compareFn) {
-    this.splice((function(arr) {
-      var m = 0;
-      var n = arr.length - 1;
-  
-      while(m <= n) {
-        var k = (n + m) >> 1;
-        var cmp = compareFn(el, arr[k]);
-  
-        if(cmp > 0) m = k + 1;
-          else if(cmp < 0) n = k - 1;
-          else return k;
-      }
-  
-      return -m - 1;
+Array.prototype.pushSorted = function (el, compareFn) {
+    this.splice((function (arr) {
+        var m = 0;
+        var n = arr.length - 1;
+
+        while (m <= n) {
+            var k = (n + m) >> 1;
+            var cmp = compareFn(el, arr[k]);
+
+            if (cmp > 0) m = k + 1;
+            else if (cmp < 0) n = k - 1;
+            else return k;
+        }
+
+        return -m - 1;
     })(this), 0, el);
-  
+
     return this.length;
-  };
+};
 
 //Unicode uppercase letters:
 export const regex: { [index: string]: RegExp } = {
     title_page: /(title|credit|author[s]?|source|notes|draft date|date|watermark|contact( info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:.*/i,
 
-    section: /^[ \t]*(#+)(?: *)(.*)/,
-    synopsis: /^[ \t]*(?:\=(?!\=+) *)(.*)/,
+    section: /^[ \t]*(#+)(?:\s*)(.*)/,
+    synopsis: /^[ \t]*(?:\=(?!\=+)\s*)(.*)/,
 
     scene_heading: /^[ \t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.])(.+?)(#[^\\s]+#)?\s*$/i,
     scene_number: /#(.+)#/,
@@ -45,13 +46,13 @@ export const regex: { [index: string]: RegExp } = {
 
     dialogue: /^[ \t]*([*_]+[^\p{Ll}\p{Lo}\p{So}\r\n]*)(\^?)?(?:\n(?!\n+))([\s\S]+)/u,
 
-    character: /^[ \t]*(?![#!]|(\[\[)|(SUPERIMPOSE:))(((?!@)[^\p{Ll}\r\n]*?\p{Lu}[^\p{Ll}\r\n]*?)|((@)[^\r\n]*?))(\(.*\))?(\s*\^\s*)?$/u,
+    character: blockRegex.block_dialogue_begin,
     parenthetical: /^[ \t]*(\(.+\))\s*$/,
     parenthetical_start: /^[ \t]*\([^\)]*$/,
     parenthetical_end: /^.*\)\s*$/,
 
     action: /^(.+)/g,
-    centered: /^[ \t]*(?:> *)(.+)(?: *<)(\n.+)*/g,
+    centered: /(?<=^[ \t]*>\s*)(.+)(?=\s*<\s*$)/g,
 
     page_break: /^\={3,}$/,
     line_break: /^ {2}$/,
@@ -66,64 +67,64 @@ export const regex: { [index: string]: RegExp } = {
     bold: /(\*{2}(?=.+\*{2}))(.+?)(\*{2})/g,
     italic: /(\*{1}(?=.+\*{1}))(.+?)(\*{1})/g,
     link: /(\[?(\[)([^\]\[]*\[?[^\]\[]*\]?[^\]\[]*)(\])(\()(.+?)(?:\s+(["'])(.*?)\4)?(\)))/g,
-   // image: /(!\[?(\[)([^\]\[]*\[?[^\]\[]*[^\]\[]*)(\])(\()(.+?)(?:\s+(["'])(.*?)\4)?(\)))/g,
-    lyric: /^(\~.+)/g,
+    // image: /(!\[?(\[)([^\]\[]*\[?[^\]\[]*[^\]\[]*)(\])(\()(.+?)(?:\s+(["'])(.*?)\4)?(\)))/g,
+    lyric: blockRegex.lyric,
     underline: /(_{1}(?=.+_{1}))(.+?)(_{1})/g,
 };
-export interface titleKeywordFormat{
-    position:'cc'|'br'|'bl'|'tr'|'tc'|'tl'|'cc'|'hidden',
-    index:number
+export interface titleKeywordFormat {
+    position: 'cc' | 'br' | 'bl' | 'tr' | 'tc' | 'tl' | 'cc' | 'hidden',
+    index: number
 }
 
-export const titlePageDisplay: {[index:string]:titleKeywordFormat} = {
-    title:{position:'cc', index:0},
-    credit:{position:'cc', index:1},
-    author:{position:'cc', index:2},
-    authors:{position:'cc', index:3},
-    source:{position:'cc', index:4},
+export const titlePageDisplay: { [index: string]: titleKeywordFormat } = {
+    title: { position: 'cc', index: 0 },
+    credit: { position: 'cc', index: 1 },
+    author: { position: 'cc', index: 2 },
+    authors: { position: 'cc', index: 3 },
+    source: { position: 'cc', index: 4 },
 
-    watermark:{position:'hidden', index:-1},
-    font:{position:'hidden', index:-1},
-    font_italic:{position:'hidden', index:-1},
-    font_bold:{position:'hidden', index:-1},
-    font_bold_italic:{position:'hidden', index:-1},
-    header:{position:'hidden', index:-1},
-    footer:{position:'hidden', index:-1},
+    watermark: { position: 'hidden', index: -1 },
+    font: { position: 'hidden', index: -1 },
+    font_italic: { position: 'hidden', index: -1 },
+    font_bold: { position: 'hidden', index: -1 },
+    font_bold_italic: { position: 'hidden', index: -1 },
+    header: { position: 'hidden', index: -1 },
+    footer: { position: 'hidden', index: -1 },
 
-    notes:{position:'bl', index:0},
-    copyright:{position:'bl', index:1},
+    notes: { position: 'bl', index: 0 },
+    copyright: { position: 'bl', index: 1 },
 
-    revision:{position:'br', index:0},
-    date:{position:'br', index:1},
-    draft_date:{position:'br', index:2},
-    contact:{position:'br', index:3},
-    contact_info:{position:'br', index:4},
+    revision: { position: 'br', index: 0 },
+    date: { position: 'br', index: 1 },
+    draft_date: { position: 'br', index: 2 },
+    contact: { position: 'br', index: 3 },
+    contact_info: { position: 'br', index: 4 },
 
 
-    br:{position:'br', index:-1},
-    bl:{position:'bl', index:-1},
-    tr:{position:'tr', index:-1},
-    tc:{position:'tc', index:-1},
-    tl:{position:'tl', index:-1},
-    cc:{position:'cc', index:-1}
+    br: { position: 'br', index: -1 },
+    bl: { position: 'bl', index: -1 },
+    tr: { position: 'tr', index: -1 },
+    tc: { position: 'tc', index: -1 },
+    tl: { position: 'tl', index: -1 },
+    cc: { position: 'cc', index: -1 }
 }
 
-interface LexerReplacements{
-    [key:string]:string,
+interface LexerReplacements {
+    [key: string]: string,
     //image: string,
-    link:string,
-    note:string,
-    line_break:string,
-    bold_italic_underline:string,
-    bold_underline:string,
-    italic_underline:string,
-    bold_italic:string,
-    bold:string,
-    italic:string,
-    underline:string
+    link: string,
+    note: string,
+    line_break: string,
+    bold_italic_underline: string,
+    bold_underline: string,
+    italic_underline: string,
+    bold_italic: string,
+    bold: string,
+    italic: string,
+    underline: string
 }
 
-var htmlreplacements:LexerReplacements = {
+var htmlreplacements: LexerReplacements = {
     //image: '<img alt="$3" title="$3" src="$6">',
     link: '<a href=\"$6\">$3</a>',
     note: '<span class=\"note\">$1</span>',
@@ -138,7 +139,7 @@ var htmlreplacements:LexerReplacements = {
     italic: '<span class=\"italic\">$2</span>',
     underline: '<span class=\"underline\">$2</span>',
 };
-export function lexer(s: string, type: string, replacer:LexerReplacements, titlepage:boolean = false) {
+export function lexer(s: string, type: string, replacer: LexerReplacements, titlepage: boolean = false) {
     if (!s) {
         return s;
     }
@@ -146,22 +147,22 @@ export function lexer(s: string, type: string, replacer:LexerReplacements, title
     var styles = ['underline', 'italic', 'bold', 'bold_italic', 'italic_underline', 'bold_underline', 'bold_italic_underline']
         , i = styles.length, style, match;
 
-    if(titlepage){
+    if (titlepage) {
         s = s.replace(regex.link, replacer.link);
     }
-    s = s.replace(regex.note_inline, replacer.note).replace(/\\\*/g, '[star]').replace(/\\_/g, '[underline]').replace(/\n/g, replacer.line_break);
+    s = s.replace(tokenRegex.note_inline, replacer.note).replace(/\n/g, replacer.line_break);
 
     // if (regex.emphasis.test(s)) {                         // this was causing only every other occurence of an emphasis syntax to be parsed
     while (i--) {
         style = styles[i];
-        match = regex[style];
+        match = tokenRegex[style];
 
         if (match.test(s)) {
             s = s.replace(match, replacer[style]);
         }
     }
     // }
-    s = s.replace(/\[star\]/g, '*').replace(/\[underline\]/g, '_');
+    // s = s.replace(/\[star\]/g, '*').replace(/\[underline\]/g, '_');
     if (type != "action")
         s = s.trim();
     return s;
@@ -172,7 +173,7 @@ export class Location {
     interior: boolean;
     exterior: boolean;
     time_of_day: string;
-    line:number;
+    line: number;
 }
 export class StructToken {
     text: string;
@@ -190,7 +191,7 @@ export class StructToken {
     durationSec: number;
 }
 export class screenplayProperties {
-    scenes: { scene: string; text:string, line: number, actionLength: number, dialogueLength: number }[];
+    scenes: { scene: string; text: string, line: number, actionLength: number, dialogueLength: number }[];
     sceneLines: number[];
     sceneNames: string[];
     titleKeys: string[];
@@ -205,7 +206,7 @@ export class screenplayProperties {
 export interface parseoutput {
     scriptHtml: string,
     titleHtml: string,
-    title_page: {[index:string]:token[]},
+    title_page: { [index: string]: token[] },
     tokens: token[],
     tokenLines: { [line: number]: number }
     lengthAction: number,
@@ -214,6 +215,9 @@ export interface parseoutput {
     properties: screenplayProperties
 }
 export var parse = function (original_script: string, cfg: any, generate_html: boolean): parseoutput {
+    var block_dialogue = false;
+    var block_except_dialogue = false;
+
     var lastFountainEditor: vscode.Uri;
     var config = getFountainConfig(lastFountainEditor);
     var emptytitlepage = true;
@@ -222,13 +226,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     var script = original_script,
         result: parseoutput = {
             title_page: {
-                tl:[],
-                tc:[],
-                tr:[],
-                cc:[],
-                bl:[],
-                br:[],
-                hidden:[]
+                tl: [],
+                tc: [],
+                tr: [],
+                cc: [],
+                bl: [],
+                br: [],
+                hidden: []
             },
             tokens: [],
             scriptHtml: "",
@@ -268,7 +272,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     }
 
     var lines_length = lines.length,
-        current = 0,
+        current_cursor = 0,
+        // current_line_number = 0,
         scene_number = 1,
         current_depth = 0,
         match, text, last_title_page_token,
@@ -277,13 +282,19 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         //top_or_separated = false,
         token_category = "none",
         last_character_index,
-        dual_right,
-        state = "normal",
+        // dual_right,
+        dual_str = "",
+        force_not_dual = true, //新场景中的第一个对话，强制为 非双对话
+        state = "normal", // TODO Arming (2024-09-06) : 只有 对话 和 非对话（noremal），title page 3种之分
         previousCharacter,
         // cache_state_for_comment,
         nested_comments = 0,
+        nested_notes = 0,
         title_page_started = false,
-        parenthetical_open = false
+        parenthetical_open = false,
+        needProcessInlineNote = 0,
+        current_expet_note_text = "", // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
+        current_outline_note_text: string[] = [] // 除去 note 首开口文字，用来 outline 面板提示。 当 needProcessInlineNote = true 才有值。
 
 
     var reduce_comment = function (prev: any, current: any) {
@@ -291,12 +302,63 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             nested_comments++;
         } else if (current === "*/") {
             nested_comments--;
-            if(nested_comments < 0) {
+            if (nested_comments < 0) {
                 nested_comments = 0;
                 prev = prev + current;
             }
-        } else if (!nested_comments) {
+        } else if (nested_comments <= 0) {
             prev = prev + current;
+        }
+        return prev;
+    };
+
+    var reduce_note = function (prev: any, current: any) {
+        if (current === "[[") {
+            nested_notes++;
+            if (nested_notes === 1) {
+                // TODO Arming (2024-09-05) : 首行 note ，outline面板处理
+                needProcessInlineNote++;
+                if (cfg.print_notes) {
+                    prev = prev + charOfStyleTag.note_begin + '['; // 首开口，转换成特殊样式字符。
+                }
+            } else {
+                if (cfg.print_notes) {
+                    prev = prev + '[';  // 嵌套的里层开口
+                }
+            }
+        } else if (current === "]]") {
+            nested_notes--;
+            if (nested_notes < 0) {
+                // 假注解，直接以 end 开始，直接显示 ]]
+                nested_notes = 0;
+                prev = prev + current;
+            } else if (nested_notes === 0) {
+                if (cfg.print_notes) {
+                    prev = prev + ']' + charOfStyleTag.note_end; // 闭口，转换成特殊样式字符。
+                }
+            } else {
+                if (cfg.print_notes) {
+                    prev = prev + ']'; // 嵌套的里层闭口，
+                }
+            }
+        } else if (nested_notes <= 0) {
+            // 非注解的文字部分
+            prev = prev + current;
+            current_expet_note_text += current;
+        } else {
+            // 注解的文字部分
+            if (cfg.print_notes) {
+                prev = prev + current;
+            }
+            if (needProcessInlineNote > 0) {
+                if (current_outline_note_text.length < needProcessInlineNote) {
+                    if (current) {
+                        current_outline_note_text.push(current);
+                    } else {
+                        current_outline_note_text.push("");
+                    }
+                }
+            }
         }
         return prev;
     };
@@ -328,7 +390,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 return null;
             }
             else if (depth == 1) {
-                var lastItem:StructToken = last(result.properties.structure.filter(condition));
+                var lastItem: StructToken = last(result.properties.structure.filter(condition));
                 return lastItem;
             }
             else {
@@ -348,78 +410,222 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         }
     }
 
-    const processInlineNote = (text: string, linenumber:number): number => {
-        let irrelevantTextLength = 0;
-        if (match = text.match(new RegExp(regex.note_inline))) {
+    const processInlineNotes2 = (linenumber: number) => {
+
+        if (current_outline_note_text.length > 0) {
             var level = latestSectionOrScene(current_depth + 1, () => true);
             if (level) {
                 level.notes = level.notes || []
-                for (let i = 0; i < match.length; i++) {
-                    match[i] = match[i].slice(2, match[i].length - 2);
-                    level.notes.push({ note: match[i], line: thistoken.line });
-                    irrelevantTextLength += match[i].length+4;
+                for (let i = 0; i < current_outline_note_text.length; i++) {
+                    if (current_outline_note_text[i]) {
+                        level.notes.push({ note: current_outline_note_text[i], line: linenumber });
+                    }
                 }
             }
-            else{
-                for(let i = 0; i < match.length; i++){
-                    match[i] = match[i].slice(2, match[i].length - 2);
-                    result.properties.structure.push({text: match[i], id:'/' + linenumber, isnote:true,isscene:false,ischartor:false,dialogueEndLine:0,durationSec:0, children:[],level:0,notes:[],range:new Range(new Position(linenumber, 0), new Position(linenumber, match[i].length+4)), section:false,synopses:[] })
-                    irrelevantTextLength += match[i].length+4;
+            else {
+                for (let i = 0; i < current_outline_note_text.length; i++) {
+                    if (current_outline_note_text[i]) {
+                        result.properties.structure.push({ text: current_outline_note_text[i], id: '/' + linenumber, isnote: true, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, current_outline_note_text[i].length + 4)), section: false, synopses: [] })
+                    }
                 }
             }
         }
-        return irrelevantTextLength;
     }
-    const processDialogueBlock = (token:token) => {
-        let textWithoutNotes = token.text.replace(regex.note_inline, "");
-        processInlineNote(token.text, token.line);
+
+    // const processInlineNote = (text: string, linenumber: number): number => {
+    //     let irrelevantTextLength = 0;
+    //     if (match = text.match(new RegExp(regex.note_inline))) {
+    //         var level = latestSectionOrScene(current_depth + 1, () => true);
+    //         if (level) {
+    //             level.notes = level.notes || []
+    //             for (let i = 0; i < match.length; i++) {
+    //                 match[i] = match[i].slice(2, match[i].length - 2);
+    //                 level.notes.push({ note: match[i], line: thistoken.line });
+    //                 irrelevantTextLength += match[i].length + 4;
+    //             }
+    //         }
+    //         else {
+    //             for (let i = 0; i < match.length; i++) {
+    //                 match[i] = match[i].slice(2, match[i].length - 2);
+    //                 result.properties.structure.push({ text: match[i], id: '/' + linenumber, isnote: true, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, match[i].length + 4)), section: false, synopses: [] })
+    //                 irrelevantTextLength += match[i].length + 4;
+    //             }
+    //         }
+    //     }
+    //     return irrelevantTextLength;
+    // }
+    const processTokenTextStyleChar = (token: token) => {
+        if (token.text) {
+            // token.text = token.text.replace(/(?<!\\)_\*{3}/g, charOfStyleTag.bold_italic_underline);
+            // token.text = token.text.replace(/(?<!\\)_\*{2}(?!\*)/g, charOfStyleTag.bold_underline);
+            // token.text = token.text.replace(/(?<!\\)_\*(?!\*)/g, charOfStyleTag.italic_underline);
+            token.text = token.text.replace(/(?<!\\)\*{3}/g, charOfStyleTag.bold_italic); // 三 *** 换成当个特殊符号 ，以防下面split_token分行截断。
+            token.text = token.text.replace(/(?<!\\)\*{2}(?!\*)/g, charOfStyleTag.bold); // 双 ** 换成当个特殊符号 ↭ ，以防下面split_token分行截断。
+            token.text = token.text.replace(/(?<!\\)\*(?!\*)/g, charOfStyleTag.italic);
+            token.text = token.text.replace(/(?<!\\)_/g, charOfStyleTag.underline);
+            token.text = token.text.replace(/\\\*/g, '*');
+            token.text = token.text.replace(/\\_/g, '_');
+            // var mt=token.text.split(regex.note_inline)
+            // if (mt.length >) {
+            //     let i = token.text.indexOf('[[');
+            //     token.text = token.text.slice(0, i) + '↺' + token.text.slice(i + 2);
+            //     i = token.text.indexOf(']]');
+            //     token.text = token.text.slice(0, i) + '↻' + token.text.slice(i + 2);
+            // } // 假的 note ，比如只有半边 [[ ，让其保留
+        }
+        return token.text
+    }
+    const processDialogueBlock = (token: token) => {
+        // let textWithoutNotes = token.text.replace(regex.note_inline, "");
+        // processInlineNote(token.text, token.line);
+        let textWithoutNotes = "";
+        if (current_has_note) {
+            textWithoutNotes = current_expet_note_text;
+        } else {
+            textWithoutNotes = token.text;
+        }
         token.time = calculateDialogueDuration(textWithoutNotes);
-        if (!cfg.print_notes) {
-            token.text = textWithoutNotes;
-            if(token.text.trim().length == 0) token.ignore = true;
-        }
+        // if (!cfg.print_notes) {
+        //     token.text = textWithoutNotes;
+        //     if (token.text.trim().length == 0) token.ignore = true;
+        // }
         result.lengthDialogue += token.time;
-        if(lastScenStructureToken){
-            lastScenStructureToken.durationSec =  lastScenStructureToken.durationSec? lastScenStructureToken.durationSec + token.time : token.time;
+        if (lastScenStructureToken) {
+            lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
         }
-        if(lastChartorStructureToken){
-            lastChartorStructureToken.durationSec =  lastChartorStructureToken.durationSec? lastChartorStructureToken.durationSec + token.time : token.time;
-        }
-    }
-    const processParentheticalBlock = (token:token) => {
-        let textWithoutNotes = token.text.replace(regex.note_inline, "");
-        processInlineNote(token.text, token.line);
-        if (!cfg.print_notes) {
-            token.text = textWithoutNotes;
-            if(token.text.trim().length == 0) token.ignore = true;
+        if (lastChartorStructureToken) {
+            lastChartorStructureToken.durationSec = lastChartorStructureToken.durationSec ? lastChartorStructureToken.durationSec + token.time : token.time;
         }
     }
-    const processActionBlock = (token:token) => {
-        processInlineNote(token.text, token.line);
+    // const processParentheticalBlock = (token: token) => {
+    //     let textWithoutNotes = token.text.replace(regex.note_inline, "");
+    //     processInlineNote(token.text, token.line);
+    //     if (!cfg.print_notes) {
+    //         token.text = textWithoutNotes;
+    //         if (token.text.trim().length == 0) token.ignore = true;
+    //     }
+    // }
+    const processActionBlock = (token: token) => {
+        // processInlineNote(token.text, token.line);
         // token.time = calculateActionDuration(token.text.length - irrelevantActionLength);
-        token.time = calculateActionDuration(token.text); 
-        if (!cfg.print_notes) {
-            token.text = token.text.replace(regex.note_inline, "");
-            if(token.text.trim().length == 0) token.ignore = true;
+        let textWithoutNotes = "";
+        if (current_has_note) {
+            textWithoutNotes = current_expet_note_text;
+        } else {
+            textWithoutNotes = token.text;
         }
+        token.time = calculateActionDuration(textWithoutNotes);
+        // if (!cfg.print_notes) {
+        //     token.text = token.text.replace(regex.note_inline, "");
+        //     if (token.text.trim().length == 0) token.ignore = true;
+        // }
         result.lengthAction += token.time;
-        if(lastScenStructureToken){
-            lastScenStructureToken.durationSec =  lastScenStructureToken.durationSec? lastScenStructureToken.durationSec + token.time : token.time;
+        if (lastScenStructureToken) {
+            lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
         }
     }
 
     let ignoredLastToken = false;
     for (var i = 0; i < lines_length; i++) {
+        var is_character_line = false;
+        needProcessInlineNote = 0;
+        var current_has_note = false // 当前行，是否包含 note
+        current_expet_note_text = "" // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
+        current_outline_note_text = []
+        // current_line_number = i;
         text = lines[i];
+        var beforEmpty = text.trim().length === 0;
 
-        var beforNotEmpty = text.trim().length > 0;
+        // 1. 至少在 dialogue block 或 非dialog block 中了。
 
-        // replace inline comments
-        text = text.split(/(\/\*){1}|(\*\/){1}|([^\/\*]+)/g).filter(if_not_empty).reduce(reduce_comment, "");
+        var noteBreakLine = false;
+        // var is_block_end_empty_line = false; // 非空行后的紧接着的空行。
+        if (beforEmpty) {
+            if (nested_comments > 0 || nested_notes > 0) {
+                // 如果是在注释中，那么直接忽略
+                current_has_note = true;
+                if (nested_notes > 0 && cfg.print_notes && text === "  ") {
+                    noteBreakLine = true;
+                    // note 空行，双空格表示保留一个空行，否则直接去掉空行。
+                    // TODO Arming (2024-09-05) : 插入一个空行 token 来表示这行是空行
+                } else {
+                    continue;
+                }
+            } else {
+                if (!block_dialogue && !block_except_dialogue) {
+                    // 至少一个空行后的，再空行。且不在 注解中的空行。
+                    continue;
+                } else {
+                    // 非空行后的紧接着的空行。
+                    block_dialogue = false;
+                    block_except_dialogue = false;
+                    // is_block_end_empty_line = true;
+                    // TODO Arming (2024-09-05) : 是否需要加入 一个空行 token 来表示这行是空行
+                }
+            }
+        } else {
+            if (!block_dialogue && !block_except_dialogue) {
+                if (nested_comments > 0 || nested_notes > 0) {
 
-        if(text.trim().length === 0 && beforNotEmpty){
-            continue;
+                } else {
+                    // 非注解空行后的紧接着的 第一个非空行。
+                    // 优先匹配 dialogue block
+                    if (text.match(new RegExp(blockRegex.block_dialogue_begin))) {
+                        is_character_line = true;
+                        block_dialogue = true;
+                    } else {
+                        block_except_dialogue = true;
+                    }
+                }
+            }
+
+
+            // 2. 至少不是空行了。
+            // comments 与 note 不相互嵌套，谁先 open 以谁为主
+            var coommentsFisrt = false;
+            var noteFisrt = false;
+            if (nested_comments === 0 && nested_notes === 0) {
+                var idxCm = text.indexOf("/*");
+                var idxNt = text.indexOf("[[");
+                coommentsFisrt = idxCm >= 0 && (idxNt < 0 || idxCm < idxNt);
+                noteFisrt = idxNt >= 0 && (idxCm < 0 || idxNt < idxCm);
+            } else if (nested_notes > 0) {
+                noteFisrt = true;
+            } else if (nested_comments > 0) {
+                coommentsFisrt = true;
+            }
+
+            if (coommentsFisrt) {
+                // replace inline comments
+                var arr = text.split(/(\/\*){1}|(\*\/){1}/g)
+                text = arr.filter(if_not_empty).reduce(reduce_comment, "");
+
+                if (text.trim().length === 0 && !beforEmpty) {
+                    // 跨行注解，整行都是注解
+                    continue;
+                }
+            } else if (noteFisrt) {
+                // replace inline notes
+                current_has_note = true;
+                var arr = text.split(/(\[\[)|(\]\])/g)
+                text = arr.filter(if_not_empty).reduce(reduce_note, "");
+
+                if (needProcessInlineNote) {
+                    // TODO Arming (2024-09-05) : 
+                    processInlineNotes2(i)
+                    needProcessInlineNote = 0;
+                }
+
+                if (text.trim().length === 0 && !beforEmpty) {
+                    // 跨行注解，整行都是注解
+                    // if (needProcessInlineNote == 0) {
+                    continue;
+                    // }
+                }
+            }
         }
+
+
 
         // if (nested_comments && state !== "ignore") {
         //     cache_state_for_comment = state;
@@ -433,41 +639,75 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // }
 
 
-        thistoken = create_token(text, current, i, new_line_length);
-        current = thistoken.end + 1;
+        thistoken = create_token(text, current_cursor, i, new_line_length);
+        current_cursor = thistoken.end + 1;
 
-        
+
         if (text.trim().length === 0) {
-            var skip_separator = (cfg.merge_multiple_empty_lines && last_was_separator) || (ignoredLastToken && result.tokens.length>1 && result.tokens[result.tokens.length-1].type == "separator");
+            // 1. noteBreakLine = true  需插入note空白换行
+            // 2. is_block_end_empty_line = true  普通正常结束
+            // 3. current_has_note = true 整行是注解，不插入空白换行，跳过。
 
-            if(ignoredLastToken) ignoredLastToken=false;
-
-            if (state == "dialogue"){
-                if(lastChartorStructureToken){
-                    lastChartorStructureToken.dialogueEndLine = i-1;
+            var skip_separator = false;
+            if (current_has_note) {
+                if (noteBreakLine) {
+                    skip_separator = false;
+                } else {
+                    skip_separator = true;
                 }
-                parenthetical_open = false;
-                pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_end"));
-            }
-            if (state == "dual_dialogue"){
-                if(lastChartorStructureToken){
-                    lastChartorStructureToken.dialogueEndLine = i-1;
+            } else {
+                skip_separator = (cfg.merge_multiple_empty_lines && last_was_separator) ||
+                    (ignoredLastToken && result.tokens.length > 1 && result.tokens[result.tokens.length - 1].type == "separator");
+
+                if (state == "dialogue") {
+                    if (lastChartorStructureToken) {
+                        lastChartorStructureToken.dialogueEndLine = i - 1;
+                    }
+                    parenthetical_open = false;
+                    pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_end")); // TODO Arming (2024-09-05) : 对话块后的 附加的 空白token 。不产生pdf实际空行，只是逻辑处理需要。
                 }
-                parenthetical_open = false;
-                pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_end"));
+                if (state == "dual_dialogue") {
+                    if (lastChartorStructureToken) {
+                        lastChartorStructureToken.dialogueEndLine = i - 1;
+                    }
+                    parenthetical_open = false;
+                    pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_end"));
+                }
+                state = "normal";
             }
-            state = "normal";
 
+            if (ignoredLastToken) ignoredLastToken = false;
 
-            if (skip_separator || state === "title_page") {
+            // if (skip_separator || state === "title_page") {
+            if (skip_separator) {
+                // if (needProcessInlineNote > 0) {
+                // }
+                continue;
+            } else {
+                if (noteBreakLine) {
+                    if (result.tokens.length > 0) {
+                        if (state === "title_page") {
+                            // result.tokens[result.tokens.length - 1].text += "\n";
+                            last_title_page_token.text += "\n";
+                        } else {
+                            thistoken.type = result.tokens[result.tokens.length - 1].type;
+                            pushToken(thistoken);
+                        }
+                        // TODO Arming (2024-09-06) : 纯note内容的行，只有 以下几种 token type
+                        // 对话 dual_dialogue, dialogue ,parenthetical, action 分别对应不同宽度页面位置。
+                        // title page 上的只能，不能生成独立token，只能追加到 token.text 上换行。
+                        // title page 之前的纯 note的token会分配type为action，pdf显示位置会 重新排序后置到 page 页后面去。action type 的token都显示到title page 之后去，重排位置。
+                    }
+                } else {
+                    thistoken.type = "separator"; // TODO Arming (2024-09-05) : 对应就是 没有对话，也没有非对话块 的空行，对应 state = normal， 能产生pdf一条空行。
+                    // dual_right = false;
+                    dual_str = "";
+                    last_was_separator = true;
+                    pushToken(thistoken);
+                }
                 continue;
             }
 
-            dual_right = false;
-            thistoken.type = "separator";
-            last_was_separator = true;
-            pushToken(thistoken);
-            continue;
         }
 
         //top_or_separated = last_was_separator || i === 0;
@@ -482,12 +722,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 var index = thistoken.text.indexOf(":");
                 thistoken.type = thistoken.text.substr(0, index).toLowerCase().replace(" ", "_");
                 thistoken.text = thistoken.text.substr(index + 1).trim();
+                processTokenTextStyleChar(thistoken);
+
                 last_title_page_token = thistoken;
                 let keyformat = titlePageDisplay[thistoken.type];
-                if(result.properties.titleKeys.indexOf(thistoken.type) == -1){
+                if (result.properties.titleKeys.indexOf(thistoken.type) == -1) {
                     result.properties.titleKeys.push(thistoken.type);
                 }
-                if(keyformat){
+                if (keyformat) {
                     thistoken.index = keyformat.index;
                     result.title_page[keyformat.position].push(thistoken);
                     emptytitlepage = false;
@@ -495,6 +737,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 title_page_started = true;
                 continue;
             } else if (title_page_started) {
+                // 标题页 字段内容的换行 内容。
+                processTokenTextStyleChar(thistoken);
                 last_title_page_token.text += (last_title_page_token.text ? "\n" : "") + thistoken.text.trim();
                 continue;
             }
@@ -504,22 +748,25 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // const latestScene = (): StructToken => latestSectionOrScene(1, token => token.isscene)
 
 
-        
+
         if (state === "normal") {
-            if (thistoken.text.match(regex.line_break)) {
-                token_category = "none";
-            } else if (result.properties.firstTokenLine == Infinity) {
+            // todo: block首行定位性质 ， 或者 非对话 block 的后续行
+            // if (thistoken.text.match(regex.line_break)) {
+            //     token_category = "none"; // TODO Arming (2024-09-06) : 只有 "script" 和 “none”； none 会导致 不 push token，相当于忽略这一行的内容
+            // } else 
+            if (result.properties.firstTokenLine == Infinity) {
                 result.properties.firstTokenLine = thistoken.line;
             }
             let sceneHeadingMatch = thistoken.text.match(regex.scene_heading);
             if (sceneHeadingMatch) {
+                force_not_dual = true;
                 thistoken.text = thistoken.text.replace(/^[ \t]*\./, "");
                 if (cfg.each_scene_on_new_page && scene_number !== 1) {
                     var page_break = create_token();
                     page_break.type = "page_break";
                     page_break.start = thistoken.start;
                     page_break.end = thistoken.end;
-                    pushToken(page_break);
+                    pushToken(page_break); //第一个 scene 之前 ，制造一个 分页 token
                 }
                 thistoken.type = "scene_heading";
                 thistoken.number = scene_number.toString();
@@ -541,11 +788,11 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 }
                 else {
                     var level = latestSection(current_depth);
-                    if(level){
+                    if (level) {
                         cobj.id = level.id + '/' + thistoken.line;
                         level.children.push(cobj);
                     }
-                    else{
+                    else {
                         cobj.id = '/' + thistoken.line;
                         result.properties.structure.push(cobj);
                     }
@@ -553,7 +800,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 lastScenStructureToken = cobj;
 
                 updatePreviousSceneLength();
-                result.properties.scenes.push({ scene: thistoken.number, text:thistoken.text, line: thistoken.line, actionLength: 0, dialogueLength: 0 })
+                result.properties.scenes.push({ scene: thistoken.number, text: thistoken.text, line: thistoken.line, actionLength: 0, dialogueLength: 0 })
                 result.properties.sceneLines.push(thistoken.line);
                 result.properties.sceneNames.push(thistoken.text);
 
@@ -572,23 +819,42 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         result.properties.locations.set(locationSlug, values);
                     }
                     else {
-                        result.properties.locations.set(locationSlug, [{scene_number, line:thistoken.line, ...location}]);
+                        result.properties.locations.set(locationSlug, [{ scene_number, line: thistoken.line, ...location }]);
                     }
                 }
                 scene_number++;
-                
-            } else if (thistoken.text.length && thistoken.text[0] === "!") {
+
+            } else if (thistoken.text.match(blockRegex.action_force)) {
+                // 强制 转换 action
                 thistoken.type = "action";
-                thistoken.text = thistoken.text.substr(1);
+                var mt = thistoken.text.match(blockRegex.action_force);
+                thistoken.text = mt[1] + mt[3]; // 保留空格格式
+                processTokenTextStyleChar(thistoken);
                 processActionBlock(thistoken);
+            } else if (thistoken.text.match(blockRegex.lyric)) {
+                // 强制 转换 action 中 歌词
+                thistoken.type = "action";
+                var mt = thistoken.text.trimRight().match(blockRegex.lyric);
+                var ct = mt[4];
+                if (ct) {
+                    if (!ct.endsWith('*') || !ct.startsWith('*')) {
+                        ct = "*" + ct + "*";
+                    }
+                } // 加斜体样式. 保留空格格式
+                thistoken.text = mt[1] + mt[3] + ct;
+                processTokenTextStyleChar(thistoken);
+                // processActionBlock(thistoken);
             } else if (thistoken.text.match(regex.centered)) {
                 thistoken.type = "centered";
-                thistoken.text = thistoken.text.replace(/>|</g, "").trim();
+                var mt = thistoken.text.match(regex.centered);
+                thistoken.text = mt[0];
+                processTokenTextStyleChar(thistoken);
             } else if (thistoken.text.match(regex.transition)) {
                 thistoken.text = thistoken.text.replace(/> ?/, "");
                 thistoken.type = "transition";
             } else if (match = thistoken.text.match(regex.synopsis)) {
                 thistoken.text = match[1];
+                processTokenTextStyleChar(thistoken);
                 thistoken.type = thistoken.text ? "synopsis" : "separator";
 
                 var level = latestSectionOrScene(current_depth + 1, () => true);
@@ -617,11 +883,11 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     cobj.id = level.id + '/' + thistoken.line;
                     level.children.push(cobj);
                 }
-                
+
             } else if (thistoken.text.match(regex.page_break)) {
                 thistoken.text = "";
                 thistoken.type = "page_break";
-            } else if (thistoken.text.match(regex.character) && (!(lines_length>i+2 && lines[i + 1].trim().length == 0 )) && (i > 0 && lines[i - 1].trim().length == 0)) {
+            } else if (is_character_line && (!(lines_length > i + 2 && lines[i + 1].trim().length == 0)) && (i > 0 && lines[i - 1].trim().length == 0)) {
                 // The last part of the above statement ('(lines[i + 1].trim().length == 0) ? (lines[i+1] == "  ") : false)')
                 // means that if the trimmed length of the following line (i+1) is equal to zero, the statement will only return 'true',
                 // and therefore consider the token as a character, if the content of the line is exactly two spaces.
@@ -632,47 +898,88 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 if (config.print_dialogue_numbers) AddDialogueNumberDecoration(thistoken)
                 thistoken.text = trimCharacterForceSymbol(thistoken.text);
                 if (thistoken.text[thistoken.text.length - 1] === "^") {
-                    if (cfg.use_dual_dialogue) {
+                    if (cfg.use_dual_dialogue && !force_not_dual) {
                         state = "dual_dialogue"
                         // update last dialogue to be dual:left
                         var dialogue_tokens = ["dialogue", "character", "parenthetical"];
+                        var mod_last = false;
                         while (dialogue_tokens.indexOf(result.tokens[last_character_index].type) !== -1) {
-                            result.tokens[last_character_index].dual = "left";
+                            var old_last_dual = result.tokens[last_character_index].dual;
+                            if (!old_last_dual) {
+                                mod_last = true;
+                                result.tokens[last_character_index].dual = "left";
+                                dual_str = "right";
+                            } else if (old_last_dual === "left") {
+                                dual_str = "right";
+                            } else {
+                                dual_str = "left";
+                            }
                             last_character_index++;
                         }
-                        //update last dialogue_begin to be dual_dialogue_begin and remove last dialogue_end
-                        var foundmatch = false;
-                        var temp_index = result.tokens.length;
-                        temp_index = temp_index - 1;
-                        while (!foundmatch) {
-                            temp_index--;
-                            switch (result.tokens[temp_index].type) {
-                                case "dialogue_end":
-                                    result.tokens.splice(temp_index);
-                                    temp_index--;
-                                    break;
-                                case "separator": break;
-                                case "character": break;
-                                case "dialogue": break;
-                                case "parenthetical": break;
-                                case "dialogue_begin":
-                                    result.tokens[temp_index].type = "dual_dialogue_begin";
-                                    foundmatch = true;
-                                    break;
-                                default: foundmatch = true;
+
+                        if(mod_last){
+                            //update last dialogue_begin to be dual_dialogue_begin and remove last dialogue_end
+                            var foundmatch = false;
+                            var temp_index = result.tokens.length;
+                            temp_index = temp_index - 1;
+                            while (!foundmatch) {
+                                temp_index--;
+                                switch (result.tokens[temp_index].type) {
+                                    case "dialogue_end":
+                                        result.tokens.splice(temp_index);
+                                        temp_index--;
+                                        break;
+                                    case "separator": break;
+                                    case "character": break;
+                                    case "dialogue": break;
+                                    case "parenthetical": break;
+                                    case "dialogue_begin":
+                                        result.tokens[temp_index].type = "dual_dialogue_begin";
+                                        foundmatch = true;
+                                        break;
+                                    default: foundmatch = true;
+                                }
                             }
                         }
-                        dual_right = true;
-                        thistoken.dual = "right";
+                        if(dual_str === "left"){
+                            pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_begin"));
+                        } else {
+                            // 删除之前 left 的 dual_dialogue_end
+                            var foundmatch = false;
+                            var temp_index = result.tokens.length;
+                            temp_index = temp_index - 1;
+                            while (!foundmatch) {
+                                temp_index--;
+                                switch (result.tokens[temp_index].type) {
+                                    case "dual_dialogue_end":
+                                        result.tokens.splice(temp_index);
+                                        temp_index--;
+                                        break;
+                                    case "separator": break;
+                                    case "character": break;
+                                    case "dialogue": break;
+                                    case "parenthetical": break;
+                                    // case "dialogue_begin":
+                                    //     result.tokens[temp_index].type = "dual_dialogue_begin";
+                                    //     foundmatch = true;
+                                    //     break;
+                                    default: foundmatch = true;
+                                }
+                            }
+                        }
+                        
+                        // dual_right = true;
+                        thistoken.dual = dual_str;
                     }
-                    else{
+                    else {
                         pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_begin"));
                     }
-                    thistoken.text = thistoken.text.replace(/\^$/, "");
+                    thistoken.text = thistoken.text.replace(/\^\s*$/, "");
                 }
                 else {
-                    pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_begin"));
+                    pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_begin")); // TODO Arming (2024-09-05) : 在 角色 line 后插入一个附加的 空token，type = dialogue_begin。 不产生pdf实际空行，只是逻辑处理需要。
                 }
+                force_not_dual = false;
                 let character = trimCharacterExtension(thistoken.text).trim();
                 previousCharacter = character;
                 if (result.properties.characters.has(character)) {
@@ -688,15 +995,15 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 last_character_index = result.tokens.length;
 
                 // todo 对话角色加入结构树
-                if(lastScenStructureToken){
-                    if(config.dialogue_foldable){
+                if (lastScenStructureToken) {
+                    if (config.dialogue_foldable) {
                         let cobj: StructToken = new StructToken();
                         cobj.text = thistoken.text;
                         cobj.children = null;
                         cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
                         cobj.id = lastScenStructureToken.id + '/' + thistoken.line;
                         cobj.ischartor = true;
-                        cobj.dialogueEndLine = lines_length-1;
+                        cobj.dialogueEndLine = lines_length - 1;
                         lastScenStructureToken.children.push(cobj);
                         lastChartorStructureToken = cobj;
                     }
@@ -704,34 +1011,43 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
 
 
 
-                    // var level = latestScene();
-                    // if(level){
-                    //     cobj.id = level.id + '/' + thistoken.line;
-                    //     // level.children.push(cobj);
-                    // }
-                    // else{
-                    //     cobj.id = '/' + thistoken.line;
-                    //     // result.properties.structure.push(cobj);
-                    // }
+                // var level = latestScene();
+                // if(level){
+                //     cobj.id = level.id + '/' + thistoken.line;
+                //     // level.children.push(cobj);
+                // }
+                // else{
+                //     cobj.id = '/' + thistoken.line;
+                //     // result.properties.structure.push(cobj);
+                // }
             }
             else {
-                thistoken.type = "action";
+                thistoken.type = "action"; // TODO Arming (2024-09-06) : 其他类型通通归于 action，
+                processTokenTextStyleChar(thistoken);
                 processActionBlock(thistoken);
             }
         } else {
+            // todo 对话 block 的后续连续行
+            thistoken.text = thistoken.text.trim();
+            // if (cfg.emitalic_dialog) {
+            //     if (!thistoken.text.endsWith('*') || !thistoken.text.startsWith('*')) {
+            //         thistoken.text = '*' + thistoken.text + '*';
+            //     }
+            // } //根据配置，施加斜体样式，如果可以的话。
+            // processTokenTextStyleChar(thistoken);
             if (parenthetical_open) {
                 thistoken.type = "parenthetical";
-                processParentheticalBlock(thistoken);
-                if(thistoken.text.match(regex.parenthetical_end)){
+                // processParentheticalBlock(thistoken);
+                if (thistoken.text.match(regex.parenthetical_end)) {
                     parenthetical_open = false;
-                } 
+                }
             } else {
                 if (thistoken.text.match(regex.parenthetical)) {
                     thistoken.type = "parenthetical";
-                    processParentheticalBlock(thistoken);
-                } else if(thistoken.text.match(regex.parenthetical_start)){
+                    // processParentheticalBlock(thistoken);
+                } else if (thistoken.text.match(regex.parenthetical_start)) {
                     thistoken.type = "parenthetical";
-                    processParentheticalBlock(thistoken);
+                    // processParentheticalBlock(thistoken);
                     parenthetical_open = true;
                 } else {
                     thistoken.type = "dialogue";
@@ -739,9 +1055,15 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     thistoken.character = previousCharacter;
                 }
             }
-            if (dual_right) {
-                thistoken.dual = "right";
+            if (dual_str) {
+                thistoken.dual = dual_str;
             }
+            if (cfg.emitalic_dialog) {
+                if (!thistoken.text.endsWith('*') || !thistoken.text.startsWith('*')) {
+                    thistoken.text = '*' + thistoken.text + '*';
+                }
+            } //根据配置，施加斜体样式，如果可以的话。
+            processTokenTextStyleChar(thistoken);
         }
 
         if (thistoken.type != "action" && !(thistoken.type == "dialogue" && thistoken.text == "  ")) {
@@ -755,9 +1077,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 thistoken.text = thistoken.text.toUpperCase();
                 title_page_started = true; // ignore title tags after first heading
             }
-            if (thistoken.text && thistoken.text[0] === "~") {
-                thistoken.text = "*" + thistoken.text.substr(1) + "*";
-            }
+            // if (thistoken.text && thistoken.text[0] === "~") {
+            //     thistoken.text = "*" + thistoken.text.substr(1) + "*";
+            // }
             if (thistoken.type != "action" && thistoken.type != "dialogue")
                 thistoken.text = thistoken.text.trim();
 
@@ -772,25 +1094,26 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             //         }
             //     }
             // } else
-             if (thistoken.type === "dialogue") {
-                if (cfg.emitalic_dialog) {
-                    if(!thistoken.text.endsWith('*') || !thistoken.text.startsWith('*')){
-                        thistoken.text = '*' + thistoken.text + '*';
-                    }
-                }
-            }
+            // if (thistoken.type === "dialogue") {
+            //     if (cfg.emitalic_dialog) {
+            //         if (!thistoken.text.endsWith('*') || !thistoken.text.startsWith('*')) {
+            //             thistoken.text = '*' + thistoken.text + '*';
+            //         }
+            //     }
+            // }
 
-            if(thistoken.ignore){
+            if (thistoken.ignore) {
                 ignoredLastToken = true;
             }
-            else{
+            else {
                 ignoredLastToken = false;
                 pushToken(thistoken);
-            }   
+            }
         }
 
     }
 
+    // TODO Arming (2024-09-05) : 所有文档行解析完后，如果是直接截断的对话block，额外添加 token dialogue_end。 逻辑处理需要，不实际产生pdf 空行。
     if (state == "dialogue") {
         pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_end"));
     }
@@ -799,7 +1122,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_end"));
     }
 
-    
+
     // tidy up separators
 
     if (generate_html) {
@@ -808,14 +1131,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         var header = undefined;
         var footer = undefined;
         //Generate html for title page
-        if(!emptytitlepage){
+        if (!emptytitlepage) {
             for (const section of Object.keys(result.title_page)) {
                 result.title_page[section].sort(helpers.sort_index);
                 titlehtml.push(`<div class="titlepagesection" data-position="${section}">`);
                 let current_index = 0/*, previous_type = null*/;
                 while (current_index < result.title_page[section].length) {
                     var current_token: token = result.title_page[section][current_index];
-                    if(current_token.ignore){
+                    if (current_token.ignore) {
                         current_index++;
                         continue;
                     }
@@ -833,14 +1156,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 titlehtml.push(`</div>`);
             }
         }
-        if(header)
+        if (header)
             html.push(`<div class="header" id="sourceline_${header.line}">${header.html}</div>`);
-        else if(config.print_header)
+        else if (config.print_header)
             html.push(`<div class="header">${lexer(config.print_header, undefined, htmlreplacements, true)}</div>`);
 
-        if(footer)
+        if (footer)
             html.push(`<div class="footer" id="sourceline_${footer.line}">${footer.html}</div>`);
-        else if(config.print_footer)
+        else if (config.print_footer)
             html.push(`<div class="footer">${lexer(config.print_footer, undefined, htmlreplacements, true)}</div>`);
 
 
@@ -860,13 +1183,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 let classes = "haseditorline";
 
                 let elStart = "\n";
-                if(!isaction) elStart = "<p>" //first action element
-                if(current_token.type == "centered"){
-                    if(isaction) elStart = ""; //It's centered anyway, no need to add anything
+                if (!isaction) elStart = "<p>" //first action element
+                if (current_token.type == "centered") {
+                    if (isaction) elStart = ""; //It's centered anyway, no need to add anything
                     classes += " centered";
                 }
                 html.push(`${elStart}<span class="${classes}" id="sourceline_${current_token.line}">${current_token.html}</span>`);
-                
+
                 isaction = true;
             }
             else if (current_token.type == "separator" && isaction) {
@@ -908,7 +1231,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         if (cfg.embolden_character_names) {
                             content = '<span class=\"bold haseditorline\" id="sourceline_' + current_token.line + '">' + content + '</span>';
                         }
-                        
+
                         if (current_token.dual == "left") {
                             html.push('<div class=\"dialogue left\">');
                         } else if (current_token.dual == "right") {
