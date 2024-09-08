@@ -248,9 +248,10 @@
 						"description": "The printing dimensions",
 						"enum": [
 							"a4",
+							"中文a4",
 							"usletter"
 						],
-						"default": "a4"
+						"default": "中文a4"
 					},
 					"fountain.pdf.doubleSpaceBetweenScenes": {
 						"type": "boolean",

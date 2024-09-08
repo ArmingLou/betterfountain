@@ -31,8 +31,9 @@ export class PrintProfile{
     note:{color:string;italic:boolean;}
 }
 
-var A4_DEFAULT_MAX = 58,
-    US_DEFAULT_MAX = 61;
+var A4_DEFAULT_MAX = 57,
+    US_DEFAULT_MAX = 61,
+    CN_DEFAULT_MAX = 60;
 
     export var print_profiles:{ [key: string]: PrintProfile } = {
         "a4": {
@@ -40,9 +41,9 @@ var A4_DEFAULT_MAX = 58,
             font_size: 12,
             lines_per_page: 57,
             top_margin: 1.0,
-            page_width: 8.27,
+            page_width: 8.6,
             page_height: 11.7,
-            left_margin: 1.5,
+            left_margin: 1,
             right_margin: 1,
             font_width: 0.1,
             font_height: 0.1667,
@@ -102,6 +103,81 @@ var A4_DEFAULT_MAX = 58,
             section: {
                 feed: 0.5,
                 max: A4_DEFAULT_MAX,
+                color: '#555555',
+                level_indent: 0.2
+            },
+            note: {
+                color: '#888888',
+                italic: true
+            }
+        },
+        "中文a4": {
+            paper_size: "a4",
+            font_size: 12,
+            lines_per_page: 40,
+            top_margin: 0.7,
+            page_width: 8.6,
+            page_height: 11.7,
+            left_margin: 0.5,
+            right_margin: 0.5,
+            font_width: 0.1,
+            font_height: 0.25,
+            line_spacing: 1,
+            page_number_top_margin: 0.2,
+            dual_max_factor: 0.75,
+            title_page: {
+                top_start: 3.5,
+                left_side: ['notes', 'copyright'],
+                right_side: ['draft_date', 'date', 'contact', 'contact_info', 'revision']
+            },
+            scene_heading: {
+                feed: 1.2,
+                max: CN_DEFAULT_MAX
+            },
+            action: {
+                feed: 1.2,
+                max: CN_DEFAULT_MAX
+            },
+            shot: {
+                feed: 1.0,
+                max: CN_DEFAULT_MAX
+            },
+            character: {
+                feed: 3,
+                max: 28
+            },
+            more: {
+                feed: 3,
+                max: 28
+            },
+            parenthetical: {
+                feed: 2.5,
+                max: 33
+            },
+            dialogue: {
+                feed: 2.2,
+                max: 40
+            },
+            transition: {
+                feed: 0.0,
+                max: CN_DEFAULT_MAX
+            },
+            centered: {
+                feed: 0.5,
+                style: 'center',
+                max: CN_DEFAULT_MAX
+            },
+            synopsis: {
+                feed: 0.2,
+                max: CN_DEFAULT_MAX,
+                italic: true,
+                color: '#888888',
+                padding: 0,
+                feed_with_last_section: true
+            },
+            section: {
+                feed: 0.2,
+                max: CN_DEFAULT_MAX,
                 color: '#555555',
                 level_indent: 0.2
             },

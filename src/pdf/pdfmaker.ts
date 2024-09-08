@@ -43,6 +43,7 @@ var PDFDocument = require('pdfkit'),
     //helper = require('../helpers'),
     Blob = require('blob');
 
+const textbox_width_error = 0.5;
 
 var create_simplestream = function (filepath: string) {
     var simplestream: any = {
@@ -119,7 +120,7 @@ async function initDoc(opts: Options) {
     //var fonts = opts.config.fonts || null;
     var options = {
         compress: false,
-        size: print.paper_size === "a4" ? 'A4' : 'LETTER',
+        size: print.paper_size.indexOf("a4") >=0 ? 'A4' : 'LETTER',
         margins: {
             top: 0,
             left: 0,
@@ -541,7 +542,7 @@ async function initDoc(opts: Options) {
                             }
                         }
                         if (!enSplit) {
-                            elem = elem.slice(0, j + 1) + '\n' + elem.slice(j);
+                            elem = elem.slice(0, j + 1) + '\n' + elem.slice(j+1);
                         }
 
                     }
@@ -564,7 +565,7 @@ async function initDoc(opts: Options) {
             });*/
         }
 
-        addTextbox(textobjects, doc, x * 72, y * 72, width * 72, {
+        addTextbox(textobjects, doc, x * 72, y * 72, (width - textbox_width_error )* 72, { // 组件bug,text显示宽度比实际配置的width值要大
             lineBreak: false,
             align: options.align,
             baseline: 'top'
@@ -692,7 +693,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     };*/
 
     if (cfg.print_title_page && parsed.title_page) {
-        const innerwidth = print.page_width - print.right_margin - print.right_margin;
+        const innerwidth = print.page_width - print.left_margin - print.right_margin;
         const innerheight = print.page_height - print.top_margin;
         const innerwidth_third = innerwidth / 3;
         const innerwidth_half = innerwidth / 2;
@@ -701,7 +702,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var tltext = parsed.title_page['tl'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
         var tltext_height = doc.heightOfString(tltext, { width: innerwidth_third * 72, align: 'left' });
 
-        doc.text2(tltext, print.right_margin, print.top_margin, {
+        doc.text2(tltext, print.left_margin, print.top_margin, {
             width: innerwidth_third,
             align: 'left',
             links: true
@@ -710,7 +711,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         //top center
         var tctext = parsed.title_page['tc'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
         var tctext_height = doc.heightOfString(tctext, { width: innerwidth_third * 72, align: 'center' });
-        doc.text2(tctext, print.right_margin + innerwidth_third, print.top_margin, {
+        doc.text2(tctext, print.left_margin + innerwidth_third, print.top_margin, {
             width: innerwidth_third,
             align: 'center',
             links: true
@@ -719,7 +720,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         //top right
         var trtext = parsed.title_page['tr'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
         var trtext_height = doc.heightOfString(trtext, { width: innerwidth_third * 72, align: 'right' });
-        doc.text2(trtext, print.right_margin + innerwidth_third + innerwidth_third, print.top_margin, {
+        doc.text2(trtext, print.left_margin + innerwidth_third + innerwidth_third, print.top_margin, {
             width: innerwidth_third,
             align: 'right',
             links: true
@@ -728,7 +729,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         //bottom left
         var bltext = parsed.title_page['bl'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
         var bltext_height = doc.heightOfString(bltext, { width: innerwidth_half * 72, align: 'left' });
-        doc.text2(bltext, print.right_margin, innerheight - (bltext_height / 72), {
+        doc.text2(bltext, print.left_margin, innerheight - (bltext_height / 72), {
             width: innerwidth_half,
             align: 'left',
             links: true
@@ -737,7 +738,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         //bottom right
         var brtext = parsed.title_page['br'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
         var brtext_height = doc.heightOfString(brtext, { width: innerwidth_half * 72, align: 'right' });
-        doc.text2(brtext, print.right_margin + innerwidth_half, innerheight - (brtext_height / 72), {
+        doc.text2(brtext, print.left_margin + innerwidth_half, innerheight - (brtext_height / 72), {
             width: innerwidth_half,
             align: 'right',
             links: true
@@ -750,7 +751,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var cctext = parsed.title_page['cc'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
         var cctext_height = doc.heightOfString(cctext, { width: innerwidth * 72, align: 'center' });
         var centerStart = (((innerheight * 72) - topheight - bottomheight) / 2) - (cctext_height / 2);
-        doc.text2(cctext, print.right_margin, centerStart / 72, {
+        doc.text2(cctext, print.left_margin, centerStart / 72, {
             width: innerwidth,
             align: 'center',
             links: true
@@ -1094,6 +1095,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             var feed_right = (print[right_line.type] || {}).feed || print.action.feed;
                             feed_right -= (feed_right - print.left_margin) / 2;
                             feed_right += (print.page_width - print.right_margin - print.left_margin) / 2;
+                            feed_right -= textbox_width_error;
                             var right_text_properties = get_text_properties(right_line);
                             var tx = wrapCharAndDialog(right_line.text, right_line);
                             doc.text2(tx, feed_right, print.top_margin + print.font_height * y_right++, right_text_properties);
