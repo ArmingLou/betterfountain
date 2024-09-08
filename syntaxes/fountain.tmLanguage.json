@@ -148,7 +148,7 @@
       ]
     },
     "scene_headings": {
-      "match": "(?i)^[ \\t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.])(.+?)(?:(#)([^\\n#]+)(#))?\\s*$",
+      "match": "(?i)^[ \\t]*([.](?=[\\w\\(\\p{L}])|(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.\\s])(.+?)(#\\s*[^\\s].*#)?\\s*$",
       "captures": {
         "1": {
           "name": "keyword.other.class"

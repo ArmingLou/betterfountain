@@ -39,10 +39,11 @@ export const regex: { [index: string]: RegExp } = {
     section: /^[ \t]*(#+)(?:\s*)(.*)/,
     synopsis: /^[ \t]*(?:\=(?!\=+)\s*)(.*)/,
 
-    scene_heading: /^[ \t]*([.]|(?:[*]{0,3}_?)(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.])(.+?)(#[^\\s]+#)?\s*$/i,
+    scene_heading: /^[ \t]*([.](?=[\w\(\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])(.+?)(#\s*[^\s].*#)?\s*$/iu,
     scene_number: /#(.+)#/,
 
-    transition: /^[ \t]*((?:FADE (?:TO BLACK|OUT)|CUT TO BLACK)\.|.+ TO\:|^TO\:$)|^(?:> *)(.+)/,
+    // transition: /^[ \t]*((?:FADE (?:TO BLACK|OUT)|CUT TO BLACK)\.|.+ TO\:|^TO\:$)|^(?:> *)(.+)/,
+    transition: /^\s*(?:(>)[^<\n\r]*|[A-Z ]+TO:)$/,
 
     dialogue: /^[ \t]*([*_]+[^\p{Ll}\p{Lo}\p{So}\r\n]*)(\^?)?(?:\n(?!\n+))([\s\S]+)/u,
 
@@ -849,7 +850,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 thistoken.text = mt[0];
                 processTokenTextStyleChar(thistoken);
             } else if (thistoken.text.match(regex.transition)) {
-                thistoken.text = thistoken.text.replace(/> ?/, "");
+                thistoken.text = thistoken.text.replace(/^\s*>\s*/, "");
                 thistoken.type = "transition";
             } else if (match = thistoken.text.match(regex.synopsis)) {
                 thistoken.text = match[1];
