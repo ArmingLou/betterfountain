@@ -870,7 +870,22 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
     };
 
-
+    function get_text_len(text: any): any {
+        var len = 0;
+        for (var i = 0; i < text.length; i++) {
+            // 判断字符是否 双角
+            if (text.charCodeAt(i) > 255) {
+                // 是双角, 长度按 1.5 增加
+                len += 1.6;
+            } else if (text[i] === " ") {
+                //空格按0增加
+                len += 0.5;
+            } else {
+                len += 1;
+            }
+        }
+        return len;
+    }
 
     function getOutlineChild(obj: any, targetDepth: number, currentDepth: number): any {
         if (currentDepth == targetDepth) {
@@ -902,7 +917,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             if (cfg.scene_continuation_bottom && line.scene_split) {
                 var scene_continued_text = '(' + (cfg.text_scene_continued || 'CONTINUED') + ')';
-                var feed = print.action.feed + print.action.max * print.font_width - scene_continued_text.length * print.font_width;
+                var feed = print.action.feed + print.action.max * print.font_width - get_text_len(scene_continued_text) * print.font_width;
                 doc.simple_text(scene_continued_text, feed * 72, (print.top_margin + print.font_height * (y + 2)) * 72);
             }
 
@@ -1013,7 +1028,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             } else {
                 var feed: number = (print[line.type] || {}).feed || print.action.feed;
                 if (line.type === "transition") {
-                    feed = print.action.feed + print.action.max * print.font_width - line.text.length * print.font_width;
+                    feed = print.action.feed + print.action.max * print.font_width - get_text_len(line.text) * print.font_width;
                 }
 
                 var hasInvisibleSection = (line.type === "scene_heading" && line.token.invisibleSections != undefined)
