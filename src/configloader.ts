@@ -12,7 +12,7 @@ export class FountainConfig{
     embolden_scene_headers:boolean;
     embolden_character_names:boolean;
     emitalic_dialog:boolean;
-    show_page_numbers:boolean;
+    show_page_numbers:string;
     split_dialogue:boolean;
     print_title_page:boolean;
     print_profile:string;

@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "4.3.5",
+	"version": "4.4.1",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -224,9 +224,9 @@
 						"description": "Make character names bold"
 					},
 					"fountain.pdf.showPageNumbers": {
-						"type": "boolean",
-						"default": true,
-						"description": "Show page numbers"
+						"type": "string",
+						"default": "{n}.",
+						"description": "Show page numbers format, eg \"(第{n}页)\" or \"{n}.\" or \"P{n}\" , {n} means page number. If empty, no page numbers will be shown"
 					},
 					"fountain.pdf.showDialogueNumbers": {
 						"type": "boolean",

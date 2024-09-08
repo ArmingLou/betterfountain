@@ -33,7 +33,7 @@ const fountainConfig: FountainConfig  = {
     embolden_scene_headers: false,
     embolden_character_names: false,
     emitalic_dialog: false,
-    show_page_numbers: false,
+    show_page_numbers: '',
     split_dialogue: false,
     print_title_page: false,
     print_profile: undefined as unknown as string,

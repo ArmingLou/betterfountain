@@ -11,6 +11,7 @@ import * as addTextbox from 'textbox-for-pdfkit';
 import { regex } from "../afterwriting-parser";
 import { Base64Encode } from "base64-stream";
 import { charOfStyleTag } from "../cons";
+import { config } from "process";
 
 // import * as blobUtil from "blob-util";
 export class Options {
@@ -120,7 +121,7 @@ async function initDoc(opts: Options) {
     //var fonts = opts.config.fonts || null;
     var options = {
         compress: false,
-        size: print.paper_size.indexOf("a4") >=0 ? 'A4' : 'LETTER',
+        size: print.paper_size.indexOf("a4") >= 0 ? 'A4' : 'LETTER',
         margins: {
             top: 0,
             left: 0,
@@ -542,7 +543,7 @@ async function initDoc(opts: Options) {
                             }
                         }
                         if (!enSplit) {
-                            elem = elem.slice(0, j + 1) + '\n' + elem.slice(j+1);
+                            elem = elem.slice(0, j + 1) + '\n' + elem.slice(j + 1);
                         }
 
                     }
@@ -565,7 +566,7 @@ async function initDoc(opts: Options) {
             });*/
         }
 
-        addTextbox(textobjects, doc, x * 72, y * 72, (width - textbox_width_error )* 72, { // 组件bug,text显示宽度比实际配置的width值要大
+        addTextbox(textobjects, doc, x * 72, y * 72, (width - textbox_width_error) * 72, { // 组件bug,text显示宽度比实际配置的width值要大
             lineBreak: false,
             align: options.align,
             baseline: 'top'
@@ -804,7 +805,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     }
 
     var y = 0,
-        page = 1,
+        page = 0,
         scene_number: string,
         prev_scene_continuation_header = '',
         scene_continuations: { [key: string]: any } = {},
@@ -901,12 +902,27 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
     }
 
+    function print_page_number() {
+        var page_num_y = print.page_height - print.page_number_top_margin;
+        if (cfg.show_page_numbers) {
+            var page_num = cfg.show_page_numbers.replace("{n}",page.toFixed());
+            var number_x = print.action.feed + print.action.max * print.font_width - page_num.length * print.font_width;
+            doc.simple_text(page_num, number_x * 72, page_num_y * 72);
+        }
+    }
+
     let outline = doc.outline;
     let outlineDepth = 0;
     // let previousSectionDepth = 0;
 
-    print_watermark();
-    print_header_and_footer();
+    if (page === 0) {
+        page++
+
+        print_page_number();
+        print_watermark();
+        print_header_and_footer();
+    }
+
 
     let currentScene: string = "";
     let currentSections: string[] = [];
@@ -946,11 +962,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 prev_scene_continuation_header = scene_continued;
             }
 
-            if (cfg.show_page_numbers) {
-                var page_num = page.toFixed() + ".";
-                var number_x = print.action.feed + print.action.max * print.font_width - page_num.length * print.font_width;
-                doc.simple_text(page_num, number_x * 72, number_y * 72);
-            }
+            print_page_number();
             print_watermark();
             print_header_and_footer(prev_scene_continuation_header);
             prev_scene_continuation_header = '';
