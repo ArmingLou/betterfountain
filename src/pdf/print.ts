@@ -114,7 +114,7 @@ var A4_DEFAULT_MAX = 57,
         "中文a4": {
             paper_size: "a4",
             font_size: 12,
-            lines_per_page: 40,
+            lines_per_page: 38,
             top_margin: 0.7,
             page_width: 8.6,
             page_height: 11.4,

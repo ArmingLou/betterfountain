@@ -11,7 +11,6 @@ import * as addTextbox from 'textbox-for-pdfkit';
 import { regex } from "../afterwriting-parser";
 import { Base64Encode } from "base64-stream";
 import { charOfStyleTag } from "../cons";
-import { config } from "process";
 
 // import * as blobUtil from "blob-util";
 export class Options {
@@ -615,8 +614,9 @@ async function initDoc(opts: Options) {
 }
 
 function clearFormatting(text: string) {
-    var clean = text.replace(/\*/g, '');
-    clean = clean.replace(/_/g, '');
+    var clean = text.replace(/☈|↭|↯|☄|↬|☍|☋|/g, '');
+    // var clean = text.replace(/\*/g, '');
+    // clean = clean.replace(/_/g, '');
     return clean;
 }
 
@@ -664,7 +664,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     // helper
     var center = function (txt: string, y: number) {
-        var txt_length = txt.replace(/\*/g, '').replace(/_/g, '').length;
+        // var txt_length = txt.replace(/\*/g, '').replace(/_/g, '').length;
+        var txt_length = clearFormatting(txt).length;
         var feed = (print.page_width - txt_length * print.font_width) / 2;
         doc.text2(txt, feed, y);
     };
@@ -807,7 +808,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     var y = 0,
         page = 0,
         scene_number: string,
-        prev_scene_continuation_header = '',
+        // prev_scene_continuation_header = '',
         scene_continuations: { [key: string]: any } = {},
         current_section_level = 0,
         current_section_number: any,
@@ -816,24 +817,15 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         text,
         after_section = false; // helpful to determine synopsis indentation
 
-    var print_header_and_footer = function (continuation_header?: string) {
+    var print_header_and_footer = function () {
+        var dif = print.font_height * 0.5
         if (cfg.print_header) {
-
-            continuation_header = continuation_header || '';
-            var offset = helpers.blank_text(continuation_header);
-            if (helpers.get_indentation(cfg.print_header).length >= continuation_header.length) {
-                offset = '';
-            }
-            if (offset) {
-                offset += ' ';
-            }
-
-            doc.format_text(offset + cfg.print_header, 1.5, print.page_number_top_margin - 0.1, {
+            doc.format_text(cfg.print_header, 1.5, print.page_number_top_margin , {
                 color: '#777777'
             });
         }
         if (cfg.print_footer) {
-            doc.format_text(cfg.print_footer, 1.5, print.page_height - 0.5, {
+            doc.format_text(cfg.print_footer, 1.5, print.page_height - print.page_number_top_margin - dif , {
                 color: '#777777'
             });
         }
@@ -852,9 +844,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             // underline and rotate pdfkit bug (?) workaround
             watermark = cfg.print_watermark.replace(/_/g, '');
-
             // unformat
-            len = watermark.replace(/\*/g, '').length;
+            // len = watermark.replace(/\*/g, '').length;
+            len = clearFormatting(watermark).length;
 
             diagonal = Math.sqrt(Math.pow(print.page_width, 2) + Math.pow(print.page_height, 2));
             diagonal -= 4;
@@ -871,7 +863,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
     };
 
-    function get_text_len(text: any): any {
+    // 显示长度
+    function get_text_display_len(text: any): any {
         var len = 0;
         for (var i = 0; i < text.length; i++) {
             // 判断字符是否 双角
@@ -933,7 +926,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             if (cfg.scene_continuation_bottom && line.scene_split) {
                 var scene_continued_text = '(' + (cfg.text_scene_continued || 'CONTINUED') + ')';
-                var feed = print.action.feed + print.action.max * print.font_width - get_text_len(scene_continued_text) * print.font_width;
+                var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued_text) * print.font_width;
                 doc.simple_text(scene_continued_text, feed * 72, (print.top_margin + print.font_height * (y + 2)) * 72);
             }
 
@@ -947,7 +940,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             doc.addPage();
             page++;
 
-            var number_y = print.page_number_top_margin;
+            var number_y = print.font_height * 0.5 + print.page_number_top_margin ;
 
             if (cfg.scene_continuation_top && line.scene_split) {
                 scene_continuations[scene_number] = scene_continuations[scene_number] || 0;
@@ -956,16 +949,18 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 var scene_continued = (cfg.scenes_numbers !== 'none' && scene_number ? scene_number + ' ' : '') + (cfg.text_scene_continued || 'CONTINUED') + ':';
                 scene_continued += scene_continuations[scene_number] > 1 ? ' (' + scene_continuations[scene_number] + ')' : '';
 
-                scene_continued = scene_continued.replace(/\*/g, '');
-                scene_continued = scene_continued.replace(/_/g, '');
-                doc.simple_text(scene_continued, print.action.feed * 72, number_y * 72);
-                prev_scene_continuation_header = scene_continued;
+                scene_continued = clearFormatting(scene_continued);
+                // scene_continued = scene_continued.replace(/\*/g, '');
+                // scene_continued = scene_continued.replace(/_/g, '');
+                var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued) * print.font_width;
+                doc.simple_text(scene_continued, feed * 72, number_y * 72);
+                // prev_scene_continuation_header = scene_continued;
             }
 
             print_page_number();
             print_watermark();
-            print_header_and_footer(prev_scene_continuation_header);
-            prev_scene_continuation_header = '';
+            print_header_and_footer();
+            // prev_scene_continuation_header = '';
 
         } else if (line.type === "separator") {
             y++;
@@ -1040,7 +1035,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             } else {
                 var feed: number = (print[line.type] || {}).feed || print.action.feed;
                 if (line.type === "transition") {
-                    feed = print.action.feed + print.action.max * print.font_width - get_text_len(line.text) * print.font_width;
+                    feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(line.text) * print.font_width;
                 }
 
                 var hasInvisibleSection = (line.type === "scene_heading" && line.token.invisibleSections != undefined)
