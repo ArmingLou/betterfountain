@@ -48,12 +48,17 @@ export function getEditor(uri: vscode.Uri): vscode.TextEditor {
 //var syllable = require('syllable');
 
 export function slugify(text: string): string {
+	// return text.toString().toLowerCase()
+	// 	.replace(/\s+/g, '-')           // Replace spaces with -
+	// 	// .replace(/[^\w-]+/g, '')       // Remove all non-word chars
+	// 	.replace(/-{2,}/g, '-')         // Replace multiple - with single -
+	// 	.replace(/^-+/, '')             // Trim - from start of text
+	// 	.replace(/-+$/, '');            // Trim - from end of text
 	return text.toString().toLowerCase()
-		.replace(/\s+/g, '-')           // Replace spaces with -
-		// .replace(/[^\w-]+/g, '')       // Remove all non-word chars
-		.replace(/-{2,}/g, '-')         // Replace multiple - with single -
-		.replace(/^-+/, '')             // Trim - from start of text
-		.replace(/-+$/, '');            // Trim - from end of text
+		.replace(/\s+/g, ' ')           // Replace spaces
+		.replace(/\s+-/g, '-')           // Replace spaces
+		.replace(/-\s+/g, '-')           // Replace spaces
+		.trim()
 }
 
 /**
@@ -63,7 +68,7 @@ export const trimCharacterExtension = (character: string): string => character.r
 
 export const parseLocationInformation = (scene_heading: RegExpMatchArray) => {
 	//input group 1 is int/ext, group 2 is location and time, group 3 is scene number
-	let splitLocationFromTime = scene_heading[2].match(/(.*)[-–—−](.*)/)
+	let splitLocationFromTime = scene_heading[2].match(/(.*?)[-–—−](.*)/)
 	if (scene_heading != null && scene_heading.length >= 3) {
 		var i = scene_heading[1].indexOf('I') != -1;
 		var e = scene_heading[1].indexOf('EX') != -1 || scene_heading[1].indexOf('E.') != -1;
@@ -79,11 +84,17 @@ export const parseLocationInformation = (scene_heading: RegExpMatchArray) => {
 				e = true;
 			}
 		}
+
+		n = n.toLowerCase().replace(/\s+/g, ' ');
+
+		var day_t = splitLocationFromTime ? splitLocationFromTime[2].trim() : "";
+		day_t = day_t.toUpperCase().replace(/\s+/g, ' ')
+
 		return {
 			name: n,
 			interior: i,
 			exterior: e,
-			time_of_day: splitLocationFromTime ? splitLocationFromTime[2].trim() : ""
+			time_of_day: day_t
 		}
 	}
 	return null;
@@ -206,7 +217,7 @@ export const calculateDialogueDuration = (dialogue: string): number => {
 	var rec = /(\.|\?|\!|\:|。|？|！|：)|(\,|，|;|；|、)/g
 	var resu = rec.exec(dialogue);
 	while (resu) {
-		if(!resu[0]){
+		if (!resu[0]) {
 			break;
 		}
 		if (resu[1]) {
@@ -257,10 +268,10 @@ export function secondsToMinutesString(seconds: number): string {
 export const overwriteSceneNumbers = () => {
 	telemetry.reportTelemetry("command:fountain.overwriteSceneNumbers");
 	const doc = vscode.window.activeTextEditor;
-	if(!doc) return
+	if (!doc) return
 	const dm = doc.document;
-	if(!dm) return
-	if(dm.languageId != "fountain") return
+	if (!dm) return
+	if (dm.languageId != "fountain") return
 	const fullText = dm.getText()
 	const clearedText = clearSceneNumbers(fullText);
 	writeSceneNumbers(clearedText);
@@ -272,10 +283,10 @@ export const overwriteSceneNumbers = () => {
 export const updateSceneNumbers = () => {
 	telemetry.reportTelemetry("command:fountain.updateSceneNumbers");
 	const doc = vscode.window.activeTextEditor;
-	if(!doc) return
+	if (!doc) return
 	const dm = doc.document;
-	if(!dm) return
-	if(dm.languageId != "fountain") return
+	if (!dm) return
+	if (dm.languageId != "fountain") return
 	const fullText = dm.getText()
 	writeSceneNumbers(fullText);
 }

@@ -399,14 +399,21 @@ function updateStats(){
                 $(row).find("td").first().css("color", data.color);
                 $(row).find("td.location-time").html(data.times_of_day.map((it, index) => {
                     let cs = it;
-                    if(it === '白天'){
+                    var arr = cs.split(/-|–|—|−/g).filter(function (a) {
+                        return a;
+                    }).map(a => {
+                        return a.trim().toLowerCase()
+                    });
+                    if(arr.includes('白天')||arr.includes('day')){
                         cs = 'day';
-                    } else if(it === '夜晚'){
+                    } else if(arr.includes('夜晚')||arr.includes('night')){
                         cs = 'night';
-                    } else if(it === '黄昏'){
+                    } else if(arr.includes('黄昏')||arr.includes('dusk')){
                         cs = 'dusk';
-                    } else if(it === '黎明'){
+                    } else if(arr.includes('黎明')||arr.includes('dawn')){
                         cs = 'dawn';
+                    } else {
+                        cs = '';
                     }
                     let output = `<span>${it.toUpperCase()}`;
                     index < data.times_of_day.length-1 ? output += ", </span>" : output += "</span>";

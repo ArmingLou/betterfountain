@@ -222,7 +222,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 		//Scene header autocomplete
 		else if (parsedDocument.properties.sceneLines.indexOf(position.line) > -1) {
 			//Time of day
-			if (currentline.trimRight().endsWith("-")) {
+			var mt = currentline.match(/^[^-–—−]+?[-–—−]\s*$/g);
+			if (mt) {
 				var addspace = !currentline.endsWith(" ");
 				completes.push(TimeofDayCompletion("白天", addspace, "A"));
 				completes.push(TimeofDayCompletion("夜晚", addspace, "B"));

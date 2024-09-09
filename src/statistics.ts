@@ -25,10 +25,10 @@ type dialogueStatisticPerCharacter = {
     name: string
     speakingParts: number
     wordsSpoken: number,
-    secondsSpoken:number,
-    averageComplexity:number,
-    monologues:number,
-    color:string
+    secondsSpoken: number,
+    averageComplexity: number,
+    monologues: number,
+    color: string
 }
 
 type singleSceneStatistic = {
@@ -37,41 +37,41 @@ type singleSceneStatistic = {
 
 type lengthStatistics = {
     characters: number
-    characterswithoutwhitespace:number;
-    lines:number,
-    lineswithoutwhitespace:number;
+    characterswithoutwhitespace: number;
+    lines: number,
+    lineswithoutwhitespace: number;
     words: number;
     pages: number;
-    pagesreal:number;
+    pagesreal: number;
     scenes: number;
 }
 
 type lengthchartitem = {
-    line:number,
-    scene:string,
-    length:number
+    line: number,
+    scene: string,
+    length: number
 }
 
 type dialoguechartitem = {
-    line:number,
-    scene:string,
-    lengthTimeGlobal:number,
-    lengthWordsGlobal:number,
-    monologue:boolean,
-    lengthTime:number,
-    lengthWords:number
+    line: number,
+    scene: string,
+    lengthTimeGlobal: number,
+    lengthWordsGlobal: number,
+    monologue: boolean,
+    lengthTime: number,
+    lengthWords: number
 }
 type sceneitem = {
-    line:number,
-    endline:number,
-    scene:string,
-    type:'int'|'ext'|'mixed'|'other',
-    time:string
+    line: number,
+    endline: number,
+    scene: string,
+    type: 'int' | 'ext' | 'mixed' | 'other',
+    time: string
 }
 
 type durationByProp = {
-    prop:string;
-    duration:number;
+    prop: string;
+    duration: number;
 }
 
 type durationStatistics = {
@@ -81,10 +81,10 @@ type durationStatistics = {
     lengthchart_action: lengthchartitem[],
     lengthchart_dialogue: lengthchartitem[],
     durationBySceneProp: durationByProp[],
-    characters:dialoguechartitem[][],
-    scenes:sceneitem[],
-    characternames:string[],
-    monologues:number
+    characters: dialoguechartitem[][],
+    scenes: sceneitem[],
+    characternames: string[],
+    monologues: number
 }
 
 type locationStatistics = {
@@ -113,36 +113,31 @@ type screenPlayStatistics = {
     structure: StructToken[]
 }
 
-function age(value:number) {
+function age(value: number) {
     var max = 22
     return value > max ? max : value
-  }
-function gradeToAge(grade:number) {
+}
+function gradeToAge(grade: number) {
     return age(Math.round(grade + 5))
 }
 
 const createCharacterStatistics = (parsed: parseoutput): characterStatistics => {
     const dialoguePieces: dialoguePiece[] = [];
 
-    for (var i=0; i<parsed.tokens.length; i++)
-    {
-        while (i<parsed.tokens.length && parsed.tokens[i].type==="character")
-        {
+    for (var i = 0; i < parsed.tokens.length; i++) {
+        while (i < parsed.tokens.length && parsed.tokens[i].type === "character") {
             const character = parsed.tokens[i].name()
             var speech = "";
-            while (i++ && i<parsed.tokens.length)
-            {
-                if (parsed.tokens[i].type==="dialogue")        
-                {
+            while (i++ && i < parsed.tokens.length) {
+                if (parsed.tokens[i].type === "dialogue") {
                     speech += parsed.tokens[i].text + " "
                 }
-                else if (parsed.tokens[i].type==="character")
-                {
+                else if (parsed.tokens[i].type === "character") {
                     break;
                 }
                 // else skip extensions / parenthesis / dialogue-begin/-end
             }
-            
+
             speech = speech.trim();
             dialoguePieces.push({
                 character,
@@ -173,22 +168,22 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
         let combinedSentences = "";
         const allDialogueCombined = dialoguePerCharacter[singledialPerChar].reduce((prev, curr) => {
             let time = calculateDialogueDuration(curr);
-            secondsSpoken+=time;
-            combinedSentences+="."+curr;
-            if(isMonologue(time)) monologues++;
+            secondsSpoken += time;
+            combinedSentences += "." + curr;
+            if (isMonologue(time)) monologues++;
             return `${prev} ${curr} `;
         }, "");
-        monologueCounter+=monologues;
+        monologueCounter += monologues;
         var readability = readabilityScores(combinedSentences);
-        if(readability){
+        if (readability) {
             averageComplexity = (
-                gradeToAge(readability.daleChall) + 
-                gradeToAge(readability.ari) + 
-                gradeToAge(readability.colemanLiau)+
-                gradeToAge(readability.fleschKincaid)+
-                gradeToAge(readability.smog)+
-                gradeToAge(readability.gunningFog))/6;
-            if(averageComplexity>0) speechcomplexityArray.push(averageComplexity);
+                gradeToAge(readability.daleChall) +
+                gradeToAge(readability.ari) +
+                gradeToAge(readability.colemanLiau) +
+                gradeToAge(readability.fleschKincaid) +
+                gradeToAge(readability.smog) +
+                gradeToAge(readability.gunningFog)) / 6;
+            if (averageComplexity > 0) speechcomplexityArray.push(averageComplexity);
         }
         const wordsSpoken = getCharacterCountWithoutWhitespace(allDialogueCombined);
         characterStats.push({
@@ -233,11 +228,11 @@ const createLocationStatistics = (parsed: parseoutput): locationStatistics => {
             const exterior = references.some(it => it.exterior);
             let interior_exterior = 'other';
             if (interior && exterior) interior_exterior = 'mixed'
-            else if (interior) interior_exterior ='int' 
+            else if (interior) interior_exterior = 'int'
             else if (exterior) interior_exterior = 'ext';
             return {
                 color: rgbToHex(wordToColor(location_slug)),
-                name: references[0].name,
+                name: location_slug,
                 scene_numbers: references.map(reference => reference.scene_number),
                 scene_lines: references.map(reference => reference.line),
                 number_of_scenes: references.length,
@@ -250,9 +245,8 @@ const createLocationStatistics = (parsed: parseoutput): locationStatistics => {
 
 const createSceneStatistics = (parsed: parseoutput): sceneStatistics => {
     const sceneStats: singleSceneStatistic[] = []
-    parsed.tokens.forEach ((tok) => {
-        if (tok.type==="scene_heading")
-        {
+    parsed.tokens.forEach((tok) => {
+        if (tok.type === "scene_heading") {
             sceneStats.push({
                 title: tok.text
             });
@@ -263,34 +257,37 @@ const createSceneStatistics = (parsed: parseoutput): sceneStatistics => {
     }
 }
 
-function locationtype(val:string):'int'|'ext'|'mixed'|'other'{
-    if(val){
-        if(/i(nt)?\.?\/e(xt)?\.?/i.test(val)){
+function locationtype(val: string): 'int' | 'ext' | 'mixed' | 'other' {
+    if (val) {
+        if (/i(nt)?\.?\/e(xt)?\.?/i.test(val)) {
             return "mixed"
         }
-        else if(/i(nt)?\.?/i.test(val)){
+        else if (/i(nt)?\.?/i.test(val)) {
             return "int"
         }
-        else if(/e(xt)?\.?/i.test(val)){
+        else if (/e(xt)?\.?/i.test(val)) {
             return "ext"
         }
     }
     return "other";
 }
-function afterdash(val:string):string{
-    if(val){
-        let dash = val.lastIndexOf(" - ");
-        if(dash === -1) dash = val.lastIndexOf(" – ");
-        if(dash === -1) dash = val.lastIndexOf(" — ");
-        if(dash === -1) dash = val.lastIndexOf(" − ");
+function afterdash(val: string): string {
+    if (val) {
+        let dash = val.indexOf("-"); // 第一个
+        if (dash === -1) dash = val.indexOf("–");
+        if (dash === -1) dash = val.indexOf("—");
+        if (dash === -1) dash = val.indexOf("−");
         if (dash !== -1) {
-            return val.substring(dash+3)
+            var n = val.substring(dash + 1)
+            if (n) {
+                return n.trim()
+            }
         }
     }
     return null;
 }
-function locationtime(val:string):string{
-    if(val){
+function locationtime(val: string): string {
+    if (val) {
         return val.toLowerCase()
             .replace(/\s+/g, ' ')
             .replace(/\.$/g, '')
@@ -304,132 +301,150 @@ function locationtime(val:string):string{
     return "unspecified";
 }
 
-const getLengthChart = (parsed:parseoutput):{action:lengthchartitem[], dialogue:lengthchartitem[], durationByProp:any, characters:dialoguechartitem[][], scenes:sceneitem[], characternames:string[], monologues:number} => {
-    let action:lengthchartitem[] = [{line:0, length: 0, scene:undefined }]
-    let dialogue:lengthchartitem[] = [{line:0, length: 0, scene:undefined }]
+const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialogue: lengthchartitem[], durationByProp: any, characters: dialoguechartitem[][], scenes: sceneitem[], characternames: string[], monologues: number } => {
+    let action: lengthchartitem[] = [{ line: 0, length: 0, scene: undefined }]
+    let dialogue: lengthchartitem[] = [{ line: 0, length: 0, scene: undefined }]
     let characters = new Map<string, dialoguechartitem[]>();
-    let scenes:sceneitem[] = [];
+    let scenes: sceneitem[] = [];
     let previousLengthAction = 0;
     let previousLengthDialogue = 0;
     let currentScene = "";
-    let monologues=0;
-    let scenepropDurations = new Map<string,number>();
+    let monologues = 0;
+    let scenepropDurations = new Map<string, number>();
     parsed.tokens.forEach(element => {
-        if(element.type == "action" || element.type == "dialogue"){
+        if (element.type == "action" || element.type == "dialogue") {
             let time = Number(element.time);
-            if(!isNaN(time)){
-                if(element.type == "action"){
+            if (!isNaN(time)) {
+                if (element.type == "action") {
                     previousLengthAction += Number(element.time);
                 }
-                else if(element.type == "dialogue"){
+                else if (element.type == "dialogue") {
                     previousLengthDialogue += Number(element.time);
                 }
             }
 
-            if(element.type == "action"){
-                action.push({line:element.line, length: previousLengthAction, scene:currentScene });
+            if (element.type == "action") {
+                action.push({ line: element.line, length: previousLengthAction, scene: currentScene });
             }
-            else if(element.type == "dialogue"){
-                dialogue.push({line:element.line, length: previousLengthDialogue, scene:currentScene });
+            else if (element.type == "dialogue") {
+                dialogue.push({ line: element.line, length: previousLengthDialogue, scene: currentScene });
                 let currentCharacter = characters.get(element.character);
                 let dialogueLength = 0;
                 let wordsLength = 0;
                 let wordcount = getWordCount(element.text);
                 let time = Number(element.time);
-                if(!currentCharacter){
+                if (!currentCharacter) {
                     characters.set(element.character, []);
                 }
-                else if(currentCharacter.length>0){
-                    dialogueLength = currentCharacter[currentCharacter.length-1].lengthTimeGlobal;
-                    wordsLength = currentCharacter[currentCharacter.length-1].lengthWordsGlobal;
+                else if (currentCharacter.length > 0) {
+                    dialogueLength = currentCharacter[currentCharacter.length - 1].lengthTimeGlobal;
+                    wordsLength = currentCharacter[currentCharacter.length - 1].lengthWordsGlobal;
                 }
                 let monologue = false;
-                if(isMonologue(time)){
-                    monologue=true;
+                if (isMonologue(time)) {
+                    monologue = true;
                     monologues++;
                 }
                 characters.get(element.character).push({
-                    line:element.line, 
-                    lengthTime:element.time, 
-                    lengthWords:wordcount,
-                    lengthTimeGlobal: dialogueLength+time, 
-                    lengthWordsGlobal: wordsLength+wordcount,
-                    monologue:monologue, //monologue if dialogue is longer than 30 seconds
-                    scene:currentScene,
+                    line: element.line,
+                    lengthTime: element.time,
+                    lengthWords: wordcount,
+                    lengthTimeGlobal: dialogueLength + time,
+                    lengthWordsGlobal: wordsLength + wordcount,
+                    monologue: monologue, //monologue if dialogue is longer than 30 seconds
+                    scene: currentScene,
                 });
             }
         }
     });
-    parsed.properties.scenes.forEach(scene=>{
+    parsed.properties.scenes.forEach(scene => {
         currentScene = scene.text;
-        if(scenes.length>0){
-            scenes[scenes.length-1].endline = scene.line-1;
+        if (scenes.length > 0) {
+            scenes[scenes.length - 1].endline = scene.line - 1;
         }
         var deconstructedSlug = regex.scene_heading.exec(scene.text);
-        let sceneType :'int'|'ext'|'mixed'|'other'
+        let sceneType: 'int' | 'ext' | 'mixed' | 'other'
         let sceneTime
-        if(deconstructedSlug){
+        if (deconstructedSlug) {
             sceneType = locationtype(deconstructedSlug?.[1]);
             sceneTime = locationtime(afterdash(deconstructedSlug?.[2]));
         } else {
             // 直接 点“.” 开头的场景
-            if(scene.text.trimLeft().startsWith("(室内)")){
+            if (scene.text.trimLeft().startsWith("(室内)")) {
                 sceneType = "int";
-            } else if(scene.text.trimLeft().startsWith("(室外)")){
+            } else if (scene.text.trimLeft().startsWith("(室外)")) {
                 sceneType = "ext";
             } else {
                 sceneType = "other";
             }
             sceneTime = locationtime(afterdash(scene.text));
         }
-        if (sceneTime === '白天'){
-            sceneTime = 'day';
-        } else if (sceneTime === '夜晚'){
-            sceneTime = 'night';
-        } else if (sceneTime === '黎明'){
-            sceneTime = 'dawn';
-        } else if (sceneTime === '黄昏'){
-            sceneTime = 'dusk';
+
+        let cs = sceneTime;
+        var arr = cs.split(/-|–|—|−/g).filter(function (a) {
+            return a;
+        }).map(a => {
+            return a.trim().toLowerCase()
+        });
+        if (arr.includes('白天') || arr.includes('day')) {
+            cs = 'day';
+        } else if (arr.includes('夜晚') || arr.includes('night')) {
+            cs = 'night';
+        } else if (arr.includes('黄昏') || arr.includes('dusk')) {
+            cs = 'dusk';
+        } else if (arr.includes('黎明') || arr.includes('dawn')) {
+            cs = 'dawn';
+        } else {
+            cs = '';
         }
+        // if (sceneTime === '白天') {
+        //     sceneTime = 'day';
+        // } else if (sceneTime === '夜晚') {
+        //     sceneTime = 'night';
+        // } else if (sceneTime === '黎明') {
+        //     sceneTime = 'dawn';
+        // } else if (sceneTime === '黄昏') {
+        //     sceneTime = 'dusk';
+        // }
         scenes.push({
             type: sceneType,
-            line:scene.line,
-            endline:65500,
-            time: sceneTime,
-            scene:scene.text
+            line: scene.line,
+            endline: 65500,
+            time: cs,
+            scene: scene.text
         });
-        let currentLength = scenepropDurations.has('type_'+sceneType) ? scenepropDurations.get('type_'+sceneType) : 0;
-        scenepropDurations.set('type_'+sceneType, currentLength+scene.actionLength+scene.dialogueLength);
-        currentLength = scenepropDurations.has('time_'+sceneTime) ? scenepropDurations.get('time_'+sceneTime) : 0;
-        scenepropDurations.set('time_'+sceneTime, currentLength+scene.actionLength+scene.dialogueLength);
+        let currentLength = scenepropDurations.has('type_' + sceneType) ? scenepropDurations.get('type_' + sceneType) : 0;
+        scenepropDurations.set('type_' + sceneType, currentLength + scene.actionLength + scene.dialogueLength);
+        currentLength = scenepropDurations.has('time_' + cs) ? scenepropDurations.get('time_' + cs) : 0;
+        scenepropDurations.set('time_' + cs, currentLength + scene.actionLength + scene.dialogueLength);
     });
-    let characterDuration:dialoguechartitem[][] = [];
-    let characterNames:string[] = [];
-    characters.forEach((value:dialoguechartitem[], key:string) =>{
+    let characterDuration: dialoguechartitem[][] = [];
+    let characterNames: string[] = [];
+    characters.forEach((value: dialoguechartitem[], key: string) => {
         characterNames.push(key);
         characterDuration.push(value);
     });
-    
-    return {action:action, dialogue:dialogue, durationByProp:mapToObject(scenepropDurations), scenes:scenes, characters: characterDuration, characternames:characterNames, monologues:monologues};
+
+    return { action: action, dialogue: dialogue, durationByProp: mapToObject(scenepropDurations), scenes: scenes, characters: characterDuration, characternames: characterNames, monologues: monologues };
 };
 
 const getWordCount = (script: string): number => {
-    return ((script || '').match(/\S+/g) || []).length 
+    return ((script || '').match(/\S+/g) || []).length
 }
 const getCharacterCount = (script: string): number => {
-    return script.length 
+    return script.length
 }
 const getCharacterCountWithoutWhitespace = (script: string): number => {
-    return ((script || '').match(/\S+?/g) || []).length 
+    return ((script || '').match(/\S+?/g) || []).length
 }
-const getLineCount = (script:string): number =>{
-    return ((script || '').match(/\n/g) || []).length 
+const getLineCount = (script: string): number => {
+    return ((script || '').match(/\n/g) || []).length
 }
-const getLineCountWithoutWhitespace = (script:string): number =>{
-    return ((script || '').match(/^.*\S.*$/gm) || []).length 
+const getLineCountWithoutWhitespace = (script: string): number => {
+    return ((script || '').match(/^.*\S.*$/gm) || []).length
 }
 
-const createLengthStatistics = (script: string, pdf:pdfstats, parsed:parseoutput): lengthStatistics => {
+const createLengthStatistics = (script: string, pdf: pdfstats, parsed: parseoutput): lengthStatistics => {
     return {
         characters: getCharacterCount(script),
         characterswithoutwhitespace: getCharacterCountWithoutWhitespace(script),
@@ -443,7 +458,7 @@ const createLengthStatistics = (script: string, pdf:pdfstats, parsed:parseoutput
 }
 
 const createDurationStatistics = (parsed: parseoutput): durationStatistics => {
-    let lengthcharts =  getLengthChart(parsed);
+    let lengthcharts = getLengthChart(parsed);
     return {
         dialogue: parsed.lengthDialogue,
         action: parsed.lengthAction,
@@ -454,11 +469,11 @@ const createDurationStatistics = (parsed: parseoutput): durationStatistics => {
         characters: lengthcharts.characters,
         scenes: lengthcharts.scenes,
         characternames: lengthcharts.characternames,
-        monologues:lengthcharts.monologues
+        monologues: lengthcharts.monologues
     }
 }
 
-export const retrieveScreenPlayStatistics = async (script: string, parsed: parseoutput, config:FountainConfig, exportconfig:ExportConfig): Promise<screenPlayStatistics> => {
+export const retrieveScreenPlayStatistics = async (script: string, parsed: parseoutput, config: FountainConfig, exportconfig: ExportConfig): Promise<screenPlayStatistics> => {
     const stats = {
         characterStats: createCharacterStatistics(parsed),
         sceneStats: createSceneStatistics(parsed),
@@ -469,7 +484,7 @@ export const retrieveScreenPlayStatistics = async (script: string, parsed: parse
 
     let pdfstats = await GeneratePdf("$STATS$", config, exportconfig, parsed, undefined);
     let pdfmap = mapToObject(pdfstats.linemap);
-    
+
     return {
         ...stats,
         lengthStats: createLengthStatistics(script, pdfstats, parsed),

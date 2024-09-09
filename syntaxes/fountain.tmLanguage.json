@@ -148,7 +148,7 @@
       ]
     },
     "scene_headings": {
-      "match": "(?i)^[ \\t]*([.](?=[\\w\\(\\p{L}])(?:\\(室内\\)|\\(室外\\))?|(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.\\s]\\s*(?:\\(室内\\)|\\(室外\\))?)(.*?)((#)\\s*([^\\s].*)(#))?\\s*$",
+      "match": "(?i)^[ \\t]*([.](?=[\\w\\(\\p{L}])(?:\\(室内\\)|\\(室外\\))?|(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.\\s]\\s*(?:\\(室内\\)|\\(室外\\))?)(.*?)([-–—−].*?)?((#)\\s*([^\\s].*)(#))?\\s*$",
       "captures": {
         "1": {
           "name": "keyword.other.class"
@@ -156,13 +156,16 @@
         "2": {
           "name": "token.error-token"
         },
-        "4": {
-          "name": "comment.block.fountain"
+        "3": {
+          "name": "keyword.other.class"
         },
         "5": {
-          "name": "constant.numeric.scene.fountain"
+          "name": "comment.block.fountain"
         },
         "6": {
+          "name": "constant.numeric.scene.fountain"
+        },
+        "7": {
           "name": "comment.block.fountain"
         }
       }
