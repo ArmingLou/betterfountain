@@ -39,7 +39,7 @@ export const regex: { [index: string]: RegExp } = {
     section: /^[ \t]*(#+)(?:\s*)(.*)/,
     synopsis: /^[ \t]*(?:\=(?!\=+)\s*)(.*)/,
 
-    scene_heading: /^[ \t]*([.](?=[\w\(\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])(.+?)(#\s*[^\s].*#)?\s*$/iu,
+    scene_heading: /^[ \t]*([.](?=[\w\(\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])(.*?)(#\s*[^\s].*#)?\s*$/iu,
     scene_number: /#(.+)#/,
 
     // transition: /^[ \t]*((?:FADE (?:TO BLACK|OUT)|CUT TO BLACK)\.|.+ TO\:|^TO\:$)|^(?:> *)(.+)/,
@@ -760,134 +760,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 result.properties.firstTokenLine = thistoken.line;
             }
             let sceneHeadingMatch = thistoken.text.match(regex.scene_heading);
-            if (sceneHeadingMatch) {
-                force_not_dual = true;
-                thistoken.text = thistoken.text.replace(/^[ \t]*\./, "");
-                if (cfg.each_scene_on_new_page && scene_number !== 1) {
-                    var page_break = create_token();
-                    page_break.type = "page_break";
-                    page_break.start = thistoken.start;
-                    page_break.end = thistoken.end;
-                    pushToken(page_break); //第一个 scene 之前 ，制造一个 分页 token
-                }
-                thistoken.type = "scene_heading";
-                thistoken.number = scene_number.toString();
-                if (match = thistoken.text.match(regex.scene_number)) {
-                    thistoken.text = thistoken.text.replace(regex.scene_number, "");
-                    thistoken.number = match[1].trim();
-                }
-                let cobj: StructToken = new StructToken();
-                cobj.text = thistoken.text;
-                cobj.children = [];
-                cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
-                cobj.isscene = true;
 
-
-
-                if (current_depth == 0) {
-                    cobj.id = '/' + thistoken.line;
-                    result.properties.structure.push(cobj);
-                }
-                else {
-                    var level = latestSection(current_depth);
-                    if (level) {
-                        cobj.id = level.id + '/' + thistoken.line;
-                        level.children.push(cobj);
-                    }
-                    else {
-                        cobj.id = '/' + thistoken.line;
-                        result.properties.structure.push(cobj);
-                    }
-                }
-                lastScenStructureToken = cobj;
-
-                updatePreviousSceneLength();
-                result.properties.scenes.push({ scene: thistoken.number, text: thistoken.text, line: thistoken.line, actionLength: 0, dialogueLength: 0 })
-                result.properties.sceneLines.push(thistoken.line);
-                result.properties.sceneNames.push(thistoken.text);
-
-                const location = parseLocationInformation(sceneHeadingMatch);
-                if (location) {
-                    const locationSlug = slugify(location.name);
-                    if (result.properties.locations.has(locationSlug)) {
-                        const values = result.properties.locations.get(locationSlug);
-                        if (values.findIndex(it => it.scene_number == scene_number) == -1) {
-                            values.push({
-                                scene_number: scene_number,
-                                line: thistoken.line,
-                                ...location
-                            });
-                        }
-                        result.properties.locations.set(locationSlug, values);
-                    }
-                    else {
-                        result.properties.locations.set(locationSlug, [{ scene_number, line: thistoken.line, ...location }]);
-                    }
-                }
-                scene_number++;
-
-            } else if (thistoken.text.match(blockRegex.action_force)) {
-                // 强制 转换 action
-                thistoken.type = "action";
-                var mt = thistoken.text.match(blockRegex.action_force);
-                thistoken.text = mt[1] + mt[3]; // 保留空格格式
-                processTokenTextStyleChar(thistoken);
-                processActionBlock(thistoken);
-            } else if (thistoken.text.match(blockRegex.lyric)) {
-                // 强制 转换 action 中 歌词
-                thistoken.type = "action";
-                var mt = thistoken.text.trimRight().match(blockRegex.lyric);
-                var ct = mt[4];
-                if (ct) {
-                    ct = charOfStyleTag.italic_global_begin + ct + charOfStyleTag.italic_global_end;
-                } // 加斜体样式. 保留空格格式
-                thistoken.text = mt[1] + mt[3] + ct;
-                processTokenTextStyleChar(thistoken);
-                // processActionBlock(thistoken);
-            } else if (thistoken.text.match(regex.centered)) {
-                thistoken.type = "centered";
-                var mt = thistoken.text.match(regex.centered);
-                thistoken.text = mt[0];
-                processTokenTextStyleChar(thistoken);
-            } else if (thistoken.text.match(regex.transition)) {
-                thistoken.text = thistoken.text.replace(/^\s*>\s*/, "");
-                thistoken.type = "transition";
-            } else if (match = thistoken.text.match(regex.synopsis)) {
-                thistoken.text = match[1];
-                processTokenTextStyleChar(thistoken);
-                thistoken.type = thistoken.text ? "synopsis" : "separator";
-
-                var level = latestSectionOrScene(current_depth + 1, () => true);
-                if (level) {
-                    level.synopses = level.synopses || []
-                    level.synopses.push({ synopsis: thistoken.text, line: thistoken.line })
-                }
-            } else if (match = thistoken.text.match(regex.section)) {
-                thistoken.level = match[1].length;
-                thistoken.text = match[2];
-                thistoken.type = "section";
-                let cobj: StructToken = new StructToken();
-                cobj.text = thistoken.text;
-                current_depth = thistoken.level;
-                cobj.level = thistoken.level;
-                cobj.children = [];
-                cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
-                cobj.section = true;
-
-                const level = current_depth > 1 && latestSectionOrScene(current_depth, token => token.section && token.level < current_depth)
-                if (current_depth == 1 || !level) {
-                    cobj.id = '/' + thistoken.line;
-                    result.properties.structure.push(cobj)
-                }
-                else {
-                    cobj.id = level.id + '/' + thistoken.line;
-                    level.children.push(cobj);
-                }
-
-            } else if (thistoken.text.match(regex.page_break)) {
-                thistoken.text = "";
-                thistoken.type = "page_break";
-            } else if (is_character_line && (!(lines_length > i + 2 && lines[i + 1].trim().length == 0)) && (i > 0 && lines[i - 1].trim().length == 0)) {
+            // 对话首行需放在最前
+            if (is_character_line && (i > 0 && lines[i - 1].trim().length == 0)) {
                 // The last part of the above statement ('(lines[i + 1].trim().length == 0) ? (lines[i+1] == "  ") : false)')
                 // means that if the trimmed length of the following line (i+1) is equal to zero, the statement will only return 'true',
                 // and therefore consider the token as a character, if the content of the line is exactly two spaces.
@@ -1020,8 +895,134 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 //     cobj.id = '/' + thistoken.line;
                 //     // result.properties.structure.push(cobj);
                 // }
-            }
-            else {
+            } else if (sceneHeadingMatch) {
+                force_not_dual = true;
+                thistoken.text = thistoken.text.replace(/^[ \t]*\./, "");
+                if (cfg.each_scene_on_new_page && scene_number !== 1) {
+                    var page_break = create_token();
+                    page_break.type = "page_break";
+                    page_break.start = thistoken.start;
+                    page_break.end = thistoken.end;
+                    pushToken(page_break); //第一个 scene 之前 ，制造一个 分页 token
+                }
+                thistoken.type = "scene_heading";
+                thistoken.number = scene_number.toString();
+                if (match = thistoken.text.match(regex.scene_number)) {
+                    thistoken.text = thistoken.text.replace(regex.scene_number, "");
+                    thistoken.number = match[1].trim();
+                }
+                let cobj: StructToken = new StructToken();
+                cobj.text = thistoken.text;
+                cobj.children = [];
+                cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
+                cobj.isscene = true;
+
+
+
+                if (current_depth == 0) {
+                    cobj.id = '/' + thistoken.line;
+                    result.properties.structure.push(cobj);
+                }
+                else {
+                    var level = latestSection(current_depth);
+                    if (level) {
+                        cobj.id = level.id + '/' + thistoken.line;
+                        level.children.push(cobj);
+                    }
+                    else {
+                        cobj.id = '/' + thistoken.line;
+                        result.properties.structure.push(cobj);
+                    }
+                }
+                lastScenStructureToken = cobj;
+
+                updatePreviousSceneLength();
+                result.properties.scenes.push({ scene: thistoken.number, text: thistoken.text, line: thistoken.line, actionLength: 0, dialogueLength: 0 })
+                result.properties.sceneLines.push(thistoken.line);
+                result.properties.sceneNames.push(thistoken.text);
+
+                const location = parseLocationInformation(sceneHeadingMatch);
+                if (location) {
+                    const locationSlug = slugify(location.name);
+                    if (result.properties.locations.has(locationSlug)) {
+                        const values = result.properties.locations.get(locationSlug);
+                        if (values.findIndex(it => it.scene_number == scene_number) == -1) {
+                            values.push({
+                                scene_number: scene_number,
+                                line: thistoken.line,
+                                ...location
+                            });
+                        }
+                        result.properties.locations.set(locationSlug, values);
+                    }
+                    else {
+                        result.properties.locations.set(locationSlug, [{ scene_number, line: thistoken.line, ...location }]);
+                    }
+                }
+                scene_number++;
+
+            } else if (thistoken.text.match(blockRegex.action_force)) {
+                // 强制 转换 action
+                thistoken.type = "action";
+                var mt = thistoken.text.match(blockRegex.action_force);
+                thistoken.text = mt[1] + mt[3]; // 保留空格格式
+                processTokenTextStyleChar(thistoken);
+                processActionBlock(thistoken);
+            } else if (thistoken.text.match(blockRegex.lyric)) {
+                // 强制 转换 action 中 歌词
+                thistoken.type = "action";
+                var mt = thistoken.text.trimRight().match(blockRegex.lyric);
+                var ct = mt[4];
+                if (ct) {
+                    ct = charOfStyleTag.italic_global_begin + ct + charOfStyleTag.italic_global_end;
+                } // 加斜体样式. 保留空格格式
+                thistoken.text = mt[1] + mt[3] + ct;
+                processTokenTextStyleChar(thistoken);
+                // processActionBlock(thistoken);
+            } else if (thistoken.text.match(regex.centered)) {
+                thistoken.type = "centered";
+                var mt = thistoken.text.match(regex.centered);
+                thistoken.text = mt[0];
+                processTokenTextStyleChar(thistoken);
+            } else if (thistoken.text.match(regex.transition)) {
+                thistoken.text = thistoken.text.replace(/^\s*>\s*/, "");
+                thistoken.type = "transition";
+            } else if (match = thistoken.text.match(regex.synopsis)) {
+                thistoken.text = match[1];
+                processTokenTextStyleChar(thistoken);
+                thistoken.type = thistoken.text ? "synopsis" : "separator";
+
+                var level = latestSectionOrScene(current_depth + 1, () => true);
+                if (level) {
+                    level.synopses = level.synopses || []
+                    level.synopses.push({ synopsis: thistoken.text, line: thistoken.line })
+                }
+            } else if (match = thistoken.text.match(regex.section)) {
+                thistoken.level = match[1].length;
+                thistoken.text = match[2];
+                thistoken.type = "section";
+                let cobj: StructToken = new StructToken();
+                cobj.text = thistoken.text;
+                current_depth = thistoken.level;
+                cobj.level = thistoken.level;
+                cobj.children = [];
+                cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
+                cobj.section = true;
+
+                const level = current_depth > 1 && latestSectionOrScene(current_depth, token => token.section && token.level < current_depth)
+                if (current_depth == 1 || !level) {
+                    cobj.id = '/' + thistoken.line;
+                    result.properties.structure.push(cobj)
+                }
+                else {
+                    cobj.id = level.id + '/' + thistoken.line;
+                    level.children.push(cobj);
+                }
+
+            } else if (thistoken.text.match(regex.page_break)) {
+                thistoken.text = "";
+                thistoken.type = "page_break";
+            } else {
                 thistoken.type = "action"; // TODO Arming (2024-09-06) : 其他类型通通归于 action，
                 processTokenTextStyleChar(thistoken);
                 processActionBlock(thistoken);
