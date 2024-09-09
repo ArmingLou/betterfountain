@@ -116,7 +116,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 	provideCompletionItems(document: vscode.TextDocument, position: vscode.Position,/* token: CancellationToken, context: CompletionContext*/): vscode.CompletionItem[] {
 		var parsedDocument = parsedDocuments.get(document.uri.toString());
 		var completes: vscode.CompletionItem[] = [];
-		var currentline = document.getText(new vscode.Range(new vscode.Position(position.line, 0), position));
+		// var currentline = document.getText(new vscode.Range(new vscode.Position(position.line, 0), position));
+		var currentline = document.getText(new vscode.Range(new vscode.Position(position.line, 0), document.lineAt(position).range.end));
 		var prevLine = document.getText(new vscode.Range(new vscode.Position(position.line - 1, 0), position)).trimRight();
 		const hasCharacters = parsedDocument.properties.characters.size > 0;
 		const currentLineIsEmpty = currentline.trim() === "";
@@ -233,7 +234,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 				completes.push(TimeofDayCompletion("DAWN", addspace, "H"));
 			}
 			else {
-				var scenematch = currentline.match(/^[ \t]*((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(室内\)|\(室外\))?)\s*$/gi);
+				// var scenematch = currentline.match(/^[ \t]*((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(室内\)|\(室外\))?)\s*$/gi);
+				var scenematch = currentline.match(/^[ \t]*([.](?=[\w\(\p{L}])(\(室内\)|\(室外\))?|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])\s*$/gui);
 				if (scenematch) {
 					// var previousLabels: string[] = []
 					parsedDocument.properties.locations.forEach((_location, name) => {
