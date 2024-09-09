@@ -148,7 +148,7 @@
       ]
     },
     "scene_headings": {
-      "match": "(?i)^[ \\t]*([.](?=[\\w\\(\\p{L}])|(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.\\s])(.+?)(#\\s*[^\\s].*#)?\\s*$",
+      "match": "(?i)^[ \\t]*([.](?=[\\w\\(\\p{L}])|(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.\\s])(.+?)((#)\\s*([^\\s].*)(#))?\\s*$",
       "captures": {
         "1": {
           "name": "keyword.other.class"
@@ -156,27 +156,27 @@
         "2": {
           "name": "token.error-token"
         },
-        "3": {
+        "4": {
           "name": "comment.block.fountain"
         },
-        "4": {
+        "5": {
           "name": "constant.numeric.scene.fountain"
         },
-        "5": {
+        "6": {
           "name": "comment.block.fountain"
         }
       }
     },
     "sections": {
-      "begin": "(#{1,6})\\s*",
-      "beginCaptures": {
+      "match": "^[ \\t]*(#+)(?:\\s*)(.*)",
+      "captures": {
         "1": {
           "name": "comment.block.fountain"
+        },
+        "2": {
+          "name": "variable.other.constant"
         }
-      },
-      "contentName": "variable.other.constant",
-      "end": "\\s*(#*)$",
-      "name": "comment.block.fountain"
+      }
     },
     "synopses": {
       "name": "constant.numeric.scene.fountain",
