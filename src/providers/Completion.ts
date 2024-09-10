@@ -117,11 +117,12 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 		var parsedDocument = parsedDocuments.get(document.uri.toString());
 		var completes: vscode.CompletionItem[] = [];
 		// var currentline = document.getText(new vscode.Range(new vscode.Position(position.line, 0), position));
-		var currentline = document.getText(new vscode.Range(new vscode.Position(position.line, 0), document.lineAt(position).range.end));
-		var prevLine = document.getText(new vscode.Range(new vscode.Position(position.line - 1, 0), position)).trimRight();
+		// var currentline = document.getText(new vscode.Range(new vscode.Position(position.line, 0), document.lineAt(position).range.end));
+		var currentline = document.lineAt(position).text;
+		var prevLine = document.lineAt(position.line - 1).text;
 		const hasCharacters = parsedDocument.properties.characters.size > 0;
 		const currentLineIsEmpty = currentline.trim() === "";
-		const previousLineIsEmpty = prevLine.trim() === "";
+		const previousLineIsEmpty = prevLine === "" || prevLine === " ";
 
 		//Title page autocomplete
 		if (parsedDocument.properties.firstTokenLine >= position.line) {
