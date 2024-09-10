@@ -665,7 +665,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     // helper
     var center = function (txt: string, y: number) {
         // var txt_length = txt.replace(/\*/g, '').replace(/_/g, '').length;
-        var txt_length = clearFormatting(txt).length;
+        var txt_length = get_text_display_len(clearFormatting(txt));
         var feed = (print.page_width - txt_length * print.font_width) / 2;
         doc.text2(txt, feed, y);
     };

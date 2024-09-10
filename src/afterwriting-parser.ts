@@ -34,12 +34,12 @@ Array.prototype.pushSorted = function (el, compareFn) {
 
 //Unicode uppercase letters:
 export const regex: { [index: string]: RegExp } = {
-    title_page: /(title|credit|author[s]?|source|notes|draft date|date|watermark|contact( info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:.*/i,
+    title_page: /^(title|credit|author[s]?|source|notes|draft date|date|watermark|contact( info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:.*/i,
 
     section: /^[ \t]*(#+)(?:\s*)(.*)/,
     synopsis: /^[ \t]*(?:\=(?!\=+)\s*)(.*)/,
 
-    scene_heading: /^[ \t]*([.](?=[\w\(\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])(.*?)(#\s*[^\s].*#)?\s*$/iu,
+    scene_heading: /^[ \t]*([.](?=[\w\(\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[. ])(.*?)(#\s*[^\s].*#)?\s*$/iu,
     scene_number: /#(.+)#/,
 
     // transition: /^[ \t]*((?:FADE (?:TO BLACK|OUT)|CUT TO BLACK)\.|.+ TO\:|^TO\:$)|^(?:> *)(.+)/,
@@ -217,8 +217,9 @@ export interface parseoutput {
     properties: screenplayProperties
 }
 export var parse = function (original_script: string, cfg: any, generate_html: boolean): parseoutput {
-    var block_dialogue = false;
-    var block_except_dialogue = false;
+    var block_inner = false;
+    // var block_dialogue = false;
+    // var block_except_dialogue = false;
 
     var lastFountainEditor: vscode.Uri;
     var config = getFountainConfig(lastFountainEditor);
@@ -282,7 +283,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         thistoken: token,
         last_was_separator = false,
         //top_or_separated = false,
-        token_category = "none",
+        // token_category = "none",
         last_character_index,
         // dual_right,
         dual_str = "",
@@ -292,6 +293,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // cache_state_for_comment,
         nested_comments = 0,
         nested_notes = 0,
+        title_page_complete = false,
         title_page_started = false,
         parenthetical_open = false,
         needProcessInlineNote = 0,
@@ -526,58 +528,119 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
         }
     }
-
+    var block_start_type = ''; // "dialogue" | "title" | "action" | "scene" | "transitions" 
     let ignoredLastToken = false;
     for (var i = 0; i < lines_length; i++) {
-        var is_character_line = false;
+        // var is_character_line = false;
         needProcessInlineNote = 0;
         var current_has_note = false // 当前行，是否包含 note
         current_expet_note_text = "" // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
         current_outline_note_text = []
         // current_line_number = i;
         text = lines[i];
+        block_start_type = ''; // 是否 block 首行
+
         var beforEmpty = text.trim().length === 0;
+        var match_block_end_empty_line = false;
+        var match_line_break = false;
+
+        if (beforEmpty) {
+            if (text.length <= 1) {
+                match_block_end_empty_line = true;
+            } else {
+                match_line_break = true;
+            }
+        }
+
 
         // 1. 至少在 dialogue block 或 非dialog block 中了。
 
-        var noteBreakLine = false;
-        // var is_block_end_empty_line = false; // 非空行后的紧接着的空行。
-        if (beforEmpty) {
+        // var noteBreakLine = false;
+        var emptyBreakLine = false;
+        var is_block_end_empty_line = false; // 连续块后紧接着的断块 空行。
+        // var is_block_begin_line = false; // 连续块后紧接着的断块 空行。
+
+        if (match_block_end_empty_line) {
             if (nested_comments > 0 || nested_notes > 0) {
                 // 如果是在注释中，那么直接忽略
                 current_has_note = true;
-                if (nested_notes > 0 && cfg.print_notes && text === "  ") {
-                    noteBreakLine = true;
+                if (nested_notes > 0 && cfg.print_notes && match_line_break) {
+                    // noteBreakLine = true;
                     // note 空行，双空格表示保留一个空行，否则直接去掉空行。
                     // TODO Arming (2024-09-05) : 插入一个空行 token 来表示这行是空行
                 } else {
                     continue;
                 }
             } else {
-                if (!block_dialogue && !block_except_dialogue) {
+                if (!block_inner) {
                     // 至少一个空行后的，再空行。且不在 注解中的空行。
-                    continue;
+                    // 插入一个 action 空行
+                    // continue;
+                    emptyBreakLine = true;
                 } else {
                     // 非空行后的紧接着的空行。
-                    block_dialogue = false;
-                    block_except_dialogue = false;
-                    // is_block_end_empty_line = true;
+                    block_inner = false;
+                    is_block_end_empty_line = true;
+                    block_start_type = "";
+                    if (title_page_started) {
+                        title_page_complete = true;
+                    }
+
+                    // block_dialogue = false;
+                    // block_except_dialogue = false;
                     // TODO Arming (2024-09-05) : 是否需要加入 一个空行 token 来表示这行是空行
                 }
             }
         } else {
-            if (!block_dialogue && !block_except_dialogue) {
+            if (!block_inner) {
+                block_inner = true;
+                // is_block_begin_line = true;
                 if (nested_comments > 0 || nested_notes > 0) {
 
                 } else {
                     // 非注解空行后的紧接着的 第一个非空行。
-                    // 优先匹配 dialogue block
-                    if (text.match(new RegExp(blockRegex.block_dialogue_begin))) {
-                        is_character_line = true;
-                        block_dialogue = true;
+                    if (title_page_complete) {
+                        if (text.match(regex.scene_heading)) {
+                            block_start_type = "scene";
+                        } else if (text.match(regex.transition)) {
+                            block_start_type = "transitions";
+                        } else if (text.match(blockRegex.action_force)) {
+                            block_start_type = "action_force";
+                            // block_dialogue = true;
+                        } else if (text.match(regex.character)) {
+                            block_start_type = "dialogue";
+                        } else {
+                            block_start_type = "action";
+                            // block_except_dialogue = true;
+                        }
                     } else {
-                        block_except_dialogue = true;
+                        if (!title_page_started) {
+                            if (text.match(regex.title_page)) {
+                                title_page_started = true;
+                                block_start_type = "title";
+                                state = "title_page";
+                            } else if (text.match(regex.scene_heading) ) {
+                                // 直接开始场景，忽略 title 页
+                                block_start_type = "scene";
+                                title_page_started = true;
+                                title_page_complete = true;
+                            } else if (text.match(regex.transition)) {
+                                // 直接开始场景，忽略 title 页
+                                block_start_type = "transitions";
+                                title_page_started = true;
+                                title_page_complete = true;
+                            } else {
+                                // titile 页开始前的 其他 内容，全部忽略
+                                block_start_type = "invalid";
+                                continue;
+                            }
+                        }
                     }
+                }
+            } else {
+                if(!title_page_started) {
+                    // titile 页开始前的 其他 内容，全部忽略
+                    continue;
                 }
             }
 
@@ -602,8 +665,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 var arr = text.split(/(\/\*){1}|(\*\/){1}/g)
                 text = arr.filter(if_not_empty).reduce(reduce_comment, "");
 
-                if (text.trim().length === 0 && !beforEmpty) {
-                    // 跨行注解，整行都是注解
+                if (text.length === 0) {
+                    // 跨行注解，整行都是注解。 只要剩一个空格，都当插入空行处理
                     continue;
                 }
             } else if (noteFisrt) {
@@ -618,7 +681,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     needProcessInlineNote = 0;
                 }
 
-                if (text.trim().length === 0 && !beforEmpty) {
+                if (text.length === 0) {
                     // 跨行注解，整行都是注解
                     // if (needProcessInlineNote == 0) {
                     continue;
@@ -650,49 +713,60 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             // 2. is_block_end_empty_line = true  普通正常结束
             // 3. current_has_note = true 整行是注解，不插入空白换行，跳过。
 
-            var skip_separator = false;
-            if (current_has_note) {
-                if (noteBreakLine) {
-                    skip_separator = false;
-                } else {
-                    skip_separator = true;
-                }
-            } else {
-                skip_separator = (cfg.merge_multiple_empty_lines && last_was_separator) ||
+            if (emptyBreakLine) {
+                // 空行后的空行
+
+                var skip_separator = (cfg.merge_multiple_empty_lines && last_was_separator) ||
                     (ignoredLastToken && result.tokens.length > 1 && result.tokens[result.tokens.length - 1].type == "separator");
 
-                if (state == "dialogue") {
-                    if (lastChartorStructureToken) {
-                        lastChartorStructureToken.dialogueEndLine = i - 1;
-                    }
-                    parenthetical_open = false;
-                    pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_end")); // TODO Arming (2024-09-05) : 对话块后的 附加的 空白token 。不产生pdf实际空行，只是逻辑处理需要。
+                if (skip_separator) {
+                    continue;
                 }
-                if (state == "dual_dialogue") {
-                    if (lastChartorStructureToken) {
-                        lastChartorStructureToken.dialogueEndLine = i - 1;
-                    }
-                    parenthetical_open = false;
-                    pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_end"));
-                }
-                state = "normal";
-            }
+                thistoken.type = "separator"; // TODO Arming (2024-09-05) : 对应就是 没有对话，也没有非对话块 的空行，对应 state = normal， 能产生pdf一条空行。
+                pushToken(thistoken);
+                last_was_separator = true;
 
-            if (ignoredLastToken) ignoredLastToken = false;
 
-            // if (skip_separator || state === "title_page") {
-            if (skip_separator) {
-                // if (needProcessInlineNote > 0) {
-                // }
-                continue;
             } else {
-                if (noteBreakLine) {
+                if (is_block_end_empty_line) {
+                    // 块的结束，处理 状态
+                    if (state == "dialogue") {
+                        if (lastChartorStructureToken) {
+                            lastChartorStructureToken.dialogueEndLine = i - 1;
+                        }
+                        parenthetical_open = false;
+                        pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_end")); // TODO Arming (2024-09-05) : 对话块后的 附加的 空白token 。不产生pdf实际空行，只是逻辑处理需要。
+                    }
+                    if (state == "dual_dialogue") {
+                        if (lastChartorStructureToken) {
+                            lastChartorStructureToken.dialogueEndLine = i - 1;
+                        }
+                        parenthetical_open = false;
+                        pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_end"));
+                    }
+                    dual_str = "";
+                    state = "normal";
+
+                    thistoken.type = "separator"; // TODO Arming (2024-09-05) : 对应就是 没有对话，也没有非对话块 的空行，对应 state = normal， 能产生pdf一条空行。
+                    pushToken(thistoken);
+                    last_was_separator = true;
+                } else {
+                    // note 里的空行 /或者 块内空行
                     if (result.tokens.length > 0) {
                         if (state === "title_page") {
                             // result.tokens[result.tokens.length - 1].text += "\n";
                             last_title_page_token.text += "\n";
                         } else {
                             thistoken.type = result.tokens[result.tokens.length - 1].type;
+                            if (thistoken.type == "character") {
+                                thistoken.type = "dialogue";
+                            } else if (thistoken.type == "parenthetical") {
+                                thistoken.type = "parenthetical";
+                            } else if (thistoken.type == "dialogue") {
+                                thistoken.type = "dialogue";
+                            } else {
+                                thistoken.type = "action";
+                            }
                             pushToken(thistoken);
                         }
                         // TODO Arming (2024-09-06) : 纯note内容的行，只有 以下几种 token type
@@ -700,27 +774,21 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         // title page 上的只能，不能生成独立token，只能追加到 token.text 上换行。
                         // title page 之前的纯 note的token会分配type为action，pdf显示位置会 重新排序后置到 page 页后面去。action type 的token都显示到title page 之后去，重排位置。
                     }
-                } else {
-                    thistoken.type = "separator"; // TODO Arming (2024-09-05) : 对应就是 没有对话，也没有非对话块 的空行，对应 state = normal， 能产生pdf一条空行。
-                    // dual_right = false;
-                    dual_str = "";
-                    last_was_separator = true;
-                    pushToken(thistoken);
                 }
-                continue;
             }
+            continue;
 
         }
 
         //top_or_separated = last_was_separator || i === 0;
-        token_category = "script";
+        // token_category = "script";
 
-        if (!title_page_started && regex.title_page.test(thistoken.text)) {
-            state = "title_page";
-        }
+        // if (!title_page_started && regex.title_page.test(thistoken.text)) {
+        //     state = "title_page";
+        // }
 
         if (state === "title_page") {
-            if (regex.title_page.test(thistoken.text)) {
+            if (thistoken.text.match(regex.title_page)) {
                 var index = thistoken.text.indexOf(":");
                 thistoken.type = thistoken.text.substr(0, index).toLowerCase().replace(" ", "_");
                 thistoken.text = thistoken.text.substr(index + 1).trim();
@@ -737,13 +805,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     emptytitlepage = false;
                 }
                 title_page_started = true;
-                continue;
-            } else if (title_page_started) {
+                // continue;
+            } else {
                 // 标题页 字段内容的换行 内容。
                 processTokenTextStyleChar(thistoken);
                 last_title_page_token.text += (last_title_page_token.text ? "\n" : "") + thistoken.text.trim();
-                continue;
             }
+            continue;
         }
 
         const latestSection = (depth: number): StructToken => latestSectionOrScene(depth, token => token.section)
@@ -759,10 +827,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             if (result.properties.firstTokenLine == Infinity) {
                 result.properties.firstTokenLine = thistoken.line;
             }
-            let sceneHeadingMatch = thistoken.text.match(regex.scene_heading);
 
             // 对话首行需放在最前
-            if (is_character_line && (i > 0 && lines[i - 1].trim().length == 0)) {
+            if (block_start_type == "dialogue" ) {
                 // The last part of the above statement ('(lines[i + 1].trim().length == 0) ? (lines[i+1] == "  ") : false)')
                 // means that if the trimmed length of the following line (i+1) is equal to zero, the statement will only return 'true',
                 // and therefore consider the token as a character, if the content of the line is exactly two spaces.
@@ -895,7 +962,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 //     cobj.id = '/' + thistoken.line;
                 //     // result.properties.structure.push(cobj);
                 // }
-            } else if (sceneHeadingMatch) {
+            } else if (block_start_type == "scene") {
                 force_not_dual = true;
                 thistoken.text = thistoken.text.replace(/^[ \t]*\./, "");
                 if (cfg.each_scene_on_new_page && scene_number !== 1) {
@@ -941,6 +1008,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 result.properties.sceneLines.push(thistoken.line);
                 result.properties.sceneNames.push(thistoken.text);
 
+                let sceneHeadingMatch = text.match(regex.scene_heading);
                 const location = parseLocationInformation(sceneHeadingMatch);
                 if (location) {
                     const locationSlug = slugify(location.name);
@@ -961,13 +1029,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 }
                 scene_number++;
 
-            } else if (thistoken.text.match(blockRegex.action_force)) {
+            } else if (block_start_type == "action_force") {
                 // 强制 转换 action
                 thistoken.type = "action";
                 var mt = thistoken.text.match(blockRegex.action_force);
                 thistoken.text = mt[1] + mt[3]; // 保留空格格式
                 processTokenTextStyleChar(thistoken);
-                processActionBlock(thistoken);
+                processActionBlock(thistoken); // 其他后续行，不转换！号
             } else if (thistoken.text.match(blockRegex.lyric)) {
                 // 强制 转换 action 中 歌词
                 thistoken.type = "action";
@@ -984,7 +1052,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 var mt = thistoken.text.match(regex.centered);
                 thistoken.text = mt[0];
                 processTokenTextStyleChar(thistoken);
-            } else if (thistoken.text.match(regex.transition)) {
+            } else if (block_start_type == "transitions") {
                 thistoken.text = thistoken.text.replace(/^\s*>\s*/, "");
                 thistoken.type = "transition";
             } else if (match = thistoken.text.match(regex.synopsis)) {
@@ -1065,16 +1133,12 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             } //根据配置，施加斜体样式，如果可以的话。
         }
 
-        if (thistoken.type != "action" && !(thistoken.type == "dialogue" && thistoken.text == "  ")) {
-            thistoken.text = thistoken.text.trim();
-        }
 
         last_was_separator = false;
 
-        if (token_category === "script" && state !== "ignore") {
+        if (state !== "ignore") {
             if (thistoken.is("scene_heading", "transition")) {
                 thistoken.text = thistoken.text.toUpperCase();
-                title_page_started = true; // ignore title tags after first heading
             }
             // if (thistoken.text && thistoken.text[0] === "~") {
             //     thistoken.text = "*" + thistoken.text.substr(1) + "*";

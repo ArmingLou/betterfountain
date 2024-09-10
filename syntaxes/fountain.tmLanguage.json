@@ -7,22 +7,29 @@
   "uuid": "BA0B1FEB-1E9C-4283-8F3B-E80E7879EA91",
   "patterns": [
     {
+      "include": "#title_page"
+    },
+    {
+      "include": "#scene_headings_and_action"
+    },
+    {
+      "include": "#transitions_and_action"
+    },
+    {
+      "include": "#action_force"
+    },
+    {
       "include": "#dialogue"
     },
     {
-      "include": "#block_except_dialogue"
+      "include": "#block_action"
     }
   ],
   "repository": {
-    "dialogue_fake": {
-      "name": "meta.paragraph.text",
-      "begin": "^[ \\t]*(?![#!]|(\\[\\[)|(SUPERIMPOSE:))(((?!@)[^\\p{Ll}\\r\\n]*?\\p{Lu}[^\\p{Ll}\\r\\n]*?)|((@)[^\\r\\n]*?))(\\(.*\\))?(\\s*\\^)?\\s*$",
-      "end": "^\\s*$"
-    },
     "dialogue": {
       "contentName": "string",
-      "begin": "^[ \\t]*(?!\\s*(?:INT|EXT|EST|INT[.]?/EXT|I[.]?/E)[. ])(((?!@)\\p{Lu}[^\\p{Ll}\\r\\n]*?)|((@)([^\\r\\n]*?)))(\\(.*\\))?(\\s*\\^)?\\s*(?<!\\s*TO:\\s*)$",
-      "end": "^\\s*$",
+      "begin": "^[ \\t]*(((?!@)\\p{Lu}[^\\p{Ll}\\r\\n]*?)|((@)([^\\r\\n]*?)))(\\(.*\\))?(\\s*\\^)?\\s*$",
+      "end": "^[ ]?$",
       "beginCaptures": {
         "2": {
           "name": "variable.parameter.url.css"
@@ -74,45 +81,12 @@
         }
       ]
     },
-    "block_except_dialogue": {
-      "begin": "^(?=\\s*[^\\s]+.*$)",
-      "end": "^\\s*$",
+    "block_action": {
+      "begin": "^(?=\\s*[^\\s]+.*$|[ ][ ].*)",
+      "end": "^[ ]?$",
       "patterns": [
         {
-          "include": "#comments"
-        },
-        {
-          "include": "#notes"
-        },
-        {
-          "include": "#title_page"
-        },
-        {
-          "include": "#scene_headings"
-        },
-        {
-          "include": "#sections"
-        },
-        {
-          "include": "#synopses"
-        },
-        {
-          "include": "#transitions"
-        },
-        {
-          "include": "#center"
-        },
-        {
-          "include": "#markup"
-        },
-        {
-          "include": "#pagebreaks"
-        },
-        {
-          "include": "#lyrics"
-        },
-        {
-          "include": "#action_force"
+          "include": "#action_content"
         }
       ]
     },
@@ -128,7 +102,7 @@
     },
     "title_page": {
       "begin": "^(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)(:)",
-      "end": "^((?=(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl))|(?=\\s*$))",
+      "end": "^((?=(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl))|(?=\\s?$))",
       "name": "meta.paragraph.text",
       "beginCaptures": {
         "1": {
@@ -144,12 +118,19 @@
         },
         {
           "include": "#notes"
+        },
+        {
+          "include": "#underline"
+        },
+        {
+          "include": "#markup"
         }
       ]
     },
-    "scene_headings": {
-      "match": "(?i)^[ \\t]*([.](?=[\\w\\(\\p{L}])(?:\\(室内\\)|\\(室外\\))?|(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[.\\s]\\s*(?:\\(室内\\)|\\(室外\\))?)(.*?)([-–—−].*?)?((#)\\s*([^\\s].*)(#))?\\s*$",
-      "captures": {
+    "scene_headings_and_action": {
+      "begin": "(?i)^[ \\t]*([.](?=[\\w\\(\\p{L}])(?:\\(室内\\)|\\(室外\\))?|(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[. ]\\s*(?:\\(室内\\)|\\(室外\\))?)(.*?)([-–—−].*?)?((#)\\s*([^\\s].*)(#))?\\s*$",
+      "end": "^[ ]?$",
+      "beginCaptures": {
         "1": {
           "name": "keyword.other.class"
         },
@@ -168,7 +149,12 @@
         "7": {
           "name": "comment.block.fountain"
         }
-      }
+      },
+      "patterns": [
+        {
+          "include": "#action_content"
+        }
+      ]
     },
     "sections": {
       "match": "^[ \\t]*(#+)(?:\\s*)(.*)",
@@ -205,14 +191,22 @@
         }
       ]
     },
-    "transitions": {
-      "name": "variable.other.constant",
-      "match": "^\\s*(?:(>)[^<\\n\\r]*|[A-Z ]+TO:)$",
-      "captures": {
+    "transitions_and_action": {
+      "begin": "^\\s*((>)[^<\\n\\r]*|[A-Z ]+TO:)$",
+      "end": "^[ ]?$",
+      "beginCaptures": {
         "1": {
+          "name": "variable.other.constant"
+        },
+        "2": {
           "name": "comment.block.fountain"
         }
-      }
+      },
+      "patterns": [
+        {
+          "include": "#action_content"
+        }
+      ]
     },
     "center": {
       "name": "token.warn-token",
@@ -284,12 +278,19 @@
     },
     "action_force": {
       "begin": "^\\s*(\\!)",
-      "end": "$",
+      "end": "^[ ]?$",
       "beginCaptures" :{
         "1": {
           "name": "comment.block.fountain"
         }
       },
+      "patterns": [
+        {
+          "include": "#action_content"
+        }
+      ]
+    },
+    "action_content": {
       "patterns": [
         {
           "include": "#comments"
@@ -302,6 +303,21 @@
         },
         {
           "include": "#markup"
+        },
+        {
+          "include": "#sections"
+        },
+        {
+          "include": "#synopses"
+        },
+        {
+          "include": "#center"
+        },
+        {
+          "include": "#pagebreaks"
+        },
+        {
+          "include": "#lyrics"
         }
       ]
     },
@@ -338,6 +354,9 @@
             },
             {
               "include": "#notes"
+            },
+            {
+              "include": "#underline"
             },
             {
               "applyEndPatternLast": 1,
