@@ -54,7 +54,7 @@ export function slugify(text: string): string {
 	// 	.replace(/-{2,}/g, '-')         // Replace multiple - with single -
 	// 	.replace(/^-+/, '')             // Trim - from start of text
 	// 	.replace(/-+$/, '');            // Trim - from end of text
-	return text.toString().toLowerCase()
+	return text.toString().toUpperCase()
 		.replace(/\s+/g, ' ')           // Replace spaces
 		.replace(/\s+-/g, '-')           // Replace spaces
 		.replace(/-\s+/g, '-')           // Replace spaces
@@ -85,7 +85,7 @@ export const parseLocationInformation = (scene_heading: RegExpMatchArray) => {
 			}
 		}
 
-		n = n.toLowerCase().replace(/\s+/g, ' ');
+		n = n.toUpperCase().replace(/\s+/g, ' ');
 
 		var day_t = splitLocationFromTime ? splitLocationFromTime[2].trim() : "";
 		day_t = day_t.toUpperCase().replace(/\s+/g, ' ')

@@ -997,6 +997,16 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     thistoken.text = thistoken.text.replace(regex.scene_number, "");
                     thistoken.number = match[1].trim();
                 }
+                
+                
+                var idx = thistoken.text.indexOf('-');
+                if(idx>=0){
+                    // if(thistoken.text.charAt(idx-1) != ' '){
+                        thistoken.text = thistoken.text.substring(0, idx) + ' - ' + thistoken.text.substring(idx + 1);
+                    // }
+                }
+                thistoken.text = thistoken.text.toUpperCase().replace(/\s+/g, ' ');//合并空格，转成大写
+                
                 let cobj: StructToken = new StructToken();
                 cobj.text = thistoken.text;
                 cobj.children = [];
