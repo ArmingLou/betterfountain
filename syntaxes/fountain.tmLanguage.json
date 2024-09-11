@@ -83,7 +83,7 @@
     },
     "block_action": {
       "begin": "^(?=\\s*[^\\s]+.*$|[ ][ ].*)",
-      "end": "^[ ]?$",
+      "end": "^[ ]*$",
       "patterns": [
         {
           "include": "#action_content"
@@ -129,7 +129,7 @@
     },
     "scene_headings_and_action": {
       "begin": "(?i)^[ \\t]*([.](?=[\\w\\(\\p{L}])(?:\\(室内\\)|\\(室外\\))?|(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[. ]\\s*(?:\\(室内\\)|\\(室外\\))?)(.*?)([-–—−].*?)?((#)\\s*([^\\s].*)(#))?\\s*$",
-      "end": "^[ ]?$",
+      "end": "^[ ]*$",
       "beginCaptures": {
         "1": {
           "name": "keyword.other.class"
@@ -193,7 +193,7 @@
     },
     "transitions_and_action": {
       "begin": "^\\s*((>)[^<\\n\\r]*|[A-Z ]+TO:)$",
-      "end": "^[ ]?$",
+      "end": "^[ ]*$",
       "beginCaptures": {
         "1": {
           "name": "variable.other.constant"
@@ -278,7 +278,7 @@
     },
     "action_force": {
       "begin": "^\\s*(\\!)",
-      "end": "^[ ]?$",
+      "end": "^[ ]*$",
       "beginCaptures" :{
         "1": {
           "name": "comment.block.fountain"

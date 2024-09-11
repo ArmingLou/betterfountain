@@ -112,6 +112,7 @@ export function activate(context: ExtensionContext) {
   languages.registerFoldingRangeProvider({ language: 'fountain' }, new FountainFoldingRangeProvider());
 
   //Setup autocomplete
+  // get delete key char
   languages.registerCompletionItemProvider({ language: 'fountain' }, new FountainCompletionProvider(), '\n', '\r', '-', ' ', '.', '@');
 
   //Setup symbols (outline)

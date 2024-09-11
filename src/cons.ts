@@ -21,7 +21,7 @@ export const charOfStyleTag: { [index: string]: string } = {
 export const blockRegex: { [index: string]: RegExp } = {
     block_dialogue_begin: /^[ \t]*(((?!@)\p{Lu}[^\p{Ll}\r\n]*)|(@[^\r\n]*))(\(.*\))?(\s*\^)?\s*$/gu,
     block_except_dialogue_begin: /^(?=\s*[^\s]+.*$)/g,
-    block_end: /^\s?$/g,
+    block_end: /^\s*$/g,
     line_break: /^\s{2,}$/g,
     action_force: /^(\s*)(\!)(.*)/,
     lyric: /^(\s*)(\~)(\s*)(.*)/,

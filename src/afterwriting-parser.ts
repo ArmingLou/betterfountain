@@ -55,8 +55,8 @@ export const regex: { [index: string]: RegExp } = {
     action: /^(.+)/g,
     centered: /(?<=^[ \t]*>\s*)(.+)(?=\s*<\s*$)/g,
 
-    page_break: /^\={3,}$/,
-    line_break: /^ {2}$/,
+    page_break: /^\s*\={3,}$/,
+    line_break: /^ {2,}$/,
 
     note_inline: /(?:\[{2}(?!\[+))([\s\S]+?)(?:\]{2})/g,
 
@@ -545,8 +545,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         var match_line_break = false;
 
         if (beforEmpty) {
+            match_block_end_empty_line = true;
             if (text.length <= 1) {
-                match_block_end_empty_line = true;
+                // match_block_end_empty_line = true;
             } else {
                 match_line_break = true;
             }
@@ -567,7 +568,6 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 if (nested_notes > 0 && cfg.print_notes && match_line_break) {
                     // noteBreakLine = true;
                     // note 空行，双空格表示保留一个空行，否则直接去掉空行。
-                    // TODO Arming (2024-09-05) : 插入一个空行 token 来表示这行是空行
                 } else {
                     continue;
                 }
@@ -579,16 +579,19 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     emptyBreakLine = true;
                 } else {
                     // 非空行后的紧接着的空行。
-                    block_inner = false;
-                    is_block_end_empty_line = true;
-                    block_start_type = "";
-                    if (title_page_started) {
-                        title_page_complete = true;
+                    if(match_line_break && state != "normal") {
+                        //区分情况，title page 和 dialogue 里面的 双空格空行，转成换行，还归为块内内容。
+                    } else {
+                        block_inner = false;
+                        is_block_end_empty_line = true;
+                        block_start_type = "";
+                        if (title_page_started) {
+                            title_page_complete = true;
+                        }
                     }
 
                     // block_dialogue = false;
                     // block_except_dialogue = false;
-                    // TODO Arming (2024-09-05) : 是否需要加入 一个空行 token 来表示这行是空行
                 }
             }
         } else {
@@ -751,7 +754,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     pushToken(thistoken);
                     last_was_separator = true;
                 } else {
-                    // note 里的空行 /或者 块内空行
+                    // note 里的延续空行 /或者 延续块内容的块内空行
                     if (result.tokens.length > 0) {
                         if (state === "title_page") {
                             // result.tokens[result.tokens.length - 1].text += "\n";

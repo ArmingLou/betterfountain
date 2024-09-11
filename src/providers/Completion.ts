@@ -121,8 +121,9 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 		var currentline = document.lineAt(position).text;
 		var prevLine = document.lineAt(position.line - 1).text;
 		const hasCharacters = parsedDocument.properties.characters.size > 0;
-		const currentLineIsEmpty = currentline.trim() === "";
-		const previousLineIsEmpty = prevLine === "" || prevLine === " ";
+		const currentLineIsEmpty = currentline === "";
+		// const previousLineIsEmpty = prevLine === "" || prevLine === " ";
+		const previousLineIsEmpty = prevLine.trim() === "";
 
 		//Title page autocomplete
 		if (parsedDocument.properties.firstTokenLine >= position.line) {
@@ -268,7 +269,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 			}
 		}
 		//Other autocompletes
-		else if ((position.line > 0 && currentLineIsEmpty && previousLineIsEmpty) || currentline.trim() === '@') {
+		else if ((position.line > 0 && currentLineIsEmpty && previousLineIsEmpty) || (currentline.trim() === '@' && previousLineIsEmpty)) {
 			//We aren't on the first line, and the previous line is empty
 
 			//Get current scene number
@@ -319,7 +320,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 					}
 				});
 			}
-		} else if (currentline.trimLeft() === ".") {
+		} else if (currentline.trim() === "." && previousLineIsEmpty) {
 			completes.push({ label: "(室内) ", documentation: "室内", sortText: "1B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 			completes.push({ label: "(室外) ", documentation: "室外", sortText: "1C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 		}
