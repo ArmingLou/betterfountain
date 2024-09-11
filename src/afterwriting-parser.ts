@@ -579,7 +579,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     emptyBreakLine = true;
                 } else {
                     // 非空行后的紧接着的空行。
-                    if(match_line_break && state != "normal") {
+                    if (match_line_break && state != "normal") {
                         //区分情况，title page 和 dialogue 里面的 双空格空行，转成换行，还归为块内内容。
                     } else {
                         block_inner = false;
@@ -622,7 +622,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                                 title_page_started = true;
                                 block_start_type = "title";
                                 state = "title_page";
-                            } else if (text.match(regex.scene_heading) ) {
+                            } else if (text.match(regex.scene_heading)) {
                                 // 直接开始场景，忽略 title 页
                                 block_start_type = "scene";
                                 title_page_started = true;
@@ -641,7 +641,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     }
                 }
             } else {
-                if(!title_page_started) {
+                if (!title_page_started) {
                     // titile 页开始前的 其他 内容，全部忽略
                     continue;
                 }
@@ -719,7 +719,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             if (emptyBreakLine) {
                 // 空行后的空行
 
-                var skip_separator = (cfg.merge_multiple_empty_lines && last_was_separator) ||
+                var skip_separator = (cfg.merge_empty_lines && last_was_separator) ||
                     (ignoredLastToken && result.tokens.length > 1 && result.tokens[result.tokens.length - 1].type == "separator");
 
                 if (skip_separator) {
@@ -758,19 +758,35 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     if (result.tokens.length > 0) {
                         if (state === "title_page") {
                             // result.tokens[result.tokens.length - 1].text += "\n";
-                            last_title_page_token.text += "\n";
-                        } else {
-                            thistoken.type = result.tokens[result.tokens.length - 1].type;
-                            if (thistoken.type == "character") {
-                                thistoken.type = "dialogue";
-                            } else if (thistoken.type == "parenthetical") {
-                                thistoken.type = "parenthetical";
-                            } else if (thistoken.type == "dialogue") {
-                                thistoken.type = "dialogue";
-                            } else {
-                                thistoken.type = "action";
+                            var merge = false;
+                            if (cfg.merge_empty_lines) {
+                                if (last_title_page_token.text.match(/(?<=\n[ ]*)$/)) {
+                                    merge = true;
+                                }
                             }
-                            pushToken(thistoken);
+                            if (!merge) {
+                                last_title_page_token.text += "\n";
+                            }
+                        } else {
+                            var lastToken = result.tokens[result.tokens.length - 1];
+                            var merge = false;
+                            if (cfg.merge_empty_lines) {
+                                if (lastToken.text.trim().length === 0) {
+                                    merge = true;
+                                }
+                            }
+                            if (!merge) {
+                                if (lastToken.type == "character") {
+                                    thistoken.type = "dialogue";
+                                } else if (lastToken.type == "parenthetical") {
+                                    thistoken.type = "parenthetical";
+                                } else if (lastToken.type == "dialogue") {
+                                    thistoken.type = "dialogue";
+                                } else {
+                                    thistoken.type = "action";
+                                }
+                                pushToken(thistoken);
+                            }
                         }
                         // TODO Arming (2024-09-06) : 纯note内容的行，只有 以下几种 token type
                         // 对话 dual_dialogue, dialogue ,parenthetical, action 分别对应不同宽度页面位置。
@@ -832,7 +848,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             }
 
             // 对话首行需放在最前
-            if (block_start_type == "dialogue" ) {
+            if (block_start_type == "dialogue") {
                 // The last part of the above statement ('(lines[i + 1].trim().length == 0) ? (lines[i+1] == "  ") : false)')
                 // means that if the trimmed length of the following line (i+1) is equal to zero, the statement will only return 'true',
                 // and therefore consider the token as a character, if the content of the line is exactly two spaces.
