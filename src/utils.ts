@@ -469,17 +469,17 @@ export function getPackageInfo(): IPackageInfo | null {
 	return null;
 }
 //Simple n-bit hash
-function nPearsonHash(message: string, n = 8): number {
-	// Ideally, this table would be shuffled...
-	// 256 will be the highest value provided by this hashing function
-	var table = [...new Array(2 ** n)].map((_, i) => i)
+// function nPearsonHash(message: string, n = 8): number {
+// 	// Ideally, this table would be shuffled...
+// 	// 256 will be the highest value provided by this hashing function
+// 	var table = [...new Array(2 ** n)].map((_, i) => i)
 
 
-	return message.split('').reduce((hash, c) => {
-		return table[(hash + c.charCodeAt(0)) % (table.length - 1)]
-	}, message.length % (table.length - 1))
+// 	return message.split('').reduce((hash, c) => {
+// 		return table[(hash + c.charCodeAt(0)) % (table.length - 1)]
+// 	}, message.length % (table.length - 1))
 
-}
+// }
 
 function HSVToRGB(h: number, s: number, v: number): Array<number> {
 	var [r, g, b] = [0, 0, 0];
@@ -502,9 +502,53 @@ function HSVToRGB(h: number, s: number, v: number): Array<number> {
 
 //We are using colors with same value and saturation as highlighters
 export function wordToColor(word: string, s: number = 0.5, v: number = 1): Array<number> {
-	const n = 5; //so that colors are spread apart
-	const h = nPearsonHash(word, n) / 2 ** (8 - n);
-	return HSVToRGB(h, s, v)
+	// const n = 5; //so that colors are spread apart
+	// const h = nPearsonHash(word, n) / 2 ** (8 - n);
+	// return HSVToRGB(h, s, v)
+
+	// return stringToColor(word);
+
+	// var hash = hashString(word); // generate a hash value for the string
+
+	// var sdiff = (1 - s) *100;
+	// if (sdiff > 0) {
+	// 	s = (hash % sdiff)/100 + s;
+	// }
+
+	// var vdiff = (1 - v) * 100;
+	// if (vdiff > 0) {
+	// 	v = (hash % vdiff)/100 + v;
+	// }
+
+	return HSVToRGB(stringToH(word), s, v);
+}
+
+// function stringToColor(str: string): Array<number> {
+// 	const hash = hashString(str); // generate a hash value for the string
+// 	const r = (hash >> 16) & 0xFF; // extract the red component
+// 	const g = (hash >> 8) & 0xFF; // extract the green component
+// 	const b = hash & 0xFF; // extract the blue component
+// 	return [r, g, b];
+// }
+
+function stringToH(str: string, colorSplits: number = 360): number {
+	const hash = hashString(str,colorSplits); // generate a hash value for the string
+	const h = (hash % colorSplits) / colorSplits; // 将色相分为 32 个区间
+	if (h < 0) return -h
+	return h;
+}
+
+function hashString(str: string, colorSplits: number) {
+	let hash = 0;
+	// 360 进制
+	for (let i = 0; i < str.length; i++) {
+		const codePoint = str.codePointAt(i);
+		var mod = codePoint % colorSplits
+		hash = (hash << 5) - hash + mod;
+		hash |= 0; // convert to 32-bit integer
+		// hash += codePoint;
+	}
+	return hash;
 }
 
 const extensionpath = vscode.extensions.getExtension("Arming.betterfountain").extensionPath;
