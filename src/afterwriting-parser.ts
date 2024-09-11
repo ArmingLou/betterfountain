@@ -1329,7 +1329,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         break;
                     case 'parenthetical': html.push('<p class="haseditorline parenthetical\" id="sourceline_' + current_token.line + '" >' + current_token.html + '</p>'); break;
                     case 'dialogue':
-                        if (current_token.text == "  ")
+                        if (current_token.text.match(regex.line_break))
                             html.push('<br>');
                         else
                             html.push('<p class="haseditorline" id="sourceline_' + current_token.line + '">' + current_token.html + '</p>');
