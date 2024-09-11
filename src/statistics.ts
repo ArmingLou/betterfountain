@@ -188,7 +188,7 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
         const wordsSpoken = getCharacterCountWithoutWhitespace(allDialogueCombined);
         characterStats.push({
             name: singledialPerChar,
-            color: rgbToHex(wordToColor(singledialPerChar, 0.6, 0.5)),
+            color: rgbToHex(wordToColor(singledialPerChar)),
             speakingParts,
             secondsSpoken,
             averageComplexity,

@@ -501,26 +501,27 @@ function HSVToRGB(h: number, s: number, v: number): Array<number> {
 }
 
 //We are using colors with same value and saturation as highlighters
-export function wordToColor(word: string, s: number = 0.5, v: number = 1): Array<number> {
+export function wordToColor(word: string, s: number = 0.7, v: number = 0.7): Array<number> {
 	// const n = 5; //so that colors are spread apart
 	// const h = nPearsonHash(word, n) / 2 ** (8 - n);
 	// return HSVToRGB(h, s, v)
 
 	// return stringToColor(word);
 
-	// var hash = hashString(word); // generate a hash value for the string
 
-	// var sdiff = (1 - s) *100;
-	// if (sdiff > 0) {
-	// 	s = (hash % sdiff)/100 + s;
-	// }
+	var sdiff = (1 - s) * 100;
+	if (sdiff > 0) {
+		var hash = hashString(word);
+		s = (hash % sdiff) / 100 + s;
+	}
 
-	// var vdiff = (1 - v) * 100;
-	// if (vdiff > 0) {
-	// 	v = (hash % vdiff)/100 + v;
-	// }
+	var vdiff = (1 - v) * 100;
+	if (vdiff > 0) {
+		var hash = hashString(word);
+		v = (hash % vdiff) / 100 + v;
+	}
 
-	return HSVToRGB(stringToH(word), s, v);
+	return HSVToRGB(stringToH(word, 360), s, v);
 }
 
 // function stringToColor(str: string): Array<number> {
@@ -532,22 +533,39 @@ export function wordToColor(word: string, s: number = 0.5, v: number = 1): Array
 // }
 
 function stringToH(str: string, colorSplits: number = 360): number {
-	const hash = hashString(str,colorSplits); // generate a hash value for the string
+	const hash = hashString(str); // generate a hash value for the string
 	const h = (hash % colorSplits) / colorSplits; // 将色相分为 32 个区间
-	if (h < 0) return -h
 	return h;
 }
 
-function hashString(str: string, colorSplits: number) {
+function hashString(str: string) {
 	let hash = 0;
 	// 360 进制
+	var ls = []
 	for (let i = 0; i < str.length; i++) {
 		const codePoint = str.codePointAt(i);
-		var mod = codePoint % colorSplits
-		hash = (hash << 5) - hash + mod;
-		hash |= 0; // convert to 32-bit integer
+		
+		var mod = codePoint % 256
+		var hashTemp = (hash << 5) - hash + mod;
+		hashTemp |= 0; // convert to 32-bit integer
 		// hash += codePoint;
+		if (hashTemp < 0) {
+			ls.push(hash)
+			hash = mod;
+		} else {
+			hash = hashTemp;
+		}
 	}
+	var len = ls.length;
+	if (len > 0) {
+		var tot = len + 1
+		hash = hash / tot;
+		for (let i = 0; i < len; i++) {
+			hash += ls[i] / tot;
+		}
+	}
+	hash |= 0;
+	if (hash < 0) hash = -hash;
 	return hash;
 }
 
