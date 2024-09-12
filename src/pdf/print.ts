@@ -98,7 +98,7 @@ var A4_DEFAULT_MAX = 57,
                 italic: true,
                 color: '#888888',
                 padding: 0,
-                feed_with_last_section: true
+                feed_with_last_section: false
             },
             section: {
                 feed: 0.5,
@@ -173,7 +173,7 @@ var A4_DEFAULT_MAX = 57,
                 italic: true,
                 color: '#888888',
                 padding: 0,
-                feed_with_last_section: true
+                feed_with_last_section: false
             },
             section: {
                 feed: 0.2,
