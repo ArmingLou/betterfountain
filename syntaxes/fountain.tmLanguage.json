@@ -103,13 +103,13 @@
     "title_page": {
       "begin": "^(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)(:)",
       "end": "^((?=(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl))|(?=\\s?$))",
-      "name": "meta.paragraph.text",
+      "name": "token.info-token",
       "beginCaptures": {
         "1": {
-          "name": "keyword.control"
+          "name": "token.info-token"
         },
         "2": {
-          "name": "keyword.operator"
+          "name": "keyword.control"
         }
       },
       "patterns": [
@@ -169,7 +169,7 @@
     },
     "synopses": {
       "name": "constant.numeric.scene.fountain",
-      "begin": "^(={1})(?!=)",
+      "begin": "^\\s*(=)",
       "end": "$",
       "captures": {
         "1": {
@@ -250,7 +250,7 @@
     },
     "pagebreaks": {
       "name": "variable.other.constant",
-      "match": "^\\s*={3,}$"
+      "match": "^\\s*={3,}\\s*$"
     },
     "lyrics": {
       "name": "markup.italic string",
@@ -308,13 +308,13 @@
           "include": "#sections"
         },
         {
+          "include": "#pagebreaks"
+        },
+        {
           "include": "#synopses"
         },
         {
           "include": "#center"
-        },
-        {
-          "include": "#pagebreaks"
         },
         {
           "include": "#lyrics"

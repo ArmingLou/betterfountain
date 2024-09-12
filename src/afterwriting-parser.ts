@@ -37,7 +37,7 @@ export const regex: { [index: string]: RegExp } = {
     title_page: /^(title|credit|author[s]?|source|notes|draft date|date|watermark|contact( info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:.*/i,
 
     section: /^[ \t]*(#+)(?:\s*)(.*)/,
-    synopsis: /^[ \t]*(?:\=(?!\=+)\s*)(.*)/,
+    synopsis: /^[ \t]*(?:\=)(.*)/,
 
     scene_heading: /^[ \t]*([.](?=[\w\(\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[. ])(.*?)(#\s*[^\s].*#)?\s*$/iu,
     scene_number: /#(.+)#/,
@@ -55,7 +55,7 @@ export const regex: { [index: string]: RegExp } = {
     action: /^(.+)/g,
     centered: /(?<=^[ \t]*>\s*)(.+)(?=\s*<\s*$)/g,
 
-    page_break: /^\s*\={3,}$/,
+    page_break: /^\s*\={3,}\s*$/,
     line_break: /^ {2,}$/,
 
     note_inline: /(?:\[{2}(?!\[+))([\s\S]+?)(?:\]{2})/g,
@@ -293,8 +293,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // cache_state_for_comment,
         nested_comments = 0,
         nested_notes = 0,
-        title_page_complete = false,
-        title_page_started = false,
+        // title_page_complete = false,
+        // title_page_started = false,
         parenthetical_open = false,
         needProcessInlineNote = 0,
         current_expet_note_text = "", // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
@@ -585,9 +585,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         block_inner = false;
                         is_block_end_empty_line = true;
                         block_start_type = "";
-                        if (title_page_started) {
-                            title_page_complete = true;
-                        }
+                        // if (title_page_started) {
+                        //     title_page_complete = true;
+                        // }
                     }
 
                     // block_dialogue = false;
@@ -602,9 +602,18 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
 
                 } else {
                     // 非注解空行后的紧接着的 第一个非空行。
-                    if (title_page_complete) {
-                        if (text.match(regex.scene_heading)) {
+                    // if (title_page_complete) {
+                        if (text.match(regex.title_page)) {
+                            block_start_type = "title";
+                            state = "title_page";
+                        }
+                        else if (text.match(regex.scene_heading)) {
                             block_start_type = "scene";
+                            if (result.properties.firstTokenLine == Infinity) {
+                                result.properties.firstTokenLine = thistoken.line; 
+                                // 以第一个出现的场景头为分割， 分割 title page 和 正文 的代码自动提示 之用。
+                                // 第一个场景出现之后，后面的 title page 元素不再提供 自动提示 。后面 开始提供 场景 和 人物 的自动提示。
+                            }
                         } else if (text.match(regex.transition)) {
                             block_start_type = "transitions";
                         } else if (text.match(blockRegex.action_force)) {
@@ -616,36 +625,38 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             block_start_type = "action";
                             // block_except_dialogue = true;
                         }
-                    } else {
-                        if (!title_page_started) {
-                            if (text.match(regex.title_page)) {
-                                title_page_started = true;
-                                block_start_type = "title";
-                                state = "title_page";
-                            } else if (text.match(regex.scene_heading)) {
-                                // 直接开始场景，忽略 title 页
-                                block_start_type = "scene";
-                                title_page_started = true;
-                                title_page_complete = true;
-                            } else if (text.match(regex.transition)) {
-                                // 直接开始场景，忽略 title 页
-                                block_start_type = "transitions";
-                                title_page_started = true;
-                                title_page_complete = true;
-                            } else {
-                                // titile 页开始前的 其他 内容，全部忽略
-                                block_start_type = "invalid";
-                                continue;
-                            }
-                        }
-                    }
-                }
-            } else {
-                if (!title_page_started) {
-                    // titile 页开始前的 其他 内容，全部忽略
-                    continue;
+                    // } else {
+                    //     if (!title_page_started) {
+                    //         if (text.match(regex.title_page)) {
+                    //             title_page_started = true;
+                    //             block_start_type = "title";
+                    //             state = "title_page";
+                    //             result.properties.firstTokenLine = Infinity // 重置 自定完成提示，page 页分割行。
+                    //         } else if (text.match(regex.scene_heading)) {
+                    //             // 直接开始场景，忽略 title 页
+                    //             block_start_type = "scene";
+                    //             title_page_started = true;
+                    //             title_page_complete = true;
+                    //         } else if (text.match(regex.transition)) {
+                    //             // 直接开始场景，忽略 title 页
+                    //             block_start_type = "transitions";
+                    //             title_page_started = true;
+                    //             title_page_complete = true;
+                    //         } else {
+                    //             // titile 页开始前的 其他 内容，全部忽略
+                    //             block_start_type = "invalid";
+                    //             continue;
+                    //         }
+                    //     }
+                    // }
                 }
             }
+            //  else {
+            //     if (!title_page_started) {
+            //         // titile 页开始前的 其他 内容，全部忽略
+            //         continue;
+            //     }
+            // }
 
 
             // 2. 至少不是空行了。
@@ -823,7 +834,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     result.title_page[keyformat.position].push(thistoken);
                     emptytitlepage = false;
                 }
-                title_page_started = true;
+                // title_page_started = true;
                 // continue;
             } else {
                 // 标题页 字段内容的换行 内容。
@@ -841,13 +852,12 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         if (state === "normal") {
             // todo: block首行定位性质 ， 或者 非对话 block 的后续行
             // if (thistoken.text.match(regex.line_break)) {
-            //     token_category = "none"; // TODO Arming (2024-09-06) : 只有 "script" 和 “none”； none 会导致 不 push token，相当于忽略这一行的内容
+            //     token_category = "none"; // Arming (2024-09-06) : 只有 "script" 和 “none”； none 会导致 不 push token，相当于忽略这一行的内容
             // } else 
-            if (result.properties.firstTokenLine == Infinity) {
-                result.properties.firstTokenLine = thistoken.line;
-            }
+            // if (result.properties.firstTokenLine == Infinity) {
+            //     result.properties.firstTokenLine = thistoken.line; // 代码自动提示，分割 title page 和 正文 提示之用。
+            // }
 
-            // 对话首行需放在最前
             if (block_start_type == "dialogue") {
                 // The last part of the above statement ('(lines[i + 1].trim().length == 0) ? (lines[i+1] == "  ") : false)')
                 // means that if the trimmed length of the following line (i+1) is equal to zero, the statement will only return 'true',
@@ -1084,6 +1094,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             } else if (block_start_type == "transitions") {
                 thistoken.text = thistoken.text.replace(/^\s*>\s*/, "");
                 thistoken.type = "transition";
+            } else if (thistoken.text.match(regex.page_break)) {
+                thistoken.text = "";
+                thistoken.type = "page_break";
             } else if (match = thistoken.text.match(regex.synopsis)) {
                 thistoken.text = match[1];
                 processTokenTextStyleChar(thistoken);
@@ -1116,9 +1129,6 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     level.children.push(cobj);
                 }
 
-            } else if (thistoken.text.match(regex.page_break)) {
-                thistoken.text = "";
-                thistoken.type = "page_break";
             } else {
                 thistoken.type = "action"; // TODO Arming (2024-09-06) : 其他类型通通归于 action，
                 processTokenTextStyleChar(thistoken);
