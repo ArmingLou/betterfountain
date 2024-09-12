@@ -133,7 +133,7 @@
     "title_page": {
       "begin": "^(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|revision|tl|tc|tr|cc|br|bl)(:)",
       "end": "^((?=(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl))|(?=\\s?$))",
-      "name": "token.info-token",
+      "name": "markup.deleted.diff",
       "beginCaptures": {
         "1": {
           "name": "variable.other.constant"
@@ -279,7 +279,7 @@
       ]
     },
     "pagebreaks": {
-      "name": "variable.other.constant",
+      "name": "token.error-token",
       "match": "^\\s*={3,}\\s*$"
     },
     "lyrics": {
