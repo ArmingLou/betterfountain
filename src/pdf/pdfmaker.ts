@@ -695,110 +695,119 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     };*/
 
     if (cfg.print_title_page && parsed.title_page) {
-        const innerwidth = print.page_width - print.left_margin - print.right_margin;
-        const innerheight = print.page_height - print.top_margin;
-        const innerwidth_third = innerwidth / 3;
-        const innerwidth_half = innerwidth / 2;
-        const joinChar = '\n\n';
-        //top left
-        var tltext = parsed.title_page['tl'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
-        var tltext_height = doc.heightOfString(tltext, { width: innerwidth_third * 72, align: 'left' });
 
-        doc.text2(tltext, print.left_margin, print.top_margin, {
-            width: innerwidth_third,
-            align: 'left',
-            links: true
-        });
+        if (parsed.title_page['tl'].length > 0 || parsed.title_page['tc'].length > 0 || parsed.title_page['tr'].length > 0 ||
+            parsed.title_page['bl'].length > 0 || parsed.title_page['cc'].length > 0 || parsed.title_page['br'].length > 0
+        ) {
 
-        //top center
-        var tctext = parsed.title_page['tc'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
-        var tctext_height = doc.heightOfString(tctext, { width: innerwidth_third * 72, align: 'center' });
-        doc.text2(tctext, print.left_margin + innerwidth_third, print.top_margin, {
-            width: innerwidth_third,
-            align: 'center',
-            links: true
-        });
+            const innerwidth = print.page_width - print.left_margin - print.right_margin;
+            const innerheight = print.page_height - print.top_margin;
+            const innerwidth_third = innerwidth / 3;
+            const innerwidth_half = innerwidth / 2;
+            const joinChar = '\n\n';
+            //top left
+            var tltext = parsed.title_page['tl'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
+            var tltext_height = doc.heightOfString(tltext, { width: innerwidth_third * 72, align: 'left' });
 
-        //top right
-        var trtext = parsed.title_page['tr'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
-        var trtext_height = doc.heightOfString(trtext, { width: innerwidth_third * 72, align: 'right' });
-        doc.text2(trtext, print.left_margin + innerwidth_third + innerwidth_third, print.top_margin, {
-            width: innerwidth_third,
-            align: 'right',
-            links: true
-        });
+            doc.text2(tltext, print.left_margin, print.top_margin, {
+                width: innerwidth_third,
+                align: 'left',
+                links: true
+            });
 
-        //bottom left
-        var bltext = parsed.title_page['bl'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
-        var bltext_height = doc.heightOfString(bltext, { width: innerwidth_half * 72, align: 'left' });
-        doc.text2(bltext, print.left_margin, innerheight - (bltext_height / 72), {
-            width: innerwidth_half,
-            align: 'left',
-            links: true
-        });
+            //top center
+            var tctext = parsed.title_page['tc'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
+            var tctext_height = doc.heightOfString(tctext, { width: innerwidth_third * 72, align: 'center' });
+            doc.text2(tctext, print.left_margin + innerwidth_third, print.top_margin, {
+                width: innerwidth_third,
+                align: 'center',
+                links: true
+            });
 
-        //bottom right
-        var brtext = parsed.title_page['br'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
-        var brtext_height = doc.heightOfString(brtext, { width: innerwidth_half * 72, align: 'right' });
-        doc.text2(brtext, print.left_margin + innerwidth_half, innerheight - (brtext_height / 72), {
-            width: innerwidth_half,
-            align: 'right',
-            links: true
-        });
+            //top right
+            var trtext = parsed.title_page['tr'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
+            var trtext_height = doc.heightOfString(trtext, { width: innerwidth_third * 72, align: 'right' });
+            doc.text2(trtext, print.left_margin + innerwidth_third + innerwidth_third, print.top_margin, {
+                width: innerwidth_third,
+                align: 'right',
+                links: true
+            });
 
-        //center center
-        var topheight = Math.max(tltext_height, tctext_height, trtext_height, 0);
-        var bottomheight = Math.max(bltext_height, brtext_height, 0);
+            //bottom left
+            var bltext = parsed.title_page['bl'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
+            var bltext_height = doc.heightOfString(bltext, { width: innerwidth_half * 72, align: 'left' });
+            doc.text2(bltext, print.left_margin, innerheight - (bltext_height / 72), {
+                width: innerwidth_half,
+                align: 'left',
+                links: true
+            });
 
-        var cctext = parsed.title_page['cc'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
-        var cctext_height = doc.heightOfString(cctext, { width: innerwidth * 72, align: 'center' });
-        var centerStart = (((innerheight * 72) - topheight - bottomheight) / 2) - (cctext_height / 2);
-        doc.text2(cctext, print.left_margin, centerStart / 72, {
-            width: innerwidth,
-            align: 'center',
-            links: true
-        });
+            //bottom right
+            var brtext = parsed.title_page['br'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
+            var brtext_height = doc.heightOfString(brtext, { width: innerwidth_half * 72, align: 'right' });
+            doc.text2(brtext, print.left_margin + innerwidth_half, innerheight - (brtext_height / 72), {
+                width: innerwidth_half,
+                align: 'right',
+                links: true
+            });
 
-        /*
-        // title page
-        title_page_main(parsed, 'title', {
-            capitalize: true
-        });
-        title_page_main();
-        title_page_main();
-        title_page_main(parsed, 'credit');
-        title_page_main();
-        title_page_main(parsed, 'author');
-        title_page_main();
-        title_page_main();
-        title_page_main();
-        title_page_main();
-        title_page_main(parsed, 'source');
+            //center center
+            var topheight = Math.max(tltext_height, tctext_height, trtext_height, 0);
+            var bottomheight = Math.max(bltext_height, brtext_height, 0);
 
-        var concat_types = function(parsed:any, prev:any, type:string) {
-            var token = get_title_page_token(parsed, type);
-            if (token) {
-                prev = prev.concat(token.text.split('\n'));
-            }
-            return prev;
-        };
-        var left_side = print.title_page.left_side.reduce(concat_types.bind(null, parsed), []),
-            right_side = print.title_page.right_side.reduce(concat_types.bind(null, parsed), []),
-            title_page_extra = function(x:number) {
-                return function(line:string) {
-                    doc.text(line.trim(), x, title_y);
-                    title_page_next_line();
-                };
+            var cctext = parsed.title_page['cc'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
+            var cctext_height = doc.heightOfString(cctext, { width: innerwidth * 72, align: 'center' });
+            var centerStart = (((innerheight * 72) - topheight - bottomheight) / 2) - (cctext_height / 2);
+            doc.text2(cctext, print.left_margin, centerStart / 72, {
+                width: innerwidth,
+                align: 'center',
+                links: true
+            });
+
+            /*
+            // title page
+            title_page_main(parsed, 'title', {
+                capitalize: true
+            });
+            title_page_main();
+            title_page_main();
+            title_page_main(parsed, 'credit');
+            title_page_main();
+            title_page_main(parsed, 'author');
+            title_page_main();
+            title_page_main();
+            title_page_main();
+            title_page_main();
+            title_page_main(parsed, 'source');
+    
+            var concat_types = function(parsed:any, prev:any, type:string) {
+                var token = get_title_page_token(parsed, type);
+                if (token) {
+                    prev = prev.concat(token.text.split('\n'));
+                }
+                return prev;
             };
+            var left_side = print.title_page.left_side.reduce(concat_types.bind(null, parsed), []),
+                right_side = print.title_page.right_side.reduce(concat_types.bind(null, parsed), []),
+                title_page_extra = function(x:number) {
+                    return function(line:string) {
+                        doc.text(line.trim(), x, title_y);
+                        title_page_next_line();
+                    };
+                };
+    
+            title_y = 8.5;
+            left_side.forEach(title_page_extra(1.3));
+    
+            title_y = 8.5;
+            right_side.forEach(title_page_extra(5));
+    */
+            // script
+            doc.addPage();
 
-        title_y = 8.5;
-        left_side.forEach(title_page_extra(1.3));
+        }
 
-        title_y = 8.5;
-        right_side.forEach(title_page_extra(5));
-*/
-        // script
-        doc.addPage();
+
     }
 
     if (opts.hooks && opts.hooks.before_script) {
@@ -820,12 +829,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     var print_header_and_footer = function () {
         var dif = print.font_height * 0.5
         if (cfg.print_header) {
-            doc.format_text(cfg.print_header, 1.5, print.page_number_top_margin , {
+            doc.format_text(cfg.print_header, 1.5, print.page_number_top_margin, {
                 color: '#777777'
             });
         }
         if (cfg.print_footer) {
-            doc.format_text(cfg.print_footer, 1.5, print.page_height - print.page_number_top_margin - dif , {
+            doc.format_text(cfg.print_footer, 1.5, print.page_height - print.page_number_top_margin - dif, {
                 color: '#777777'
             });
         }
@@ -898,7 +907,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     function print_page_number() {
         var page_num_y = print.page_height - print.page_number_top_margin;
         if (cfg.show_page_numbers) {
-            var page_num = cfg.show_page_numbers.replace("{n}",page.toFixed());
+            var page_num = cfg.show_page_numbers.replace("{n}", page.toFixed());
             var number_x = print.action.feed + print.action.max * print.font_width - page_num.length * print.font_width;
             doc.simple_text(page_num, number_x * 72, page_num_y * 72);
         }
@@ -940,7 +949,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             doc.addPage();
             page++;
 
-            var number_y = print.font_height * 0.5 + print.page_number_top_margin ;
+            var number_y = print.font_height * 0.5 + print.page_number_top_margin;
 
             if (cfg.scene_continuation_top && line.scene_split) {
                 scene_continuations[scene_number] = scene_continuations[scene_number] || 0;

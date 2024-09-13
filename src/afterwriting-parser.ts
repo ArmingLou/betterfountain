@@ -34,16 +34,16 @@ Array.prototype.pushSorted = function (el, compareFn) {
 
 //Unicode uppercase letters:
 export const regex: { [index: string]: RegExp } = {
-    title_page: /^(title|credit|author[s]?|source|notes|draft date|date|watermark|contact( info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:.*/i,
+    title_page: /^[ \t]*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact( info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:.*/i,
 
     section: /^[ \t]*(#+)(?:\s*)(.*)/,
     synopsis: /^[ \t]*(?:\=)(.*)/,
 
-    scene_heading: /^[ \t]*([.](?=[\w\(\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[. ])(.*?)(#\s*[^\s].*#)?\s*$/iu,
+    scene_heading: /^[ \t]*([.](?=[\w\(\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[. ])([^#]*)(#\s*[^\s].*#)?\s*$/iu,
     scene_number: /#(.+)#/,
 
     // transition: /^[ \t]*((?:FADE (?:TO BLACK|OUT)|CUT TO BLACK)\.|.+ TO\:|^TO\:$)|^(?:> *)(.+)/,
-    transition: /^\s*(?:(>)[^<\n\r]*|[A-Z ]+TO:)$/,
+    transition: /^\s*(?:(>)[^\n\r]*(?!<[ \t]*)|[A-Z ]+TO:)$/,
 
     dialogue: /^[ \t]*([*_]+[^\p{Ll}\p{Lo}\p{So}\r\n]*)(\^?)?(?:\n(?!\n+))([\s\S]+)/u,
 
@@ -297,75 +297,107 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // title_page_started = false,
         parenthetical_open = false,
         needProcessInlineNote = 0,
-        current_expet_note_text = "", // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
+        // current_expet_note_text = "", // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
         current_outline_note_text: string[] = [] // 除去 note 首开口文字，用来 outline 面板提示。 当 needProcessInlineNote = true 才有值。
 
 
-    var reduce_comment = function (prev: any, current: any) {
-        if (current === "/*") {
-            nested_comments++;
-        } else if (current === "*/") {
-            nested_comments--;
-            if (nested_comments < 0) {
-                nested_comments = 0;
-                prev = prev + current;
-            }
-        } else if (nested_comments <= 0) {
-            prev = prev + current;
-        }
-        return prev;
-    };
+    var reduce_comment_and_note = function (arr: string[]) {
 
-    var reduce_note = function (prev: any, current: any) {
-        if (current === "[[") {
-            nested_notes++;
-            if (nested_notes === 1) {
-                // TODO Arming (2024-09-05) : 首行 note ，outline面板处理
-                needProcessInlineNote++;
-                if (cfg.print_notes) {
-                    prev = prev + charOfStyleTag.note_begin + '['; // 首开口，转换成特殊样式字符。
-                }
-            } else {
-                if (cfg.print_notes) {
-                    prev = prev + '[';  // 嵌套的里层开口
-                }
-            }
-        } else if (current === "]]") {
-            nested_notes--;
-            if (nested_notes < 0) {
-                // 假注解，直接以 end 开始，直接显示 ]]
-                nested_notes = 0;
-                prev = prev + current;
-            } else if (nested_notes === 0) {
-                if (cfg.print_notes) {
-                    prev = prev + ']' + charOfStyleTag.note_end; // 闭口，转换成特殊样式字符。
-                }
-            } else {
-                if (cfg.print_notes) {
-                    prev = prev + ']'; // 嵌套的里层闭口，
-                }
-            }
-        } else if (nested_notes <= 0) {
-            // 非注解的文字部分
-            prev = prev + current;
-            current_expet_note_text += current;
-        } else {
-            // 注解的文字部分
-            if (cfg.print_notes) {
-                prev = prev + current;
-            }
-            if (needProcessInlineNote > 0) {
-                if (current_outline_note_text.length < needProcessInlineNote) {
-                    if (current) {
-                        current_outline_note_text.push(current);
+        for (var i = 0; i < arr.length; i++) {
+            var current = arr[i];
+            if (current) {
+                if (current === "/*") {
+                    if (nested_notes == 0) {
+                        nested_comments++;
+                    }
+                    else {
+                        // 是 note 的注解内容
+                        if (cfg.print_notes) {
+                            text_display = text_display + current;
+                        }
+                    }
+                } else if (current === "*/") {
+                    if (nested_comments > 0) {
+                        nested_comments--;
                     } else {
-                        current_outline_note_text.push("");
+                        if (nested_notes == 0) {
+                            // 既不是 note 也不是 comment
+                            text_display = text_display + current;
+                            text_valid = text_valid + current;
+                        } else {
+                            // 是 note 的注解内容
+                            if (cfg.print_notes) {
+                                text_display = text_display + current;
+                            }
+                        }
                     }
                 }
+                else if (current === "[[") {
+                    if (nested_comments == 0) {
+                        nested_notes++;
+                        if (nested_notes === 1) {
+                            // TODO Arming (2024-09-05) : 首行 note ，outline面板处理
+                            needProcessInlineNote++;
+                            if (cfg.print_notes) {
+                                text_display = text_display + charOfStyleTag.note_begin + '['; // 首开口，转换成特殊样式字符。
+                            }
+                        } else {
+                            if (cfg.print_notes) {
+                                text_display = text_display + '[';  // 嵌套的里层开口
+                            }
+                        }
+                    } else {
+                        // 是 comment 的注解内容
+                    }
+                }
+                else if (current === "]]") {
+                    if (nested_notes > 0) {
+                        nested_notes--;
+                        if (nested_notes === 0) {
+                            if (cfg.print_notes) {
+                                text_display = text_display + ']' + charOfStyleTag.note_end; // 闭口，转换成特殊样式字符。
+                            }
+                        } else {
+                            if (cfg.print_notes) {
+                                text_display = text_display + ']'; // 嵌套的里层闭口，
+                            }
+                        }
+                    } else {
+                        if (nested_comments == 0) {
+                            // 既不是 comment 也不是 note
+                            text_display = text_display + current;
+                            text_valid = text_valid + current;
+                        } else {
+                            // 是 comment 的注解内容
+                        }
+                    }
+                }
+                else {
+                    // 非符号文字内容
+                    if (nested_comments > 0) {
+                    } else if (nested_notes > 0) {
+                        if (cfg.print_notes) {
+                            text_display = text_display + current;
+                        }
+                        if (needProcessInlineNote > 0) {
+                            if (current_outline_note_text.length < needProcessInlineNote) {
+                                if (current) {
+                                    current_outline_note_text.push(current);
+                                } else {
+                                    current_outline_note_text.push("");
+                                }
+                            }
+                        }
+                    } else {
+                        text_display = text_display + current;
+                        text_valid = text_valid + current;
+                    }
+                }
+
             }
         }
-        return prev;
     };
+
 
     var if_not_empty = function (a: any) {
         return a;
@@ -484,7 +516,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // processInlineNote(token.text, token.line);
         let textWithoutNotes = "";
         if (current_has_note) {
-            textWithoutNotes = current_expet_note_text;
+            // textWithoutNotes = current_expet_note_text;
+            textWithoutNotes = text_valid;
         } else {
             textWithoutNotes = token.text;
         }
@@ -514,7 +547,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // token.time = calculateActionDuration(token.text.length - irrelevantActionLength);
         let textWithoutNotes = "";
         if (current_has_note) {
-            textWithoutNotes = current_expet_note_text;
+            textWithoutNotes = text_valid;
         } else {
             textWithoutNotes = token.text;
         }
@@ -528,17 +561,23 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
         }
     }
-    var block_start_type = ''; // "dialogue" | "title" | "action" | "scene" | "transitions" 
+    // var line_match_type = '';
     let ignoredLastToken = false;
+    var text_display = '';// 视乎打印设置是否打印note，可以包含 note 内容。
+    var text_valid = '';// 去除 注解 和 note 后的 有效内容， 用来判定文本内容性质。
+    var notetoken; // page_break 的 打印注解
     for (var i = 0; i < lines_length; i++) {
+        notetoken = null;
         // var is_character_line = false;
         needProcessInlineNote = 0;
         var current_has_note = false // 当前行，是否包含 note
-        current_expet_note_text = "" // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
+        // current_expet_note_text = "" // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
         current_outline_note_text = []
         // current_line_number = i;
         text = lines[i];
-        block_start_type = ''; // 是否 block 首行
+        // line_match_type = ''; // 是否 block 首行
+        text_display = '';// 视乎打印设置是否打印note，可以包含 note 内容。
+        text_valid = '';// 去除 注解 和 note 后的 有效内容， 用来判定文本内容性质。
 
         var beforEmpty = text.trim().length === 0;
         var match_block_end_empty_line = false;
@@ -554,14 +593,17 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         }
 
 
+        // 注解行结尾不算块的结尾空行；注解行开头的块，可以以下一行再作为块开头行性质的判断。
         // 1. 至少在 dialogue block 或 非dialog block 中了。
 
         // var noteBreakLine = false;
         var emptyBreakLine = false;
         var is_block_end_empty_line = false; // 连续块后紧接着的断块 空行。
-        // var is_block_begin_line = false; // 连续块后紧接着的断块 空行。
+        var is_block_begin_line = false; // 连续块后紧接着的断块 空行。
 
         if (match_block_end_empty_line) {
+            // 注解去除前已经是空行了
+            text_display = text;
             if (nested_comments > 0 || nested_notes > 0) {
                 // 如果是在注释中，那么直接忽略
                 current_has_note = true;
@@ -584,7 +626,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     } else {
                         block_inner = false;
                         is_block_end_empty_line = true;
-                        block_start_type = "";
+                        // line_match_type = "";
                         // if (title_page_started) {
                         //     title_page_complete = true;
                         // }
@@ -595,134 +637,37 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 }
             }
         } else {
-            if (!block_inner) {
-                block_inner = true;
-                // is_block_begin_line = true;
-                if (nested_comments > 0 || nested_notes > 0) {
-
-                } else {
-                    // 非注解空行后的紧接着的 第一个非空行。
-                    // if (title_page_complete) {
-                        if (text.match(regex.title_page)) {
-                            block_start_type = "title";
-                            state = "title_page";
-                        }
-                        else if (text.match(regex.scene_heading)) {
-                            block_start_type = "scene";
-                            if (result.properties.firstTokenLine == Infinity) {
-                                result.properties.firstTokenLine = thistoken.line; 
-                                // 以第一个出现的场景头为分割， 分割 title page 和 正文 的代码自动提示 之用。
-                                // 第一个场景出现之后，后面的 title page 元素不再提供 自动提示 。后面 开始提供 场景 和 人物 的自动提示。
-                            }
-                        } else if (text.match(regex.transition)) {
-                            block_start_type = "transitions";
-                        } else if (text.match(blockRegex.action_force)) {
-                            block_start_type = "action_force";
-                            // block_dialogue = true;
-                        } else if (text.match(regex.character)) {
-                            block_start_type = "dialogue";
-                        } else {
-                            block_start_type = "action";
-                            // block_except_dialogue = true;
-                        }
-                    // } else {
-                    //     if (!title_page_started) {
-                    //         if (text.match(regex.title_page)) {
-                    //             title_page_started = true;
-                    //             block_start_type = "title";
-                    //             state = "title_page";
-                    //             result.properties.firstTokenLine = Infinity // 重置 自定完成提示，page 页分割行。
-                    //         } else if (text.match(regex.scene_heading)) {
-                    //             // 直接开始场景，忽略 title 页
-                    //             block_start_type = "scene";
-                    //             title_page_started = true;
-                    //             title_page_complete = true;
-                    //         } else if (text.match(regex.transition)) {
-                    //             // 直接开始场景，忽略 title 页
-                    //             block_start_type = "transitions";
-                    //             title_page_started = true;
-                    //             title_page_complete = true;
-                    //         } else {
-                    //             // titile 页开始前的 其他 内容，全部忽略
-                    //             block_start_type = "invalid";
-                    //             continue;
-                    //         }
-                    //     }
-                    // }
-                }
-            }
-            //  else {
-            //     if (!title_page_started) {
-            //         // titile 页开始前的 其他 内容，全部忽略
-            //         continue;
-            //     }
-            // }
-
-
             // 2. 至少不是空行了。
-            // comments 与 note 不相互嵌套，谁先 open 以谁为主
-            var coommentsFisrt = false;
-            var noteFisrt = false;
-            if (nested_comments === 0 && nested_notes === 0) {
-                var idxCm = text.indexOf("/*");
-                var idxNt = text.indexOf("[[");
-                coommentsFisrt = idxCm >= 0 && (idxNt < 0 || idxCm < idxNt);
-                noteFisrt = idxNt >= 0 && (idxCm < 0 || idxNt < idxCm);
-            } else if (nested_notes > 0) {
-                noteFisrt = true;
-            } else if (nested_comments > 0) {
-                coommentsFisrt = true;
+
+            var arr = text.split(/(\/\*)|(\*\/)|(\[\[)|(\]\])/g).filter(if_not_empty);
+            reduce_comment_and_note(arr);
+
+            if (needProcessInlineNote) {
+                // TODO Arming (2024-09-05) : 
+                processInlineNotes2(i)
+                needProcessInlineNote = 0;
             }
 
-            if (coommentsFisrt) {
-                // replace inline comments
-                var arr = text.split(/(\/\*){1}|(\*\/){1}/g)
-                text = arr.filter(if_not_empty).reduce(reduce_comment, "");
-
-                if (text.length === 0) {
-                    // 跨行注解，整行都是注解。 只要剩一个空格，都当插入空行处理
+            if (text_valid.trim().length == 0) {
+                // 纯注解行内容，有内容，且全部被注解了。
+                if (text_display.trim().length == 0 && text_display.length <= 1) {
+                    // 关闭了打印note的注解开头，或跨行的note； 且空格小于2
                     continue;
                 }
-            } else if (noteFisrt) {
-                // replace inline notes
-                current_has_note = true;
-                var arr = text.split(/(\[\[)|(\]\])/g)
-                text = arr.filter(if_not_empty).reduce(reduce_note, "");
-
-                if (needProcessInlineNote) {
-                    // TODO Arming (2024-09-05) : 
-                    processInlineNotes2(i)
-                    needProcessInlineNote = 0;
-                }
-
-                if (text.length === 0) {
-                    // 跨行注解，整行都是注解
-                    // if (needProcessInlineNote == 0) {
-                    continue;
-                    // }
+            } else {
+                if (!block_inner) {
+                    block_inner = true;
+                    is_block_begin_line = true;
                 }
             }
+
         }
 
-
-
-        // if (nested_comments && state !== "ignore") {
-        //     cache_state_for_comment = state;
-        //     state = "ignore";
-        // } else if (state === "ignore") {
-        //     state = cache_state_for_comment;
-        // }
-
-        // if (nested_comments === 0 && state === "ignore") {
-        //     state = cache_state_for_comment;
-        // }
-
-
-        thistoken = create_token(text, current_cursor, i, new_line_length);
+        thistoken = create_token(text_display, current_cursor, i, new_line_length);
         current_cursor = thistoken.end + 1;
 
 
-        if (text.trim().length === 0) {
+        if (text_display.trim().length === 0) {
             // 1. noteBreakLine = true  需插入note空白换行
             // 2. is_block_end_empty_line = true  普通正常结束
             // 3. current_has_note = true 整行是注解，不插入空白换行，跳过。
@@ -817,11 +762,18 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         //     state = "title_page";
         // }
 
+        if (is_block_begin_line && text_valid.match(regex.title_page)) {
+            state = "title_page";
+        }
+
         if (state === "title_page") {
-            if (thistoken.text.match(regex.title_page)) {
-                var index = thistoken.text.indexOf(":");
-                thistoken.type = thistoken.text.substr(0, index).toLowerCase().replace(" ", "_");
-                thistoken.text = thistoken.text.substr(index + 1).trim();
+            if (text_valid.match(regex.title_page)) {
+                text_valid = text_valid.trim()
+                var index = text_valid.indexOf(":");
+                thistoken.type = text_valid.substr(0, index).toLowerCase().replace(" ", "_");
+
+                var mt = text_display.match(/^(.*?↻)?\s*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact(?: info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:(.*)/i)
+                thistoken.text = mt[3].trim();
                 processTokenTextStyleChar(thistoken);
 
                 last_title_page_token = thistoken;
@@ -851,292 +803,333 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
 
         if (state === "normal") {
             // todo: block首行定位性质 ， 或者 非对话 block 的后续行
-            // if (thistoken.text.match(regex.line_break)) {
-            //     token_category = "none"; // Arming (2024-09-06) : 只有 "script" 和 “none”； none 会导致 不 push token，相当于忽略这一行的内容
-            // } else 
-            // if (result.properties.firstTokenLine == Infinity) {
-            //     result.properties.firstTokenLine = thistoken.line; // 代码自动提示，分割 title page 和 正文 提示之用。
-            // }
-
-            if (block_start_type == "dialogue") {
-                // The last part of the above statement ('(lines[i + 1].trim().length == 0) ? (lines[i+1] == "  ") : false)')
-                // means that if the trimmed length of the following line (i+1) is equal to zero, the statement will only return 'true',
-                // and therefore consider the token as a character, if the content of the line is exactly two spaces.
-                // If the trimmed length is larger than zero, then it will be accepted as dialogue regardless
-                state = "dialogue";
-                thistoken.type = "character";
-                thistoken.takeNumber = takeCount++;
-                if (config.print_dialogue_numbers) AddDialogueNumberDecoration(thistoken)
-                thistoken.text = trimCharacterForceSymbol(thistoken.text);
-                if (thistoken.text[thistoken.text.length - 1] === "^") {
-                    if (cfg.use_dual_dialogue && !force_not_dual) {
-                        state = "dual_dialogue"
-                        // update last dialogue to be dual:left
-                        var dialogue_tokens = ["dialogue", "character", "parenthetical"];
-                        var mod_last = false;
-                        while (dialogue_tokens.indexOf(result.tokens[last_character_index].type) !== -1) {
-                            var old_last_dual = result.tokens[last_character_index].dual;
-                            if (!old_last_dual) {
-                                mod_last = true;
-                                result.tokens[last_character_index].dual = "left";
-                                dual_str = "right";
-                            } else if (old_last_dual === "left") {
-                                dual_str = "right";
-                            } else {
-                                dual_str = "left";
-                            }
-                            last_character_index++;
-                        }
-
-                        if (mod_last) {
-                            //update last dialogue_begin to be dual_dialogue_begin and remove last dialogue_end
-                            var foundmatch = false;
-                            var temp_index = result.tokens.length;
-                            temp_index = temp_index - 1;
-                            while (!foundmatch) {
-                                temp_index--;
-                                switch (result.tokens[temp_index].type) {
-                                    case "dialogue_end":
-                                        result.tokens.splice(temp_index);
-                                        temp_index--;
-                                        break;
-                                    case "separator": break;
-                                    case "character": break;
-                                    case "dialogue": break;
-                                    case "parenthetical": break;
-                                    case "dialogue_begin":
-                                        result.tokens[temp_index].type = "dual_dialogue_begin";
-                                        foundmatch = true;
-                                        break;
-                                    default: foundmatch = true;
-                                }
-                            }
-                        }
-                        if (dual_str === "left") {
-                            pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_begin"));
-                        } else {
-                            // 删除之前 left 的 dual_dialogue_end
-                            var foundmatch = false;
-                            var temp_index = result.tokens.length;
-                            temp_index = temp_index - 1;
-                            while (!foundmatch) {
-                                temp_index--;
-                                switch (result.tokens[temp_index].type) {
-                                    case "dual_dialogue_end":
-                                        result.tokens.splice(temp_index);
-                                        temp_index--;
-                                        break;
-                                    case "separator": break;
-                                    case "character": break;
-                                    case "dialogue": break;
-                                    case "parenthetical": break;
-                                    // case "dialogue_begin":
-                                    //     result.tokens[temp_index].type = "dual_dialogue_begin";
-                                    //     foundmatch = true;
-                                    //     break;
-                                    default: foundmatch = true;
-                                }
-                            }
-                        }
-
-                        // dual_right = true;
-                        thistoken.dual = dual_str;
+            var action = false;
+            if (is_block_begin_line) {
+                // 匹配需要前面是空行的情况
+                if (text_valid.match(regex.scene_heading)) {
+                    if (result.properties.firstTokenLine == Infinity) {
+                        result.properties.firstTokenLine = thistoken.line;
+                        // 以第一个出现的场景头为分割， 分割 title page 和 正文 的代码自动提示 之用。
+                        // 第一个场景出现之后，后面的 title page 元素不再提供 自动提示 。后面 开始提供 场景 和 人物 的自动提示。
                     }
-                    else {
-                        pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_begin"));
+
+                    let sceneHeadingMatch = text_valid.match(regex.scene_heading);
+
+                    force_not_dual = true;
+                    text_valid = text_valid.replace(/^[ \t]*\./, "");
+                    text_display = text_display.replace(/(?<=(^.*?↻)|(^))[ \t]*\./, "");
+                    if (cfg.each_scene_on_new_page && scene_number !== 1) {
+                        var page_break = create_token();
+                        page_break.type = "page_break";
+                        page_break.start = thistoken.start;
+                        page_break.end = thistoken.end;
+                        pushToken(page_break); //第一个 scene 之前 ，制造一个 分页 token
                     }
-                    thistoken.text = thistoken.text.replace(/\^\s*$/, "");
-                }
-                else {
-                    pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_begin")); // TODO Arming (2024-09-05) : 在 角色 line 后插入一个附加的 空token，type = dialogue_begin。 不产生pdf实际空行，只是逻辑处理需要。
-                }
-                force_not_dual = false;
-                let character = trimCharacterExtension(thistoken.text).trim();
-                previousCharacter = character;
-                if (result.properties.characters.has(character)) {
-                    var values = result.properties.characters.get(character);
-                    if (values.indexOf(scene_number) == -1) {
-                        values.push(scene_number);
+                    thistoken.type = "scene_heading";
+                    thistoken.number = scene_number.toString();
+                    if (match = text_valid.match(regex.scene_number)) {
+                        text_valid = text_valid.replace(regex.scene_number, "");
+                        text_display = text_display.replace(regex.scene_number, "");
+                        thistoken.number = match[1].trim();
                     }
-                    result.properties.characters.set(character, values);
-                }
-                else {
-                    result.properties.characters.set(character, [scene_number]);
-                }
-                last_character_index = result.tokens.length;
 
-                // todo 对话角色加入结构树
-                if (lastScenStructureToken) {
-                    if (config.dialogue_foldable) {
-                        let cobj: StructToken = new StructToken();
-                        cobj.text = thistoken.text;
-                        cobj.children = null;
-                        cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
-                        cobj.id = lastScenStructureToken.id + '/' + thistoken.line;
-                        cobj.ischartor = true;
-                        cobj.dialogueEndLine = lines_length - 1;
-                        lastScenStructureToken.children.push(cobj);
-                        lastChartorStructureToken = cobj;
+
+                    var idx = text_valid.indexOf('-');
+                    if (idx >= 0) {
+                        // if(thistoken.text.charAt(idx-1) != ' '){
+                        text_valid = text_valid.substring(0, idx) + ' - ' + text_valid.substring(idx + 1);
+                        // }
                     }
-                }
+                    text_valid = text_valid.toUpperCase().replace(/\s+/g, ' ');//合并空格，转成大写
 
-
-
-                // var level = latestScene();
-                // if(level){
-                //     cobj.id = level.id + '/' + thistoken.line;
-                //     // level.children.push(cobj);
-                // }
-                // else{
-                //     cobj.id = '/' + thistoken.line;
-                //     // result.properties.structure.push(cobj);
-                // }
-            } else if (block_start_type == "scene") {
-                force_not_dual = true;
-                thistoken.text = thistoken.text.replace(/^[ \t]*\./, "");
-                if (cfg.each_scene_on_new_page && scene_number !== 1) {
-                    var page_break = create_token();
-                    page_break.type = "page_break";
-                    page_break.start = thistoken.start;
-                    page_break.end = thistoken.end;
-                    pushToken(page_break); //第一个 scene 之前 ，制造一个 分页 token
-                }
-                thistoken.type = "scene_heading";
-                thistoken.number = scene_number.toString();
-                if (match = thistoken.text.match(regex.scene_number)) {
-                    thistoken.text = thistoken.text.replace(regex.scene_number, "");
-                    thistoken.number = match[1].trim();
-                }
-                
-                
-                var idx = thistoken.text.indexOf('-');
-                if(idx>=0){
-                    // if(thistoken.text.charAt(idx-1) != ' '){
-                        thistoken.text = thistoken.text.substring(0, idx) + ' - ' + thistoken.text.substring(idx + 1);
-                    // }
-                }
-                thistoken.text = thistoken.text.toUpperCase().replace(/\s+/g, ' ');//合并空格，转成大写
-                
-                let cobj: StructToken = new StructToken();
-                cobj.text = thistoken.text;
-                cobj.children = [];
-                cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
-                cobj.isscene = true;
-
-
-
-                if (current_depth == 0) {
-                    cobj.id = '/' + thistoken.line;
-                    result.properties.structure.push(cobj);
-                }
-                else {
-                    var level = latestSection(current_depth);
-                    if (level) {
-                        cobj.id = level.id + '/' + thistoken.line;
-                        level.children.push(cobj);
+                    idx = -1;
+                    idx = text_display.indexOf('-');
+                    if (idx >= 0) {
+                        // if(thistoken.text.charAt(idx-1) != ' '){
+                        text_display = text_display.substring(0, idx) + ' - ' + text_display.substring(idx + 1);
+                        // }
                     }
-                    else {
+                    text_display = text_display.toUpperCase().replace(/\s+/g, ' ');//合并空格，转成大写
+                    thistoken.text = text_display;
+
+                    let cobj: StructToken = new StructToken();
+                    cobj.text = text_valid;
+                    cobj.children = [];
+                    cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, text_valid.length));
+                    cobj.isscene = true;
+
+
+
+                    if (current_depth == 0) {
                         cobj.id = '/' + thistoken.line;
                         result.properties.structure.push(cobj);
                     }
-                }
-                lastScenStructureToken = cobj;
-
-                updatePreviousSceneLength();
-                result.properties.scenes.push({ scene: thistoken.number, text: thistoken.text, line: thistoken.line, actionLength: 0, dialogueLength: 0 })
-                result.properties.sceneLines.push(thistoken.line);
-                result.properties.sceneNames.push(thistoken.text);
-
-                let sceneHeadingMatch = text.match(regex.scene_heading);
-                const location = parseLocationInformation(sceneHeadingMatch);
-                if (location) {
-                    const locationSlug = slugify(location.name);
-                    if (result.properties.locations.has(locationSlug)) {
-                        const values = result.properties.locations.get(locationSlug);
-                        if (values.findIndex(it => it.scene_number == scene_number) == -1) {
-                            values.push({
-                                scene_number: scene_number,
-                                line: thistoken.line,
-                                ...location
-                            });
+                    else {
+                        var level = latestSection(current_depth);
+                        if (level) {
+                            cobj.id = level.id + '/' + thistoken.line;
+                            level.children.push(cobj);
                         }
-                        result.properties.locations.set(locationSlug, values);
+                        else {
+                            cobj.id = '/' + thistoken.line;
+                            result.properties.structure.push(cobj);
+                        }
+                    }
+                    lastScenStructureToken = cobj;
+
+                    updatePreviousSceneLength();
+                    result.properties.scenes.push({ scene: thistoken.number, text: text_valid, line: thistoken.line, actionLength: 0, dialogueLength: 0 })
+                    result.properties.sceneLines.push(thistoken.line);
+                    result.properties.sceneNames.push(text_valid);
+
+
+                    const location = parseLocationInformation(sceneHeadingMatch);
+                    if (location) {
+                        const locationSlug = slugify(location.name);
+                        if (result.properties.locations.has(locationSlug)) {
+                            const values = result.properties.locations.get(locationSlug);
+                            if (values.findIndex(it => it.scene_number == scene_number) == -1) {
+                                values.push({
+                                    scene_number: scene_number,
+                                    line: thistoken.line,
+                                    ...location
+                                });
+                            }
+                            result.properties.locations.set(locationSlug, values);
+                        }
+                        else {
+                            result.properties.locations.set(locationSlug, [{ scene_number, line: thistoken.line, ...location }]);
+                        }
+                    }
+                    scene_number++;
+
+                }
+                else if (text_valid.match(regex.centered)) {
+                    action = true;
+                    //下面再处理
+                }
+                else if (text_valid.match(regex.transition)) {
+                    thistoken.text = text_display.replace(/(?<=(^.*?↻)|(^))\s*>\s*/, "");
+                    processTokenTextStyleChar(thistoken);
+                    thistoken.type = "transition";
+                } else if (text_valid.match(blockRegex.action_force)) {
+                    // 强制 转换 action
+                    thistoken.type = "action";
+                    var mt = text_display.match(/^((?:.*?↻)?\s*)(\!)(.*)/);
+                    thistoken.text = mt[1] + mt[3]; // 保留空格格式
+                    processTokenTextStyleChar(thistoken);
+                    processActionBlock(thistoken); // 其他后续行，不转换！号
+                } else if (text_valid.match(regex.character)) {
+                    state = "dialogue";
+                    thistoken.type = "character";
+                    thistoken.takeNumber = takeCount++;
+
+                    text_valid = trimCharacterForceSymbol(text_valid);
+                    if (text_valid[text_valid.length - 1] === "^") {
+                        if (cfg.use_dual_dialogue && !force_not_dual) {
+                            state = "dual_dialogue"
+                            // update last dialogue to be dual:left
+                            var dialogue_tokens = ["dialogue", "character", "parenthetical"];
+                            var mod_last = false;
+                            while (dialogue_tokens.indexOf(result.tokens[last_character_index].type) !== -1) {
+                                var old_last_dual = result.tokens[last_character_index].dual;
+                                if (!old_last_dual) {
+                                    mod_last = true;
+                                    result.tokens[last_character_index].dual = "left";
+                                    dual_str = "right";
+                                } else if (old_last_dual === "left") {
+                                    dual_str = "right";
+                                } else {
+                                    dual_str = "left";
+                                }
+                                last_character_index++;
+                            }
+
+                            if (mod_last) {
+                                //update last dialogue_begin to be dual_dialogue_begin and remove last dialogue_end
+                                var foundmatch = false;
+                                var temp_index = result.tokens.length;
+                                temp_index = temp_index - 1;
+                                while (!foundmatch) {
+                                    temp_index--;
+                                    switch (result.tokens[temp_index].type) {
+                                        case "dialogue_end":
+                                            result.tokens.splice(temp_index);
+                                            temp_index--;
+                                            break;
+                                        case "separator": break;
+                                        case "character": break;
+                                        case "dialogue": break;
+                                        case "parenthetical": break;
+                                        case "dialogue_begin":
+                                            result.tokens[temp_index].type = "dual_dialogue_begin";
+                                            foundmatch = true;
+                                            break;
+                                        default: foundmatch = true;
+                                    }
+                                }
+                            }
+                            if (dual_str === "left") {
+                                pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_begin"));
+                            } else {
+                                // 删除之前 left 的 dual_dialogue_end
+                                var foundmatch = false;
+                                var temp_index = result.tokens.length;
+                                temp_index = temp_index - 1;
+                                while (!foundmatch) {
+                                    temp_index--;
+                                    switch (result.tokens[temp_index].type) {
+                                        case "dual_dialogue_end":
+                                            result.tokens.splice(temp_index);
+                                            temp_index--;
+                                            break;
+                                        case "separator": break;
+                                        case "character": break;
+                                        case "dialogue": break;
+                                        case "parenthetical": break;
+                                        // case "dialogue_begin":
+                                        //     result.tokens[temp_index].type = "dual_dialogue_begin";
+                                        //     foundmatch = true;
+                                        //     break;
+                                        default: foundmatch = true;
+                                    }
+                                }
+                            }
+
+                            // dual_right = true;
+                            thistoken.dual = dual_str;
+                        }
+                        else {
+                            pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_begin"));
+                        }
+                        text_valid = text_valid.replace(/\^\s*$/, "");
+                        text_display = text_display.replace(/\^\s*(?=(↺.*$)|($))/, "");
                     }
                     else {
-                        result.properties.locations.set(locationSlug, [{ scene_number, line: thistoken.line, ...location }]);
+                        pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_begin")); // TODO Arming (2024-09-05) : 在 角色 line 后插入一个附加的 空token，type = dialogue_begin。 不产生pdf实际空行，只是逻辑处理需要。
                     }
-                }
-                scene_number++;
+                    force_not_dual = false;
+                    let character = trimCharacterExtension(text_valid).trim();
+                    previousCharacter = character;
+                    thistoken.character = character;
+                    if (result.properties.characters.has(character)) {
+                        var values = result.properties.characters.get(character);
+                        if (values.indexOf(scene_number) == -1) {
+                            values.push(scene_number);
+                        }
+                        result.properties.characters.set(character, values);
+                    }
+                    else {
+                        result.properties.characters.set(character, [scene_number]);
+                    }
+                    last_character_index = result.tokens.length;
 
-            } else if (block_start_type == "action_force") {
-                // 强制 转换 action
-                thistoken.type = "action";
-                var mt = thistoken.text.match(blockRegex.action_force);
-                thistoken.text = mt[1] + mt[3]; // 保留空格格式
-                processTokenTextStyleChar(thistoken);
-                processActionBlock(thistoken); // 其他后续行，不转换！号
-            } else if (thistoken.text.match(blockRegex.lyric)) {
-                // 强制 转换 action 中 歌词
-                thistoken.type = "action";
-                var mt = thistoken.text.trimRight().match(blockRegex.lyric);
-                var ct = mt[4];
-                if (ct) {
-                    ct = charOfStyleTag.italic_global_begin + ct + charOfStyleTag.italic_global_end;
-                } // 加斜体样式. 保留空格格式
-                thistoken.text = mt[1] + mt[3] + ct;
-                processTokenTextStyleChar(thistoken);
-                // processActionBlock(thistoken);
-            } else if (thistoken.text.match(regex.centered)) {
-                thistoken.type = "centered";
-                var mt = thistoken.text.match(regex.centered);
-                thistoken.text = mt[0];
-                processTokenTextStyleChar(thistoken);
-            } else if (block_start_type == "transitions") {
-                thistoken.text = thistoken.text.replace(/^\s*>\s*/, "");
-                thistoken.type = "transition";
-            } else if (thistoken.text.match(regex.page_break)) {
-                thistoken.text = "";
-                thistoken.type = "page_break";
-            } else if (match = thistoken.text.match(regex.synopsis)) {
-                thistoken.text = match[1];
-                processTokenTextStyleChar(thistoken);
-                thistoken.type = thistoken.text ? "synopsis" : "separator";
+                    // todo 对话角色加入结构树
+                    if (lastScenStructureToken) {
+                        if (config.dialogue_foldable) {
+                            let cobj: StructToken = new StructToken();
+                            cobj.text = text_valid;
+                            cobj.children = null;
+                            cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, text_valid.length));
+                            cobj.id = lastScenStructureToken.id + '/' + thistoken.line;
+                            cobj.ischartor = true;
+                            cobj.dialogueEndLine = lines_length - 1;
+                            lastScenStructureToken.children.push(cobj);
+                            lastChartorStructureToken = cobj;
+                        }
+                    }
 
-                var level = latestSectionOrScene(current_depth + 1, () => true);
-                if (level) {
-                    level.synopses = level.synopses || []
-                    level.synopses.push({ synopsis: thistoken.text, line: thistoken.line })
-                }
-            } else if (match = thistoken.text.match(regex.section)) {
-                thistoken.level = match[1].length;
-                thistoken.text = match[2];
-                thistoken.type = "section";
-                let cobj: StructToken = new StructToken();
-                cobj.text = thistoken.text;
-                current_depth = thistoken.level;
-                cobj.level = thistoken.level;
-                cobj.children = [];
-                cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
-                cobj.section = true;
+                    text_display = text_display.replace(/^(.*?↻)?[ \t]*@/, "").trim();
+                    thistoken.text = text_display;
+                    if (config.print_dialogue_numbers) {
+                        AddDialogueNumberDecoration(thistoken)
+                    }
 
-                const level = current_depth > 1 && latestSectionOrScene(current_depth, token => token.section && token.level < current_depth)
-                if (current_depth == 1 || !level) {
-                    cobj.id = '/' + thistoken.line;
-                    result.properties.structure.push(cobj)
-                }
-                else {
-                    cobj.id = level.id + '/' + thistoken.line;
-                    level.children.push(cobj);
+                } else {
+                    action = true;
+                    // 下面再处理
                 }
 
             } else {
-                thistoken.type = "action"; // TODO Arming (2024-09-06) : 其他类型通通归于 action，
-                processTokenTextStyleChar(thistoken);
-                processActionBlock(thistoken);
+                action = true;
+            }
+
+            if (action) {
+                if (text_valid.match(regex.centered)) {
+                    thistoken.type = "centered";
+                    var mt = text_display.match(/((?:^.*?↻)|^)[ \t]*>\s*(.+)\s*?<\s*((?:↺.*$)|$)/);
+                    thistoken.text = mt[1].trim() + mt[2].trim() + mt[3].trim();
+                    processTokenTextStyleChar(thistoken);
+                }
+                else if (text_valid.match(blockRegex.lyric)) {
+                    // 强制 转换 action 中 歌词
+                    thistoken.type = "action";
+                    var mt = text_display.trimRight().match(/^((?:.*?↻)?\s*)(\~)(.*)/);
+                    var ct = mt[3];
+                    if (ct) {
+                        ct = charOfStyleTag.italic_global_begin + ct + charOfStyleTag.italic_global_end;
+                    } // 加斜体样式. 保留空格格式
+                    thistoken.text = mt[1] + ct;
+                    processTokenTextStyleChar(thistoken);
+                }
+                else if (text_valid.match(regex.page_break)) {
+                    thistoken.text = '';
+                    thistoken.type = "page_break";
+                    if (text_valid != text_display) {
+                        text_display = text_display.replace(/(?<=(↻)|(^))\s*\=+\s*(?=(↺)|($))/g, "");
+                        notetoken = create_token(text_display, current_cursor, i, new_line_length);
+                        notetoken.type = "action";
+                        current_cursor = notetoken.end + 1;
+                    }
+                }
+                else if (text_valid.match(regex.synopsis)) {
+                    match = text_display.match(/((?:^.*?↻)|^)[ \t]*(?:\=)(.*)/)
+                    thistoken.text = match[1].trim() + match[2].trim();
+                    processTokenTextStyleChar(thistoken);
+                    thistoken.type = thistoken.text ? "synopsis" : "separator";
+
+                    var level = latestSectionOrScene(current_depth + 1, () => true);
+                    if (level) {
+                        level.synopses = level.synopses || []
+                        level.synopses.push({ synopsis: text_valid, line: thistoken.line })
+                    }
+                }
+                else if (match = text_valid.match(regex.section)) {
+                    var matchdisplay = text_display.match(/((?:^.*?↻)|^)[ \t]*(#+)(?:\s*)(.*)/)
+                    thistoken.text = matchdisplay[1].trim() + matchdisplay[3].trim();
+                    thistoken.level = match[1].length;
+                    thistoken.type = "section";
+                    let cobj: StructToken = new StructToken();
+                    cobj.text = match[2];
+                    current_depth = thistoken.level;
+                    cobj.level = thistoken.level;
+                    cobj.children = [];
+                    cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
+                    cobj.section = true;
+
+                    const level = current_depth > 1 && latestSectionOrScene(current_depth, token => token.section && token.level < current_depth)
+                    if (current_depth == 1 || !level) {
+                        cobj.id = '/' + thistoken.line;
+                        result.properties.structure.push(cobj)
+                    }
+                    else {
+                        cobj.id = level.id + '/' + thistoken.line;
+                        level.children.push(cobj);
+                    }
+
+                    processTokenTextStyleChar(thistoken);
+
+                } else {
+                    thistoken.type = "action"; // TODO Arming (2024-09-06) : 其他类型通通归于 action，
+                    thistoken.text = text_display;
+                    processTokenTextStyleChar(thistoken);
+                    processActionBlock(thistoken);
+                }
             }
         } else {
             // todo 对话 block 的后续连续行
-            thistoken.text = thistoken.text.trim();
+            text_valid = text_valid.trim();
+            text_display = text_display.trim();
             // if (cfg.emitalic_dialog) {
             //     if (!thistoken.text.endsWith('*') || !thistoken.text.startsWith('*')) {
             //         thistoken.text = '*' + thistoken.text + '*';
@@ -1146,14 +1139,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             if (parenthetical_open) {
                 thistoken.type = "parenthetical";
                 // processParentheticalBlock(thistoken);
-                if (thistoken.text.match(regex.parenthetical_end)) {
+                if (text_valid.match(regex.parenthetical_end)) {
                     parenthetical_open = false;
                 }
             } else {
-                if (thistoken.text.match(regex.parenthetical)) {
+                if (text_valid.match(regex.parenthetical)) {
                     thistoken.type = "parenthetical";
                     // processParentheticalBlock(thistoken);
-                } else if (thistoken.text.match(regex.parenthetical_start)) {
+                } else if (text_valid.match(regex.parenthetical_start)) {
                     thistoken.type = "parenthetical";
                     // processParentheticalBlock(thistoken);
                     parenthetical_open = true;
@@ -1166,6 +1159,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             if (dual_str) {
                 thistoken.dual = dual_str;
             }
+            thistoken.text = text_display;
             processTokenTextStyleChar(thistoken);
             if (cfg.emitalic_dialog) {
                 thistoken.text = charOfStyleTag.italic_global_begin + thistoken.text + charOfStyleTag.italic_global_end;
@@ -1209,6 +1203,11 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             }
             else {
                 ignoredLastToken = false;
+                pushToken(thistoken);
+            }
+
+            if (notetoken) {
+                thistoken = notetoken;
                 pushToken(thistoken);
             }
         }

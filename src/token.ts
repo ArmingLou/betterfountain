@@ -22,6 +22,9 @@ export function create_token(text?: string, cursor?: number, line?: number, new_
         },
         name:function(){
             var character = this.text;
+            if(this.character){
+                character = this.character;
+            }
             var p = character.indexOf("(");
             if (p !== -1) {
                 character = character.substring(0, p);

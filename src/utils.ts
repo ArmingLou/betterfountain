@@ -126,7 +126,8 @@ export const getCharactersWhoSpokeBeforeLast = (parsedDocument: any, position: v
 		var token = parsedDocument.tokens[searchIndex - 1];
 		if (token === undefined) {
 		} else if (token.type == "character") {
-			var name = trimCharacterForceSymbol(trimCharacterExtension(token.text)).trim();
+			// var name = trimCharacterForceSymbol(trimCharacterExtension(token.text)).trim();
+			var name = token.name().trim();
 			if (lastCharacter == undefined) {
 				lastCharacter = name;
 			}
