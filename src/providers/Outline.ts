@@ -53,24 +53,45 @@ export class FountainOutlineTreeDataProvider implements vscode.TreeDataProvider<
 
 function buildTree(): OutlineTreeItem {
 	const root = new OutlineTreeItem("", "", null);
+	const notes = new NoteRootTreeItem("NOTES", "", root);
 	// done this way to take care of root-level synopses and notes
 	const doc = activeParsedDocument();
 	if (doc) {
 		const structure = doc.properties.structure;
-		root.children.push(...structure.map(token => makeTreeItem(token, root)));
-		root.children = root.children.sort((a, b) => a.lineNumber - b.lineNumber);
+		// e note 统一放最外层
+		if(!root.children){
+			root.children = []
+		}
+		root.children.push(...structure.map(token => makeTreeItem(token, root, notes)).filter(x => x));
+		if(root.children && root.children.length > 0) {
+			root.children = root.children.sort((a, b) => a.lineNumber - b.lineNumber);
+		}
+		if(notes.children && notes.children.length > 0) {
+			notes.children = notes.children.sort((a, b) => a.lineNumber - b.lineNumber);
+		}
+		if(!root.children){
+			root.children = []
+		}
+		root.children.push(notes);
+		
 	}
 	return root;
 }
 
-function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem): OutlineTreeItem {
+function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem, notesRoot: OutlineTreeItem): OutlineTreeItem {
 	var item: OutlineTreeItem;
 	if (token.section) {
 		item = new SectionTreeItem(token, parent);
 	}
 	else if (token.isnote) {
 		if (config.uiPersistence.outline_visibleNotes) {
-			item = new NoteTreeItem({ note: token.text, line: token.id.substring(1) }, parent);
+			// item = new NoteTreeItem({ note: token.text, line: token.id.substring(1) }, parent);
+			item = new NoteTreeItem({ note: token.text, line: token.id.substring(1) }, notesRoot);
+			if(!notesRoot.children){
+				notesRoot.children = []
+			}
+			notesRoot.children.push(item);
+			return undefined;
 		}
 		else {
 			return undefined;
@@ -94,10 +115,13 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem): 
 			if(!parent.children){
 				parent.children = []
 			}
-			parent.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, parent)));
+			parent.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, parent, notesRoot)));
 		}
 		else {
-			item.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, item)));
+			if(!item.children){
+				item.children = []
+			}
+			item.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, item, notesRoot)));
 			// if (token.section) {
 			// 	item.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, item)));
 			// } else if (token.isscene) {
@@ -113,18 +137,25 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem): 
 	/* notes and synopses get pushed to this item, or to it's parent if it's a scene */
 	{
 		if (token.notes && config.uiPersistence.outline_visibleNotes) {
-			if (token.section && config.uiPersistence.outline_visibleSections) {
-				item.children.push(...token.notes.map(note => new NoteTreeItem(note, item)));
+			// if (token.section && config.uiPersistence.outline_visibleSections) {
+			// 	item.children.push(...token.notes.map(note => new NoteTreeItem(note, item)));
+			// }
+			// else {
+			// 	if(!parent.children){
+			// 		parent.children = []
+			// 	}
+			// 	parent.children.push(...token.notes.map(note => new NoteTreeItem(note, parent)));
+			// }
+			if(!notesRoot.children){
+				notesRoot.children = []
 			}
-			else {
-				if(!parent.children){
-					parent.children = []
-				}
-				parent.children.push(...token.notes.map(note => new NoteTreeItem(note, parent)));
-			}
+			notesRoot.children.push(...token.notes.map(note => new NoteTreeItem(note, notesRoot)));
 		}
 		if (token.synopses && config.uiPersistence.outline_visibleSynopses) {
 			if (token.section && config.uiPersistence.outline_visibleSections) {
+				if(!item.children){
+					item.children = [];
+				}
 				item.children.push(...token.synopses.map(syn => new SynopsisTreeItem(syn, item)));
 			}
 			else {
@@ -236,6 +267,15 @@ class NoteTreeItem extends OutlineTreeItem {
 		};
 		this.description = token.note;
 		this.tooltip = this.description;
+	}
+}
+
+class NoteRootTreeItem extends OutlineTreeItem {
+	constructor(label: string, public path: string, public parent: OutlineTreeItem) {
+		super(label, path, parent)
+
+		this.iconPath = __filename + '/../../../assets/note_light.svg';
+		this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
 	}
 }
 

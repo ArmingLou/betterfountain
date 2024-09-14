@@ -8,6 +8,9 @@ export class FountainFoldingRangeProvider implements FoldingRangeProvider {
 		if (parsedDocuments.has(document.uri.toString())) {
 
 			function addRange(structItem: StructToken, nextStructItem: StructToken, lastline: number) {
+				if(nextStructItem &&nextStructItem.isnote){
+					nextStructItem = undefined;
+				}
 				if (structItem.isnote) return;
 				if (nextStructItem != undefined) //this is the last child, so the end of the folding range is the end of the parent
 					lastline = nextStructItem.range.start.line;

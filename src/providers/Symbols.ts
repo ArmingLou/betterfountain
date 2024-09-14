@@ -65,7 +65,13 @@ export class FountainSymbolProvider implements vscode.DocumentSymbolProvider {
 		if (doc) {
 			for (let index = 0; index < doc.properties.structure.length; index++) {
 				if (!doc.properties.structure[index].isnote) {
-					symbols.push(symbolFromStruct(doc.properties.structure[index], doc.properties.structure[index + 1], document.lineCount).symbol);
+					var next = doc.properties.structure[index + 1];
+					if (next) {
+						if(next.isnote){
+							next = null;
+						}
+					}
+					symbols.push(symbolFromStruct(doc.properties.structure[index], next, document.lineCount).symbol);
 				}
 			}
 		}

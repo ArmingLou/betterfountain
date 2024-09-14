@@ -296,12 +296,22 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // title_page_complete = false,
         // title_page_started = false,
         parenthetical_open = false,
-        needProcessInlineNote = 0,
+        needProcessOutlineNote = 0,
         // current_expet_note_text = "", // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
-        current_outline_note_text: string[] = [] // 除去 note 首开口文字，用来 outline 面板提示。 当 needProcessInlineNote = true 才有值。
+        current_outline_note_text: string[] = [], // 除去 note 首开口文字，用来 outline 面板提示。 当 needProcessOutlineNote = true 才有值。
+        current_outline_note_linenum: number[] = [] // 是 note 行码，用来 outline 面板提示。 当 needProcessOutlineNote = true 才有值。
 
 
-    var reduce_comment_and_note = function (arr: string[]) {
+    var add_outline_note = function (note: string, li: number) {
+        var oltext = current_outline_note_text[current_outline_note_text.length - 1];
+        current_outline_note_text[current_outline_note_text.length - 1] = oltext + note;
+        if (oltext.trim().length === 0) {
+            current_outline_note_linenum[current_outline_note_linenum.length - 1] = li;
+        }
+    }
+
+
+    var reduce_comment_and_note = function (arr: string[], li: number) {
 
         for (var i = 0; i < arr.length; i++) {
             var current = arr[i];
@@ -312,6 +322,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     }
                     else {
                         // 是 note 的注解内容
+                        add_outline_note('/*', li);
                         if (cfg.print_notes) {
                             text_display = text_display + current;
                         }
@@ -326,6 +337,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             text_valid = text_valid + current;
                         } else {
                             // 是 note 的注解内容
+                            add_outline_note('*/', li);
                             if (cfg.print_notes) {
                                 text_display = text_display + current;
                             }
@@ -337,11 +349,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         nested_notes++;
                         if (nested_notes === 1) {
                             // TODO Arming (2024-09-05) : 首行 note ，outline面板处理
-                            needProcessInlineNote++;
+                            needProcessOutlineNote++;
+                            current_outline_note_text.push("");
+                            current_outline_note_linenum.push(li);
                             if (cfg.print_notes) {
                                 text_display = text_display + charOfStyleTag.note_begin + '['; // 首开口，转换成特殊样式字符。
                             }
                         } else {
+                            add_outline_note('[', li)
                             if (cfg.print_notes) {
                                 text_display = text_display + '[';  // 嵌套的里层开口
                             }
@@ -358,6 +373,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                                 text_display = text_display + ']' + charOfStyleTag.note_end; // 闭口，转换成特殊样式字符。
                             }
                         } else {
+                            add_outline_note(']', li);
                             if (cfg.print_notes) {
                                 text_display = text_display + ']'; // 嵌套的里层闭口，
                             }
@@ -376,17 +392,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     // 非符号文字内容
                     if (nested_comments > 0) {
                     } else if (nested_notes > 0) {
+                        add_outline_note(current ? current : "", li);
                         if (cfg.print_notes) {
                             text_display = text_display + current;
-                        }
-                        if (needProcessInlineNote > 0) {
-                            if (current_outline_note_text.length < needProcessInlineNote) {
-                                if (current) {
-                                    current_outline_note_text.push(current);
-                                } else {
-                                    current_outline_note_text.push("");
-                                }
-                            }
                         }
                     } else {
                         text_display = text_display + current;
@@ -446,23 +454,33 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         }
     }
 
-    const processInlineNotes2 = (linenumber: number) => {
+    const processInlineNotes2 = () => {
 
         if (current_outline_note_text.length > 0) {
-            var level = latestSectionOrScene(current_depth + 1, () => true);
-            if (level) {
-                level.notes = level.notes || []
-                for (let i = 0; i < current_outline_note_text.length; i++) {
-                    if (current_outline_note_text[i]) {
-                        level.notes.push({ note: current_outline_note_text[i], line: linenumber });
-                    }
-                }
-            }
-            else {
-                for (let i = 0; i < current_outline_note_text.length; i++) {
-                    if (current_outline_note_text[i]) {
-                        result.properties.structure.push({ text: current_outline_note_text[i], id: '/' + linenumber, isnote: true, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, current_outline_note_text[i].length + 4)), section: false, synopses: [] })
-                    }
+            // var level = latestSectionOrScene(current_depth + 1, () => true);
+            // if (level) {
+            //     level.notes = level.notes || []
+            //     for (let i = 0; i < current_outline_note_text.length; i++) {
+            //         if (current_outline_note_text[i] && current_outline_note_text[i].trim().length > 0) {
+            //             var linenumber = current_outline_note_linenum[i];
+            //             level.notes.push({ note: current_outline_note_text[i].trim(), line: linenumber });
+            //         }
+            //     }
+            // }
+            // else {
+            //     for (let i = 0; i < current_outline_note_text.length; i++) {
+            //         if (current_outline_note_text[i] && current_outline_note_text[i].trim().length > 0) {
+            //             var linenumber = current_outline_note_linenum[i];
+            //             result.properties.structure.push({ text: current_outline_note_text[i].trim(), id: '/' + linenumber, isnote: true, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, current_outline_note_text[i].length + 4)), section: false, synopses: [] })
+            //         }
+            //     }
+            // }
+            
+            // 统一在最外层
+            for (let i = 0; i < current_outline_note_text.length; i++) {
+                if (current_outline_note_text[i] && current_outline_note_text[i].trim().length > 0) {
+                    var linenumber = current_outline_note_linenum[i];
+                    result.properties.structure.push({ text: current_outline_note_text[i].trim(), id: '/' + linenumber, isnote: true, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, current_outline_note_text[i].length + 4)), section: false, synopses: [] })
                 }
             }
         }
@@ -569,10 +587,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     for (var i = 0; i < lines_length; i++) {
         notetoken = null;
         // var is_character_line = false;
-        needProcessInlineNote = 0;
         var current_has_note = false // 当前行，是否包含 note
         // current_expet_note_text = "" // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
-        current_outline_note_text = []
         // current_line_number = i;
         text = lines[i];
         // line_match_type = ''; // 是否 block 首行
@@ -640,13 +656,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             // 2. 至少不是空行了。
 
             var arr = text.split(/(\/\*)|(\*\/)|(\[\[)|(\]\])/g).filter(if_not_empty);
-            reduce_comment_and_note(arr);
-
-            if (needProcessInlineNote) {
-                // TODO Arming (2024-09-05) : 
-                processInlineNotes2(i)
-                needProcessInlineNote = 0;
-            }
+            reduce_comment_and_note(arr, i);
 
             if (text_valid.trim().length == 0) {
                 // 纯注解行内容，有内容，且全部被注解了。
@@ -1223,6 +1233,11 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         pushToken(create_token(undefined, undefined, undefined, undefined, "dual_dialogue_end"));
     }
 
+    if (needProcessOutlineNote) {
+        // TODO Arming (2024-09-05) : 
+        processInlineNotes2()
+        needProcessOutlineNote = 0;
+    }
 
     // tidy up separators
 
