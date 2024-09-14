@@ -13,7 +13,7 @@
       "include": "#notes"
     },
     {
-      "include": "#title_page_font"
+      "include": "#title_page_hiden"
     },
     {
       "include": "#title_page"
@@ -36,8 +36,8 @@
   ],
   "repository": {
     "dialogue": {
-      "contentName": "string",
-      "begin": "[ \\t]*(((?!@)\\p{Lu}[^\\p{Ll}\\r\\n]*?)|((@)([^\\r\\n\\(\\^]*?)))(\\(.*?\\))?(\\s*\\^)?\\s*((\\[\\[.*)|(/\\*.*))?$",
+      "contentName": "string.fountain markup.italic.fountain",
+      "begin": "[ \\t]*(((?!@)\\p{Lu}[^\\p{Ll}\\r\\n]*?)|((@)([^\\r\\n\\(\\^]*?)))(\\(.*\\))?((?:\\s*(?:(?:\\[\\[[^\\]]*?\\]\\])|(?:/\\*[^(?:\\*/)]*?\\*/))\\s*?)*?)(\\s*\\^)?\\s*((?:(?:(?:\\[\\[[^\\]]*?\\]\\])|(?:/\\*[^(?:\\*/)]*?\\*/))\\s*?)*?)$",
       "end": "^[ ]?$",
       "beginCaptures": {
         "2": {
@@ -52,7 +52,7 @@
           ]
         },
         "4": {
-          "name": "comment.block.fountain"
+          "name": "keyword.other.unit"
         },
         "5": {
           "name": "variable.parameter.url.css",
@@ -66,12 +66,30 @@
           ]
         },
         "6": {
-          "name": "constant.numeric.fountain"
+          "name": "constant.numeric.fountain",
+          "patterns": [
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#notes"
+            }
+          ]
         },
         "7": {
-          "name": "comment.block.fountain"
+          "patterns": [
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#notes"
+            }
+          ]
         },
         "8": {
+          "name": "keyword.other.unit"
+        },
+        "9": {
           "patterns": [
             {
               "include": "#comments"
@@ -135,16 +153,16 @@
         }
       ]
     },
-    "title_page_font": {
-      "begin": "\\s*(?i)(font|font italic|font bold|font bold italic)(:)",
+    "title_page_hiden": {
+      "begin": "\\s*(?i)(font|font italic|font bold|font bold italic|watermark|header|footer)(:)",
       "end": "((?=(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)(:))|(?=^\\s?$))",
       "name": "entity.name.tag",
       "beginCaptures": {
         "1": {
-          "name": "variable.other.constant"
+          "name": "keyword.other.unit"
         },
         "2": {
-          "name": "keyword.control"
+          "name": "keyword.other.unit"
         }
       },
       "patterns": [
@@ -163,15 +181,15 @@
       ]
     },
     "title_page": {
-      "begin": "\\s*(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|revision|tl|tc|tr|cc|br|bl)(:)",
+      "begin": "\\s*(?i)(title|credit|authors?|source|draft date|date|contact|contact info|copyright|notes|revision|tl|tc|tr|cc|br|bl)(:)",
       "end": "((?=(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)(:))|(?=^\\s?$))",
       "name": "markup.deleted.diff",
       "beginCaptures": {
         "1": {
-          "name": "variable.other.constant"
+          "name": "keyword.other.unit"
         },
         "2": {
-          "name": "keyword.control"
+          "name": "keyword.other.unit"
         }
       },
       "patterns": [
@@ -190,13 +208,16 @@
       ]
     },
     "scene_headings_and_action": {
-      "begin": "(?i)[ \\t]*([.](?=[\\w\\(\\p{L}])(?:\\(室内\\)|\\(室外\\))?|(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[. ]\\s*(?:\\(室内\\)|\\(室外\\))?)([^-]*)([-–—−][^#]*)?((#)\\s*([^\\s].*)(#))?\\s*((\\[\\[.*)|(/\\*.*))?$",
+      "begin": "(?i)[ \\t]*(([.])(?=[\\w\\(\\p{L}])(?:\\(室内\\)|\\(室外\\))?|(?:int|ext|est|int[.]?\\/ext|i[.]?\\/e)[. ]\\s*(?:\\(室内\\)|\\(室外\\))?)([^-]*)(?:([-–—−])([^#]*))?((#)\\s*([^\\s].*)(#))?\\s*((?:\\s*(?:(?:\\[\\[[^\\]]*?\\]\\])|(?:/\\*[^(?:\\*/)]*?\\*/))\\s*?)*?)$",
       "end": "^[ ]*$",
       "beginCaptures": {
         "1": {
           "name": "keyword.other.class"
         },
         "2": {
+          "name": "keyword.other.unit"
+        },
+        "3": {
           "name": "token.error-token",
           "patterns": [
             {
@@ -207,8 +228,11 @@
             }
           ]
         },
-        "3": {
-          "name": "keyword.other.class",
+        "4": {
+          "name": "keyword.other.unit"
+        },
+        "5": {
+          "name": "token.warn-token",
           "patterns": [
             {
               "include": "#comments"
@@ -218,16 +242,24 @@
             }
           ]
         },
-        "5": {
-          "name": "comment.block.fountain"
-        },
-        "6": {
-          "name": "constant.numeric.scene.fountain"
-        },
         "7": {
-          "name": "comment.block.fountain"
+          "name": "keyword.other.unit"
         },
         "8": {
+          "name": "constant.numeric.scene.fountain",
+          "patterns": [
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#notes"
+            }
+          ]
+        },
+        "9": {
+          "name": "keyword.other.unit"
+        },
+        "10": {
           "patterns": [
             {
               "include": "#comments"
@@ -250,7 +282,7 @@
       "end": "$|(?<=^[^(/\\*)]*\\*\\s*/)|(?<=^[^(\\[\\[)]*\\]\\]\\s*)|(?<=^[^_]*_)|(?<=^[^\\*]*\\*{1,3})",
       "beginCaptures": {
         "1": {
-          "name": "comment.block.fountain"
+          "name": "keyword.other.unit"
         }
       },
       "patterns": [
@@ -274,7 +306,7 @@
       "end": "$|(?<=^[^(/\\*)]*\\*\\s*/)|(?<=^[^(\\[\\[)]*\\]\\]\\s*)|(?<=^[^_]*_)|(?<=^[^\\*]*\\*{1,3})",
       "beginCaptures": {
         "1": {
-          "name": "comment.block.fountain"
+          "name": "keyword.other.unit"
         }
       },
       "patterns": [
@@ -293,10 +325,13 @@
       ]
     },
     "transitions_and_action": {
-      "begin": "\\s*((>)[^\\n\\r]*(?!<[ \\t]*)$)|([A-Z ]+?TO:((\\[\\[|/\\*).*)?(?<!\\s)$)",
+      "begin": "\\s*(?:(>)([^\\n\\r]*(?<!<[ \\t]*(?:(?:\\s*(?:(?:\\[\\[[^\\]]*?\\]\\])|(?:/\\*[^(?:\\*/)]*?\\*/))\\s*?)*?)))$)|([A-Z ]+?TO:((?:(?:(?:\\[\\[[^\\]]*?\\]\\])|(?:/\\*[^(?:\\*/)]*?\\*/))?)*?)(?<!\\s)$)",
       "end": "^[ ]*$",
       "beginCaptures": {
         "1": {
+          "name": "keyword.other.unit"
+        },
+        "2": {
           "name": "variable.other.constant",
           "patterns": [
             {
@@ -312,9 +347,6 @@
               "include": "#markup"
             }
           ]
-        },
-        "2": {
-          "name": "comment.block.fountain"
         },
         "3": {
           "name": "variable.other.constant",
@@ -341,28 +373,52 @@
       ]
     },
     "center": {
-      "name": "token.warn-token",
-      "begin": "^\\s*(>)",
-      "end": "(<)\\s*$",
+      "name": "token.info-token",
+      "match": "\\s*((?:\\s*(?:(?:\\[\\[[^\\]]*?\\]\\])|(?:/\\*[^(?:\\*/)]*?\\*/))\\s*?)*?)(>)(.*)(<)\\s*((?:\\s*(?:(?:\\[\\[[^\\]]*?\\]\\])|(?:/\\*[^(?:\\*/)]*?\\*/))\\s*?)*?)$",
       "captures": {
         "1": {
-          "name": "comment.block.fountain"
+          "patterns": [
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#notes"
+            }
+          ]
+        },
+        "2": {
+          "name": "keyword.other.unit"
+        },
+        "3": {
+          "patterns": [
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#notes"
+            },
+            {
+              "include": "#underline"
+            },
+            {
+              "include": "#markup"
+            }
+          ]
+        },
+        "4": {
+          "name": "keyword.other.unit"
+        },
+        "5": {
+          "patterns": [
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#notes"
+            }
+          ]
         }
-      },
-      "patterns": [
-        {
-          "include": "#comments"
-        },
-        {
-          "include": "#notes"
-        },
-        {
-          "include": "#underline"
-        },
-        {
-          "include": "#markup"
-        }
-      ]
+      }
     },
     "notes": {
       "name": "comment.block",
@@ -399,7 +455,7 @@
       "end": "$|(?<=^[^(/\\*)]*\\*\\s*/)|(?<=^[^(\\[\\[)]*\\]\\]\\s*)|(?<=^[^_]*_)|(?<=^[^\\*]*\\*{1,3})",
       "beginCaptures": {
         "1": {
-          "name": "comment.block.fountain"
+          "name": "keyword.other.unit"
         }
       },
       "patterns": [
@@ -440,7 +496,7 @@
       "end": "^[ ]*$",
       "beginCaptures": {
         "1": {
-          "name": "comment.block.fountain"
+          "name": "keyword.other.unit"
         }
       },
       "patterns": [
@@ -504,8 +560,13 @@
     },
     "underline": {
       "name": "markup.underline.fountain",
-      "begin": "(?<!\\\\)_",
-      "end": "(?<!\\\\)_",
+      "begin": "(?<!\\\\)(_)",
+      "end": "(?<!\\\\)(_)",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.markup.underline.fountain"
+        }
+      },
       "patterns": [
         {
           "include": "#comments"
@@ -521,8 +582,39 @@
     "markup": {
       "patterns": [
         {
+          "name": "markup.bold.italic.fountain",
+          "begin": "(?<!\\\\|/)(\\*{3})(?!/)",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.markup.bold.italic.fountain"
+            }
+          },
+          "end": "(?<!\\\\|/)(\\1)(?!/)",
+          "patterns": [
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#notes"
+            },
+            {
+              "include": "#underline"
+            },
+            {
+              "applyEndPatternLast": 1,
+              "begin": "(?=<[^>]*?>)",
+              "end": "(?<=>)",
+              "patterns": [
+                {
+                  "include": "text.html.basic"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "name": "markup.bold.fountain",
-          "begin": "(?<!\\\\|/)(\\*{2,3})(?!/)",
+          "begin": "(?<!\\\\|/)(\\*{2})(?!/)",
           "captures": {
             "1": {
               "name": "punctuation.definition.markup.bold.fountain"
@@ -568,6 +660,9 @@
               "include": "#notes"
             },
             {
+              "include": "#underline"
+            },
+            {
               "applyEndPatternLast": 1,
               "begin": "(?=<[^>]*?>)",
               "end": "(?<=>)",
@@ -578,6 +673,15 @@
               ]
             }
           ]
+        },
+        {
+          "name": "markup.escape.fountain",
+          "match": "(\\\\)(?=[\\*_])",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.markup.escape.fountain"
+            }
+          }
         }
       ]
     },
