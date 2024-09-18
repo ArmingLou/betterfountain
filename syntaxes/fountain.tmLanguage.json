@@ -155,7 +155,7 @@
     },
     "title_page_hiden": {
       "begin": "\\s*(?i)(font|font italic|font bold|font bold italic|watermark|header|footer)(:)",
-      "end": "((?=(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)(:))|(?=^\\s?$))",
+      "end": "((?=^\\s*(?:(?:\\s*(?:(?:\\[\\[[^\\]]*?\\]\\])|(?:/\\*[^(?:\\*/)]*?\\*/))\\s*?)*?)(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)(:))|(?=^\\s?$))",
       "name": "entity.name.tag",
       "beginCaptures": {
         "1": {
@@ -182,7 +182,7 @@
     },
     "title_page": {
       "begin": "\\s*(?i)(title|credit|authors?|source|draft date|date|contact|contact info|copyright|notes|revision|tl|tc|tr|cc|br|bl)(:)",
-      "end": "((?=(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)(:))|(?=^\\s?$))",
+      "end": "((?=^\\s*(?:(?:\\s*(?:(?:\\[\\[[^\\]]*?\\]\\])|(?:/\\*[^(?:\\*/)]*?\\*/))\\s*?)*?)(?i)(title|credit|authors?|source|draft date|date|watermark|header|footer|contact|contact info|copyright|notes|font|font italic|font bold|font bold italic|revision|tl|tc|tr|cc|br|bl)(:))|(?=^\\s?$))",
       "name": "markup.deleted.diff",
       "beginCaptures": {
         "1": {
