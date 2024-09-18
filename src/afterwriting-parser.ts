@@ -781,10 +781,16 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 text_valid = text_valid.trim()
                 var index = text_valid.indexOf(":");
                 thistoken.type = text_valid.substr(0, index).toLowerCase().replace(" ", "_");
+                
+                var fontMt = text_valid.match(/^\s*(font|font italic|font bold|font bold italic)\:(.*)/i)
+                if (fontMt) {
+                    thistoken.text = fontMt[2].trim();
+                }else {
+                    var mt = text_display.match(/^(.*?↻)?\s*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact(?: info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:(.*)/i)
+                    thistoken.text = mt[3].trim();
+                    processTokenTextStyleChar(thistoken);
+                }
 
-                var mt = text_display.match(/^(.*?↻)?\s*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact(?: info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:(.*)/i)
-                thistoken.text = mt[3].trim();
-                processTokenTextStyleChar(thistoken);
 
                 last_title_page_token = thistoken;
                 let keyformat = titlePageDisplay[thistoken.type];
