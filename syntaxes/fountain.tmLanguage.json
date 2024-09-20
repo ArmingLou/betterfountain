@@ -42,12 +42,12 @@
   ],
   "repository": {
     "dialogue": {
-      "contentName": "string markup.italic.fountain",
+      "contentName": "string.fountain markup.italic.fountain",
       "begin": "[ \\t]*(((?!@)\\p{Lu}(?:[^\\p{Ll}\\r\\n]*?(?:(?:\\s*(?:(?:\\[\\[(?:(?!\\]\\]).)*?\\]\\])|(?:/\\*(?:(?!\\*/).)*?\\*/))\\s*?)*?))*?)|((@)([^\\r\\n\\(\\^]*?)))(\\(.*\\))?((?:\\s*(?:(?:\\[\\[(?:(?!\\]\\]).)*?\\]\\])|(?:/\\*(?:(?!\\*/).)*?\\*/))\\s*?)*?)(\\s*\\^)?(?=\\s*(?:(?:\\s*(?:(?:\\[\\[(?:(?!\\]\\]).)*?\\]\\])|(?:/\\*(?:(?!\\*/).)*?\\*/))\\s*?)*?)(?:(?:\\s*\\[\\[(?:(?!\\]\\]).)*$)|(?:\\s*/\\*(?:(?!\\*/).)*$)|\\s*$))",
       "end": "^[ ]?$",
       "beginCaptures": {
         "2": {
-          "name": "variable.parameter.url.css",
+          "name": "constant.character.fountain",
           "patterns": [
             {
               "include": "#comments"
@@ -61,7 +61,7 @@
           "name": "keyword.other.unit"
         },
         "5": {
-          "name": "variable.parameter.url.css",
+          "name": "constant.character.fountain",
           "patterns": [
             {
               "include": "#comments"
@@ -564,7 +564,7 @@
       ]
     },
     "lyrics": {
-      "name": "markup.italic string.fountain",
+      "name": "markup.italic string",
       "begin": "\\s*(~)",
       "end": "(?=\\s*(?:(?:\\s*(?:(?:\\[\\[(?:(?!\\]\\]).)*?\\]\\])|(?:/\\*(?:(?!\\*/).)*?\\*/))\\s*?)*?)(?:(?:\\s*\\[\\[(?:(?!\\]\\]).)*$)|(?:\\s*/\\*(?:(?!\\*/).)*$)|\\s*$))",
       "beginCaptures": {
