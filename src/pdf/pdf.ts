@@ -6,9 +6,9 @@ import * as fliner from "./liner";
 import * as vscode from "vscode";
 
 //Creates the PDF, or returns stats if output path is "$STATS$"
-export var GeneratePdf = function (outputpath: string, config: FountainConfig, exportconfig : ExportConfig, parsedDocument: any, progress?: vscode.Progress<{ message?: string; increment?: number; }> ):any {
+export var GeneratePdf = function (outputpath: string, config: FountainConfig, exportconfig: ExportConfig, parsedDocument: any, progress?: vscode.Progress<{ message?: string; increment?: number; }>): any {
 
-    if(progress) progress.report({message: "Converting to individual lines", increment: 25});
+    if (progress) progress.report({ message: "Converting to individual lines", increment: 25 });
     var liner: any = new fliner.Liner(helpers.default, config.print_dialogue_numbers);
     var watermark = undefined;
     var header = undefined;
@@ -17,14 +17,14 @@ export var GeneratePdf = function (outputpath: string, config: FountainConfig, e
     var font_bold = "";
     var font_italic = "";
     var font_bold_italic = "";
-    if(parsedDocument.title_page){
+    if (parsedDocument.title_page) {
         for (let index = 0; index < parsedDocument.title_page['hidden'].length; index++) {
             if (parsedDocument.title_page['hidden'][index].type == "watermark")
                 watermark = parsedDocument.title_page['hidden'][index].text;
             if (parsedDocument.title_page['hidden'][index].type == "header")
                 header = parsedDocument.title_page['hidden'][index].text;
             if (parsedDocument.title_page['hidden'][index].type == "footer")
-            footer = parsedDocument.title_page['hidden'][index].text;
+                footer = parsedDocument.title_page['hidden'][index].text;
             if (parsedDocument.title_page['hidden'][index].type == "font")
                 font = parsedDocument.title_page['hidden'][index].text;
             if (parsedDocument.title_page['hidden'][index].type == "font_italic")
@@ -50,18 +50,18 @@ export var GeneratePdf = function (outputpath: string, config: FountainConfig, e
             (!config.print_synopsis && current_token.type === "synopsis") ||
             (!config.print_dialogues && current_token.is_dialogue()) ||
             (config.merge_empty_lines && current_token.is("separator") && previous_type === "separator")) {
-            
-                if(current_token.type == "section"){
-                    //on the next scene header, add an invisible section (for keeping track of sections when creating bookmarks and generating pdf-side)
-                    invisibleSections.push(current_token);
-                }
-                parsedDocument.tokens.splice(current_index, 1);
 
-                continue;
+            if (current_token.type == "section") {
+                //on the next scene header, add an invisible section (for keeping track of sections when creating bookmarks and generating pdf-side)
+                invisibleSections.push(current_token);
+            }
+            parsedDocument.tokens.splice(current_index, 1);
+
+            continue;
         }
-        if(current_token.type == "scene_heading"){
-            if(invisibleSections.length>0)
-            current_token.invisibleSections = invisibleSections;
+        if (current_token.type == "scene_heading") {
+            if (invisibleSections.length > 0)
+                current_token.invisibleSections = invisibleSections;
             invisibleSections = [];
         }
 
@@ -79,12 +79,27 @@ export var GeneratePdf = function (outputpath: string, config: FountainConfig, e
         parsedDocument.tokens.pop();
     }
 
-    if (!config.print_watermark && watermark != undefined)
+    // if (watermark == undefined || header == undefined || footer == undefined) {
+    //     cleanFountainConfig();
+    //     getFountainConfig(getActiveFountainDocument());
+    //     var pdfConfig = vscode.workspace.getConfiguration("fountain.pdf");
+    // }
+    if (watermark != undefined) {
         config.print_watermark = watermark;
-    if (!config.print_header && header != undefined)
+    } else {
+        config.print_watermark = vscode.workspace.getConfiguration("fountain.pdf").get("watermark");
+    }
+    if (header != undefined) {
         config.print_header = header;
-    if(!config.print_footer && footer != undefined)
+    } else {
+        config.print_header = vscode.workspace.getConfiguration("fountain.pdf").get("pageHeader");
+    }
+    if (footer != undefined) {
         config.print_footer = footer;
+    } else {
+        config.print_footer = vscode.workspace.getConfiguration("fountain.pdf").get("pageFooter");
+    }
+ 
 
     parsedDocument.lines = liner.line(parsedDocument.tokens, {
         print: print.print_profiles[config.print_profile || "a4"],
@@ -99,11 +114,11 @@ export var GeneratePdf = function (outputpath: string, config: FountainConfig, e
         print: print.print_profiles[config.print_profile || "a4"],
         config: config,
         font: font,
-        exportconfig:exportconfig,
+        exportconfig: exportconfig,
         font_italic: font_italic,
         font_bold: font_bold,
         font_bold_italic: font_bold_italic,
-        stash_style_left_clumn : {
+        stash_style_left_clumn: {
             bold_italic: false,
             bold: false,
             italic: false,
@@ -112,7 +127,7 @@ export var GeneratePdf = function (outputpath: string, config: FountainConfig, e
             italic_global: false,
             italic_dynamic: false
         },
-        stash_style_right_clumn : {
+        stash_style_right_clumn: {
             bold_italic: false,
             bold: false,
             italic: false,
@@ -121,13 +136,13 @@ export var GeneratePdf = function (outputpath: string, config: FountainConfig, e
             italic_global: false,
             italic_dynamic: false
         },
-        italic_global: false, 
+        italic_global: false,
         italic_dynamic: false
     }
 
-    if(outputpath=="$STATS$") 
+    if (outputpath == "$STATS$")
         return pdfmaker.get_pdf_stats(pdf_options);
-    else if(outputpath=="$PREVIEW$")
+    else if (outputpath == "$PREVIEW$")
         return pdfmaker.get_pdf_base64(pdf_options)
     else
         pdfmaker.get_pdf(pdf_options, progress);
