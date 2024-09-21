@@ -674,13 +674,10 @@
       ]
     },
     "action_force": {
-      "begin": "(?:\\s*(\\!)\\s*[^\\s](?=.*?$))|(?:\\s*(\\!)\\s*$)",
+      "begin": "\\s*(?=(\\!).*?$)",
       "end": "^[ \\t]*$",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.unit"
-        },
-        "2": {
           "name": "keyword.other.unit"
         }
       },
