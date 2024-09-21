@@ -281,6 +281,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         current_depth = 0,
         match, text, last_title_page_token,
         thistoken: token,
+        font_title = false,
         last_was_separator = false,
         //top_or_separated = false,
         // token_category = "none",
@@ -475,7 +476,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             //         }
             //     }
             // }
-            
+
             // 统一在最外层
             for (let i = 0; i < current_outline_note_text.length; i++) {
                 if (current_outline_note_text[i] && current_outline_note_text[i].trim().length > 0) {
@@ -723,6 +724,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     // note 里的延续空行 /或者 延续块内容的块内空行
                     if (result.tokens.length > 0) {
                         if (state === "title_page") {
+                            if(font_title) {
+                                continue;
+                            }
                             // result.tokens[result.tokens.length - 1].text += "\n";
                             var merge = false;
                             if (cfg.merge_empty_lines) {
@@ -781,11 +785,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 text_valid = text_valid.trim()
                 var index = text_valid.indexOf(":");
                 thistoken.type = text_valid.substr(0, index).toLowerCase().replace(" ", "_");
-                
+
                 var fontMt = text_valid.match(/^\s*(font|font italic|font bold|font bold italic)\:(.*)/i)
                 if (fontMt) {
+                    font_title = true;
                     thistoken.text = fontMt[2].trim();
-                }else {
+                } else {
+                    font_title = false;
                     var mt = text_display.match(/^(.*?↻)?\s*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact(?: info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:(.*)/i)
                     thistoken.text = mt[3].trim();
                     processTokenTextStyleChar(thistoken);
@@ -806,8 +812,16 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 // continue;
             } else {
                 // 标题页 字段内容的换行 内容。
-                processTokenTextStyleChar(thistoken);
-                last_title_page_token.text += (last_title_page_token.text ? "\n" : "") + thistoken.text.trim();
+                if (font_title) {
+                    thistoken.text = text_valid.trim();
+                    if(thistoken.text.length > 0){
+                        last_title_page_token.text += (last_title_page_token.text ? " " : "") + thistoken.text.trim();
+                    }
+                } else {
+                    thistoken.text = text_display.trim();
+                    processTokenTextStyleChar(thistoken);
+                    last_title_page_token.text += (last_title_page_token.text ? "\n" : "") + thistoken.text.trim();
+                }
             }
             continue;
         }

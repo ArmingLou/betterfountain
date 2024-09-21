@@ -16,6 +16,9 @@
       "include": "#title_page_hiden"
     },
     {
+      "include": "#title_page_font"
+    },
+    {
       "include": "#title_page"
     },
     {
@@ -178,6 +181,19 @@
         }
       ]
     },
+    "title_font_content_inline": {
+      "name": "entity.name.tag",
+      "begin": "(?=\\s*[^\\s])",
+      "end": "(?=(?:(?:(?:\\s*(?:\\s*(?:(?:\\[\\[(?:(?!\\]\\]).)*\\]\\])|(?:/\\*(?:(?!\\*/).)*\\*/))\\s*)*)(?:(?:/\\*(?:(?!\\*/).)*)|(?:\\[\\[(?:(?!\\]\\]).)*))?)$))",
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#notes"
+        }
+      ]
+    },
     "title_hiden_content_inline": {
       "name": "entity.name.tag",
       "begin": "(?=\\s*[^\\s])",
@@ -197,8 +213,48 @@
         }
       ]
     },
+    "title_page_font": {
+      "begin": "\\s*(?i)(font|font italic|font bold|font bold italic)(:)(.*?)(?=(?:(?:(?:\\s*(?:\\s*(?:(?:\\[\\[(?:(?!\\]\\]).)*\\]\\])|(?:/\\*(?:(?!\\*/).)*\\*/))\\s*)*)(?:(?:/\\*(?:(?!\\*/).)*)|(?:\\[\\[(?:(?!\\]\\]).)*))?)$))",
+      "end": "(?=^[ ]?$)",
+      "name": "entity.name.tag",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.unit"
+        },
+        "2": {
+          "name": "keyword.other.unit"
+        },
+        "3": {
+          "patterns": [
+            {
+              "include": "#title_font_content_inline"
+            }
+          ]
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#notes"
+        },
+        {
+          "include": "#title_page"
+        },
+        {
+          "include": "#title_page_hiden"
+        },
+        {
+          "include": "#title_page_font"
+        },
+        {
+          "include": "#title_font_content_inline"
+        }
+      ]
+    },
     "title_page_hiden": {
-      "begin": "\\s*(?i)(font|font italic|font bold|font bold italic|watermark|header|footer)(:)(.*?)(?=(?:(?:(?:\\s*(?:\\s*(?:(?:\\[\\[(?:(?!\\]\\]).)*\\]\\])|(?:/\\*(?:(?!\\*/).)*\\*/))\\s*)*)(?:(?:/\\*(?:(?!\\*/).)*)|(?:\\[\\[(?:(?!\\]\\]).)*))?)$))",
+      "begin": "\\s*(?i)(watermark|header|footer)(:)(.*?)(?=(?:(?:(?:\\s*(?:\\s*(?:(?:\\[\\[(?:(?!\\]\\]).)*\\]\\])|(?:/\\*(?:(?!\\*/).)*\\*/))\\s*)*)(?:(?:/\\*(?:(?!\\*/).)*)|(?:\\[\\[(?:(?!\\]\\]).)*))?)$))",
       "end": "(?=^[ ]?$)",
       "name": "entity.name.tag",
       "beginCaptures": {
@@ -228,6 +284,9 @@
         },
         {
           "include": "#title_page_hiden"
+        },
+        {
+          "include": "#title_page_font"
         },
         {
           "include": "#title_hiden_content_inline"
@@ -265,6 +324,9 @@
         },
         {
           "include": "#title_page_hiden"
+        },
+        {
+          "include": "#title_page_font"
         },
         {
           "include": "#title_content_inline"
