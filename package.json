@@ -561,9 +561,9 @@
 		"diff": "^5.0.0",
 		"font-finder": "^1.1.0",
 		"he": "^1.2.0",
-		"pdfkit": "^0.12.3",
+		"pdfkit": "^0.15.0",
 		"readability-scores": "^1.0.8",
-		"textbox-for-pdfkit": "^0.2.1",
+		"textbox-for-pdfkit": "file:textbox-for-pdfkit",
 		"username": "^5.1.0",
 		"vscode-extension-telemetry": "^0.3.2"
 	}

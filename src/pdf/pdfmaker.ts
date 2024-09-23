@@ -867,7 +867,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 color: '#eeeeee',
                 line_break: false,
                 width: diagonal,
-                align: 'right',
+                align: 'center',
             });
             doc.rotate(-angle, options);
             doc.fontSize(print.font_size || 12);

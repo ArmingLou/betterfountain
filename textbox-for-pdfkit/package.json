@@ -1,0 +1,26 @@
+{
+  "name": "textbox-for-pdfkit",
+  "version": "0.3.0",
+  "description": "A package to easily create beautiful Textboxes with pdfKit",
+  "main": "js/pdfTextbox.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "textbox",
+    "pdfkit"
+  ],
+  "homepage": "https://github.com/NikolaiMe/textbox-for-pdfkit",
+  "bugs": {
+    "url": "https://github.com/NikolaiMe/textbox-for-pdfkit/issues"
+  },
+  "author": "Nikolai Merz",
+  "license": "MIT",
+  "dependencies": {
+    "fontkit": "^1.8.1"
+  },
+  "devDependencies": {
+    "jest": "^26.6.3",
+    "pdfkit": "^0.12.3"
+  }
+}
