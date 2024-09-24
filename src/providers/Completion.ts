@@ -127,7 +127,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 
 		//Title page autocomplete
 		if (parsedDocument.properties.firstTokenLine >= position.line) {
-			if (currentline.indexOf(":") == -1) {
+			if (currentline.trim() === "") {
 				if (parsedDocument.properties.titleKeys.indexOf("title") == -1)
 					// completes.push({ label: "Title: **《》**", insertText: new vscode.SnippetString('Title: **《$1》**'), sortText: "0A", kind: vscode.CompletionItemKind.Snippet });
 					completes.push(TitlePageKey({ name: "Title", detail: "The title of the screenplay", sort: "0A", triggerIntellisense: true, position: titlePageDisplay['title'].position }));
@@ -188,7 +188,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 				completes.push(TitlePageKey({ name: 'Footer', detail: "Header used throughout the document", documentation: "This will be printed in the bottom left of every single page, excluding the title page. Can also be set globally by the 'Page Footer' setting", sort: "T", position: 'footer' }))
 			}
 			else {
-				var currentkey = currentline.trimRight().toLowerCase();
+				var currentkey = currentline.trim().toLowerCase();
 				if (currentkey == 'title:') {
 					completes.push({ label: "**《》**", insertText: new vscode.SnippetString('**《$1》**'), sortText: "0A", kind: vscode.CompletionItemKind.Snippet });
 				}
@@ -218,53 +218,6 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 					fontnames.forEach((fontname: string) => {
 						completes.push({ label: fontname, insertText: fontname + "\n", kind: vscode.CompletionItemKind.Text });
 					})
-				}
-			}
-		}
-		//Scene header autocomplete
-		else if (parsedDocument.properties.sceneLines.indexOf(position.line) > -1) {
-			//Time of day
-			var mt = currentline.match(/^[^-–—−]+?[-–—−]\s*$/g);
-			if (mt) {
-				var addspace = !currentline.endsWith(" ");
-				completes.push(TimeofDayCompletion("白天", addspace, "A"));
-				completes.push(TimeofDayCompletion("夜晚", addspace, "B"));
-				completes.push(TimeofDayCompletion("黄昏", addspace, "C"));
-				completes.push(TimeofDayCompletion("黎明", addspace, "D"));
-				completes.push(TimeofDayCompletion("DAY", addspace, "E"));
-				completes.push(TimeofDayCompletion("NIGHT", addspace, "F"));
-				completes.push(TimeofDayCompletion("DUSK", addspace, "G"));
-				completes.push(TimeofDayCompletion("DAWN", addspace, "H"));
-			}
-			else {
-				// var scenematch = currentline.match(/^[ \t]*((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(内景\)|\(外景\))?)\s*$/gi);
-				var scenematch = currentline.match(/^[ \t]*([.](?=[\w\(\p{L}])(\(内景\)|\(外景\)|\(内外景\))?|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])\s*$/gui);
-				if (scenematch) {
-					// var previousLabels: string[] = []
-					parsedDocument.properties.locations.forEach((_location, name) => {
-						if (name != "") {
-							// if (previousLabels.indexOf(name) == -1) {
-							// 	previousLabels.push(name);
-							completes.push({ label: name, documentation: "Scene heading", sortText: "0B" + name });
-							// }
-						}
-					})
-
-					// for (let index = 0; index < parsedDocument.properties.sceneNames.length; index++) {
-					// 	var spacepos = parsedDocument.properties.sceneNames[index].indexOf(" ");
-					// 	if (spacepos != -1) {
-					// 		var thisLocation = parsedDocument.properties.sceneNames[index].slice(parsedDocument.properties.sceneNames[index].indexOf(" ")).trimLeft();
-					// 		if (previousLabels.indexOf(thisLocation) == -1) {
-					// 			previousLabels.push(thisLocation);
-					// 			if (parsedDocument.properties.sceneNames[index].toLowerCase().startsWith(scenematch[0].toLowerCase())) {
-					// 				completes.push({ label: thisLocation, documentation: "Scene heading", sortText: "0A" + (10 - scenematch[0].length) });
-					// 				//The (10-scenematch[0].length) is a hack to avoid a situation where INT. would be before INT./EXT. when it should be after
-					// 			}
-					// 			else
-					// 				completes.push({ label: thisLocation, documentation: "Scene heading", sortText: "0B" });
-					// 		}
-					// 	}
-					// }
 				}
 			}
 		}
@@ -321,10 +274,60 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 					}
 				});
 			}
-		} else if (currentline.trim() === "." && previousLineIsEmpty) {
-			completes.push({ label: "(内景) ", documentation: "内景", sortText: "1B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
-			completes.push({ label: "(外景) ", documentation: "外景", sortText: "1C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
-			completes.push({ label: "(内外景) ", documentation: "内外景", sortText: "1D", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+		} 
+		if (currentline.trim() === "." && previousLineIsEmpty) {
+			if(currentline.indexOf(".") == position.character-1){
+				completes.push({ label: "(内景) ", documentation: "内景", sortText: "00B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: "(外景) ", documentation: "外景", sortText: "00C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: "(内外景) ", documentation: "内外景", sortText: "00D", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+			}
+		}
+		//Scene header autocomplete
+		if (parsedDocument.properties.sceneLines.indexOf(position.line) > -1) {
+			//Time of day
+			var mt = currentline.match(/^[^-–—−]+?[-–—−]\s*$/g);
+			if (mt) {
+				var addspace = !currentline.endsWith(" ");
+				completes.push(TimeofDayCompletion("白天", addspace, "A"));
+				completes.push(TimeofDayCompletion("夜晚", addspace, "B"));
+				completes.push(TimeofDayCompletion("黄昏", addspace, "C"));
+				completes.push(TimeofDayCompletion("黎明", addspace, "D"));
+				completes.push(TimeofDayCompletion("DAY", addspace, "E"));
+				completes.push(TimeofDayCompletion("NIGHT", addspace, "F"));
+				completes.push(TimeofDayCompletion("DUSK", addspace, "G"));
+				completes.push(TimeofDayCompletion("DAWN", addspace, "H"));
+			}
+			else {
+				// var scenematch = currentline.match(/^[ \t]*((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(内景\)|\(外景\))?)\s*$/gi);
+				var scenematch = currentline.match(/^[ \t]*([.](?=[\w\(\p{L}])(\(内景\)|\(外景\)|\(内外景\))?|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])\s*$/gui);
+				if (scenematch) {
+					// var previousLabels: string[] = []
+					parsedDocument.properties.locations.forEach((_location, name) => {
+						if (name != "") {
+							// if (previousLabels.indexOf(name) == -1) {
+							// 	previousLabels.push(name);
+							completes.push({ label: name, documentation: "Scene heading", sortText: "0B" + name });
+							// }
+						}
+					})
+
+					// for (let index = 0; index < parsedDocument.properties.sceneNames.length; index++) {
+					// 	var spacepos = parsedDocument.properties.sceneNames[index].indexOf(" ");
+					// 	if (spacepos != -1) {
+					// 		var thisLocation = parsedDocument.properties.sceneNames[index].slice(parsedDocument.properties.sceneNames[index].indexOf(" ")).trimLeft();
+					// 		if (previousLabels.indexOf(thisLocation) == -1) {
+					// 			previousLabels.push(thisLocation);
+					// 			if (parsedDocument.properties.sceneNames[index].toLowerCase().startsWith(scenematch[0].toLowerCase())) {
+					// 				completes.push({ label: thisLocation, documentation: "Scene heading", sortText: "0A" + (10 - scenematch[0].length) });
+					// 				//The (10-scenematch[0].length) is a hack to avoid a situation where INT. would be before INT./EXT. when it should be after
+					// 			}
+					// 			else
+					// 				completes.push({ label: thisLocation, documentation: "Scene heading", sortText: "0B" });
+					// 		}
+					// 	}
+					// }
+				}
+			}
 		}
 		return completes;
 	}
