@@ -190,7 +190,9 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
             if (tx_l) {
               lineText = lineText + tx_l;
             }
-            res.push(lineText);
+            if (lineText) {
+              res.push(lineText);
+            }
             // lineWidth = 0;
             spaceLeft = width;
             lineText = "";
@@ -205,9 +207,9 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
         lineText = lineText + tx;
       }
     });
-    if (lineText !== "") {
-      res.push(lineText);
-    }
+    // if (lineText !== "") {
+    res.push(lineText);
+    // }
   });
 
   return res;

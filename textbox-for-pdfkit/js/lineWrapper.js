@@ -124,7 +124,9 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
               lineWidth += w_l;
               lineText = lineText + txt_l;
             }
-            lines.push({ ...textPart, text: lineText, width: lineWidth });
+            if (lineText) {
+              lines.push({ ...textPart, text: lineText, width: lineWidth });
+            }
             lineWidth = 0;
             spaceLeft = widthTextbox;
             lineText = "";
