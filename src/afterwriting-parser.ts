@@ -534,12 +534,12 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // let textWithoutNotes = token.text.replace(regex.note_inline, "");
         // processInlineNote(token.text, token.line);
         let textWithoutNotes = "";
-        if (current_has_note) {
+        // if (current_has_note) {
             // textWithoutNotes = current_expet_note_text;
             textWithoutNotes = text_valid;
-        } else {
-            textWithoutNotes = token.text;
-        }
+        // } else {
+            // textWithoutNotes = token.text;
+        // }
         token.time = calculateDialogueDuration(textWithoutNotes);
         // if (!cfg.print_notes) {
         //     token.text = textWithoutNotes;
@@ -565,11 +565,11 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // processInlineNote(token.text, token.line);
         // token.time = calculateActionDuration(token.text.length - irrelevantActionLength);
         let textWithoutNotes = "";
-        if (current_has_note) {
+        // if (current_has_note) {
             textWithoutNotes = text_valid;
-        } else {
-            textWithoutNotes = token.text;
-        }
+        // } else {
+            // textWithoutNotes = token.text;
+        // }
         token.time = calculateActionDuration(textWithoutNotes);
         // if (!cfg.print_notes) {
         //     token.text = token.text.replace(regex.note_inline, "");
@@ -597,7 +597,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     for (var i = 0; i < lines_length; i++) {
         notetoken = null;
         // var is_character_line = false;
-        var current_has_note = false // 当前行，是否包含 note
+        // var current_has_note = false // 当前行，是否包含 note
         // current_expet_note_text = "" // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
         // current_line_number = i;
         text = lines[i];
@@ -632,7 +632,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             text_display = text;
             if (nested_comments > 0 || nested_notes > 0) {
                 // 如果是在注释中，那么直接忽略
-                current_has_note = true;
+                // current_has_note = true;
                 if (nested_notes > 0 && cfg.print_notes && match_line_break) {
                     // noteBreakLine = true;
                     // note 空行，双空格表示保留一个空行，否则直接去掉空行。
