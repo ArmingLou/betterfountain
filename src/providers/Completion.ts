@@ -237,8 +237,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 				completes.push(TimeofDayCompletion("DAWN", addspace, "H"));
 			}
 			else {
-				// var scenematch = currentline.match(/^[ \t]*((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(室内\)|\(室外\))?)\s*$/gi);
-				var scenematch = currentline.match(/^[ \t]*([.](?=[\w\(\p{L}])(\(室内\)|\(室外\))?|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])\s*$/gui);
+				// var scenematch = currentline.match(/^[ \t]*((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(内景\)|\(外景\))?)\s*$/gi);
+				var scenematch = currentline.match(/^[ \t]*([.](?=[\w\(\p{L}])(\(内景\)|\(外景\)|\(内外景\))?|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])\s*$/gui);
 				if (scenematch) {
 					// var previousLabels: string[] = []
 					parsedDocument.properties.locations.forEach((_location, name) => {
@@ -301,12 +301,13 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 			}
 
 			if (currentline.trim() !== '@') {
-				completes.push({ label: ".(室内) ", documentation: "室内", sortText: "1B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
-				completes.push({ label: ".(室外) ", documentation: "室外", sortText: "1C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
-				completes.push({ label: "INT. ", documentation: "Interior", sortText: "1D", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
-				completes.push({ label: "EXT. ", documentation: "Exterior", sortText: "1E", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
-				completes.push({ label: "INT/EXT. ", documentation: "Interior/Exterior", sortText: "1F", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
-				completes.push({ label: "EST. ", documentation: "Establishing", sortText: "1G", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: ".(内景) ", documentation: "内景", sortText: "1B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: ".(外景) ", documentation: "外景", sortText: "1C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: ".(内外景) ", documentation: "内外景", sortText: "1D", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: "INT. ", documentation: "Interior", sortText: "1E", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: "EXT. ", documentation: "Exterior", sortText: "1F", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: "INT/EXT. ", documentation: "Interior/Exterior", sortText: "1G", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: "EST. ", documentation: "Establishing", sortText: "1H", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 			}
 			if (hasCharacters) {
 				let sortText = "2" // Add all characters, but after the "INT/EXT" suggestions
@@ -321,8 +322,9 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 				});
 			}
 		} else if (currentline.trim() === "." && previousLineIsEmpty) {
-			completes.push({ label: "(室内) ", documentation: "室内", sortText: "1B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
-			completes.push({ label: "(室外) ", documentation: "室外", sortText: "1C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+			completes.push({ label: "(内景) ", documentation: "内景", sortText: "1B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+			completes.push({ label: "(外景) ", documentation: "外景", sortText: "1C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+			completes.push({ label: "(内外景) ", documentation: "内外景", sortText: "1D", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 		}
 		return completes;
 	}

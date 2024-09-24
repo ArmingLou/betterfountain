@@ -73,15 +73,23 @@ export const parseLocationInformation = (scene_heading: RegExpMatchArray) => {
 		var i = scene_heading[1].indexOf('I') != -1;
 		var e = scene_heading[1].indexOf('EX') != -1 || scene_heading[1].indexOf('E.') != -1;
 		var n = splitLocationFromTime ? splitLocationFromTime[1].trim() : scene_heading[2].trim();
-		if (n.startsWith('(室内)')) {
+		if (n.startsWith('(内景)')) {
 			n = n.substring(4).trim();
 			if (!i) {
 				i = true;
 			}
-		} else if (n.startsWith('(室外)')) {
+		} else if (n.startsWith('(外景)')) {
 			n = n.substring(4).trim();
 			if (!e) {
 				e = true;
+			}
+		} else if (n.startsWith('(内外景)')) {
+			n = n.substring(5).trim();
+			if (!e) {
+				e = true;
+			}
+			if (!i) {
+				i = true;
 			}
 		}
 

@@ -370,10 +370,12 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
             sceneTime = locationtime(afterdash(deconstructedSlug?.[2]));
         } else {
             // 直接 点“.” 开头的场景
-            if (scene.text.trimLeft().startsWith("(室内)")) {
+            if (scene.text.trimLeft().startsWith("(内景)")) {
                 sceneType = "int";
-            } else if (scene.text.trimLeft().startsWith("(室外)")) {
+            } else if (scene.text.trimLeft().startsWith("(外景)")) {
                 sceneType = "ext";
+            } else if (scene.text.trimLeft().startsWith("(内外景)")) {
+                sceneType = "mixed";
             } else {
                 sceneType = "other";
             }
