@@ -40,6 +40,11 @@ function addTextbox(text, doc, posX, posY, width, style = {}) {
   const baseline = style.baseline || "alphabetic";
 
   drawTextLinesOnPDF(optimizedLines, width, posX, posY, textboxStyle, doc, baseline);
+  
+  if (optimizedLines.length <=0) {
+    // 至少有一行
+    return 1;
+  }
 
   return optimizedLines.length;
 }
@@ -164,7 +169,9 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
         // If there are many spaces at a line end --> ignore them.
         if (textFragment.text.match(/^[a-zA-Zа-яА-ЯёЁéÈçÇàÀäÄöÖüÜïÏêÊîÎôÔñÑ\s\d]+$/u)) {
           // 字母和数字不截断
-          res.push(lineText);
+          if(lineText) {
+            res.push(lineText);
+          }
           // lineWidth = 0;
           spaceLeft = width;
           lineText = "";

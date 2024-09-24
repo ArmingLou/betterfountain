@@ -103,7 +103,9 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
       // If there are many spaces at a line end --> ignore them.
       if(textFragment.text.match(/^[a-zA-Zа-яА-ЯёЁéÈçÇàÀäÄöÖüÜïÏêÊîÎôÔñÑ\s\d]+$/u)){
         // 字母和数字不截断
-        lines.push({ ...textPart, text: lineText, width: lineWidth });
+        if (lineText){
+          lines.push({ ...textPart, text: lineText, width: lineWidth });
+        }
         lineWidth = 0;
         spaceLeft = widthTextbox;
         lineText = "";
@@ -142,9 +144,9 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
       // }
     }
   });
-  if (lineText !== "") {
+  // if (lineText !== "") {
     lines.push({ ...textPart, text: lineText, width: lineWidth });
-  }
+  // }
   return lines;
 }
 
