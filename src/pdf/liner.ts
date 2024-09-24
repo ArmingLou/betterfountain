@@ -1,5 +1,7 @@
 import { charOfStyleTag } from "../cons";
 import { token } from "../token";
+import { breakLines } from 'textbox-for-pdfkit';
+import * as path from 'path';
 
 export class Liner {
     printTakeNumbers: boolean = false;
@@ -32,6 +34,7 @@ export class Liner {
         }
         return idx;
     }
+
 
     split_text = (text: any, max: any, index: any, token: token): any => {
         var maxIdx = this.get_max_idx(text, max);
@@ -83,8 +86,35 @@ export class Liner {
     };
 
     split_token = (token: any, max: number) => {
+        // token.lines = this.split_text(token.text || "", max, token.start, token);
         token.lines = this.split_text(token.text || "", max, token.start, token);
     };
+    split_token2 = (token: any, width: number, font: string, fontSize: number, doc: any, exclude: string): any => {
+        var tmpText;
+
+        if (token.type === "character" && this.printTakeNumbers) {
+            tmpText = token.takeNumber + " - " + token.text;
+        } else {
+            tmpText = token.text;
+        }
+
+        var bl = breakLines(tmpText, width, font, fontSize, doc, exclude);
+        var res = [];
+        var st = 0;
+        for (var i = 0; i < bl.length; i++) {
+            var l = bl[i].length;
+            res.push(this.h.create_line({
+                type: token.type,
+                token: token,
+                text: bl[i],
+                start: st,
+                end: st + l - 1
+            }))
+            st += l;
+        }
+        token.lines = res;
+        // return res;
+    }
 
     default_breaker = (index: number, lines: any, cfg: any) => {
         var CONTD = cfg.text_contd || "(CONT'D)";
@@ -169,7 +199,7 @@ export class Liner {
                         end: token_on_break.end,
                         token: token_on_break.token
                     };
-                    lines[index-1].text = lines[index-1].text + charOfStyleTag.style_left_stash; //加上样式 stash 标记
+                    lines[index - 1].text = lines[index - 1].text + charOfStyleTag.style_left_stash; //加上样式 stash 标记
                     lines[index].text = charOfStyleTag.style_left_pop + lines[index].text; // 加上样式 恢复 标记
                     lines.splice(index, 0, this.h.create_line(moreitem), new_page_character = this.h.create_line({
                         type: "character",
@@ -202,11 +232,11 @@ export class Liner {
                                 token: token_on_break.token
                             })
                             ].concat(lines[character].right_column.slice(dialogue_on_page_length));
-                            
-                            
+
+
                         right_lines_on_this_page[right_lines_on_this_page.length - 2].text = right_lines_on_this_page[right_lines_on_this_page.length - 2].text + charOfStyleTag.style_right_stash; //加上样式 stash 标记
                         right_lines_for_next_page[1].text = charOfStyleTag.style_right_pop + right_lines_for_next_page[1].text; // 加上样式 恢复 标记
-                        
+
                         lines[character].right_column = right_lines_on_this_page;
                         if (right_lines_for_next_page.length > 1) {
                             new_page_character.right_column = right_lines_for_next_page;
@@ -354,29 +384,93 @@ export class Liner {
     };
 
 
-    line = (tokens: any, cfg: any): any => {
+    line = async (tokens: any, cfg: any): Promise<any> => {
 
         var lines: any[] = [],
             global_index = 0;
 
         this._state = "normal";
 
+        var after_section = false;
+        var current_section_level = 0;
+
+        var PDFDocument = require('pdfkit');
+        var options = {
+            compress: false,
+            size: cfg.print.paper_size.indexOf("a4") >= 0 ? 'A4' : 'LETTER',
+            margins: {
+                top: 0,
+                left: 0,
+                bottom: 0,
+                right: 0
+            }
+        };
+        var doc = new PDFDocument(options);
+        const fontFinder = require('font-finder');
+        var variants = await fontFinder.listVariants(cfg.font);
+        var sett = false;
+        variants.forEach((variant: any) => {
+            if (variant.style == "regular") {
+                doc.registerFont(cfg.font, variant.path);
+                sett = true;
+            }
+        });
+        if (!sett && variants.length > 0) {
+            doc.registerFont(cfg.font, variants[0].path);
+            sett = true;
+        }
+        if (!sett) {
+            var fp = __dirname.slice(0, __dirname.lastIndexOf(path.sep)) + path.sep + 'courierprime' + path.sep
+            doc.registerFont(cfg.font, fp + 'courier-prime.ttf');
+        }
+        doc.font(cfg.font);
+        doc.fontSize(cfg.print.font_size);
+
         tokens.forEach((token: any) => {
             if (!token.hide) {
-                var max = (cfg.print[token.type] || {}).max || cfg.print.action.max;
+                // var max = (cfg.print[token.type] || {}).max || cfg.print.action.max;
+
+                var feed = (cfg.print[token.type] || {}).feed || 0
+                if (token.type == "synopsis") {
+                    if (after_section && cfg.print.synopsis.feed_with_last_section) {
+                        feed += current_section_level * cfg.print.section.level_indent
+                    } else {
+                        feed = cfg.print.action.feed
+                    }
+                }
 
                 //Replace tabs with 4 spaces
                 if (token.text) {
                     token.text = token.text.replace('\t', '    ');
                 }
 
-                if (token.dual) {
-                    max *= cfg.print.dual_max_factor;
-                }
+                // if (token.dual) {
+                //     max *= cfg.print.dual_max_factor;
+                // }
 
                 // TODO Arming (2024-09-04) : note  [[ ]] 标签可能会被换行，导致 pdf 打印时判断 note [[]] 必须单行才能 按照预期打印会出问题
                 // pdf 打印 note [[ ]] 特殊处理。将其转换为 ↺↻
-                this.split_token(token, max);
+                // this.split_token(token, max);
+
+                // var w = 72 * (cfg.print.page_width - cfg.print.left_margin - cfg.print.right_margin) * max / cfg.print.max;
+                var w = 72 * (cfg.print.page_width - feed - feed);
+                if (token.dual) {
+                    // w = (w / 2) + (72 * (cfg.print.right_margin));
+                    // w = (w / 2) ;
+                    var feed_diff = 0.2
+                    if (token.type == "parenthetical") {
+                        w = (cfg.print.page_width / 2 - cfg.print.action.feed - (feed_diff * 3)) * 72;
+                    }
+                    else if (token.type == "character" || token.type == "more") {
+                        w = (cfg.print.page_width / 2 - cfg.print.action.feed - (feed_diff * 5)) * 72;
+                    }
+                    else {
+                        w = (cfg.print.page_width / 2 - cfg.print.action.feed - feed_diff) * 72;
+                    }
+                }
+
+                // var w = 72 * (cfg.print.page_width - cfg.print.left_margin - cfg.print.right_margin);
+                this.split_token2(token, w, cfg.font, cfg.print.font_size, doc, "☄☈↭↯↺↻↬☍☋↷↶⇂↿↝↜");
 
                 if (token.is("scene_heading") && lines.length) {
                     token.lines[0].number = token.number;
@@ -387,6 +481,13 @@ export class Liner {
                     line.global_index = global_index++;
                     lines.push(line);
                 });
+
+                if (token.type === 'section') {
+                    after_section = true;
+                    current_section_level = token.level;
+                } else if (token.type === 'scene_heading') {
+                    after_section = false;
+                }
             }
         });
 

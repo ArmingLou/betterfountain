@@ -27,3 +27,5 @@ node_modules/**/test/
 
 #For the moment, this stays out
 standalone/**
+
+textbox-for-pdfkit/**

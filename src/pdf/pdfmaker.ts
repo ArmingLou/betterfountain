@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import helpers from "../helpers";
 import { openFile, revealFile, trimCharacterExtension, wordToColor } from "../utils";
 import * as he from 'he';
-import * as addTextbox from 'textbox-for-pdfkit';
+import { addTextbox } from 'textbox-for-pdfkit';
 import { regex } from "../afterwriting-parser";
 import { Base64Encode } from "base64-stream";
 import { charOfStyleTag } from "../cons";
@@ -43,7 +43,7 @@ var PDFDocument = require('pdfkit'),
     //helper = require('../helpers'),
     Blob = require('blob');
 
-const textbox_width_error = 0.5;
+const textbox_width_error = 0;
 
 var create_simplestream = function (filepath: string) {
     var simplestream: any = {
@@ -345,7 +345,7 @@ async function initDoc(opts: Options) {
         doc.text2(text, x, y, options);
         doc.format_state = cache_current_state;
     };
-    doc.text2 = function (text: string, x: number, y: number, options: any) {
+    doc.text2 = function (text: string, x: number, y: number, options: any): number {
         options = options || {};
         var color = options.color || 'black';
         color = doc.format_state.override_color ? doc.format_state.override_color : color;
@@ -401,11 +401,11 @@ async function initDoc(opts: Options) {
             i += innersplit.length - 1;
         }
 
-        var width = options.width !== undefined ? options.width : print.page_width;
+        var width = options.width ? options.width : print.page_width;
         // var font_width = print.font_width;
         var textobjects = [];
         var currentIndex = 0;
-        var currentWidth = 0;
+        // var currentWidth = 0;
         for (var i = 0; i < split_for_formatting.length; i++) {
             var elem = split_for_formatting[i];
             if (elem === charOfStyleTag.style_left_stash) {
@@ -504,49 +504,49 @@ async function initDoc(opts: Options) {
                         linkurl = link.url;
                     }
                 }
-                for (var j = 0; j < elem.length; j++) {
-                    if (elem[j] == '\n') {
-                        currentWidth = 0;
-                    } else if (elem[j] == ' ') {
-                        currentWidth += 0.5;
-                    } else if (elem.charCodeAt(j) < 255) {
-                        currentWidth += 1;
-                    } else {
-                        currentWidth += 1.6;
-                    }
-                    if (currentWidth > width * 9) {
-                        // currentWidth = 0;
-                        // elem = elem.slice(0, j + 1) + '\n' + elem.slice(j);
-                        // j++;
-                        var enSplit = false;
-                        if (elem.charCodeAt(j) < 255) {
-                            // 处理英文单词，不截断单词
-                            for (var k = j; k >= 0; k--) {
-                                if (elem[k] === " ") {
-                                    if (k > 0) {
-                                        elem = elem.slice(0, k) + '\n' + elem.slice(k + 1);
-                                        j = k - 1;
-                                    }
-                                    enSplit = true;
-                                    break;
-                                } else if (elem.charCodeAt(k) > 255) {
-                                    if (k > 0) {
-                                        elem = elem.slice(0, k + 1) + '\n' + elem.slice(k + 1);
-                                        j = k;
-                                    }
-                                    enSplit = true;
-                                    break;
-                                } else if (elem[k] === "\n") {
-                                    break;
-                                }
-                            }
-                        }
-                        if (!enSplit) {
-                            elem = elem.slice(0, j + 1) + '\n' + elem.slice(j + 1);
-                        }
+                // for (var j = 0; j < elem.length; j++) {
+                //     if (elem[j] == '\n') {
+                //         currentWidth = 0;
+                //     } else if (elem[j] == ' ') {
+                //         currentWidth += 0.5;
+                //     } else if (elem.charCodeAt(j) < 255) {
+                //         currentWidth += 1;
+                //     } else {
+                //         currentWidth += 1.6;
+                //     }
+                //     if (currentWidth > width * 9) {
+                //         // currentWidth = 0;
+                //         // elem = elem.slice(0, j + 1) + '\n' + elem.slice(j);
+                //         // j++;
+                //         var enSplit = false;
+                //         if (elem.charCodeAt(j) < 255) {
+                //             // 处理英文单词，不截断单词
+                //             for (var k = j; k >= 0; k--) {
+                //                 if (elem[k] === " ") {
+                //                     if (k > 0) {
+                //                         elem = elem.slice(0, k) + '\n' + elem.slice(k + 1);
+                //                         j = k - 1;
+                //                     }
+                //                     enSplit = true;
+                //                     break;
+                //                 } else if (elem.charCodeAt(k) > 255) {
+                //                     if (k > 0) {
+                //                         elem = elem.slice(0, k + 1) + '\n' + elem.slice(k + 1);
+                //                         j = k;
+                //                     }
+                //                     enSplit = true;
+                //                     break;
+                //                 } else if (elem[k] === "\n") {
+                //                     break;
+                //                 }
+                //             }
+                //         }
+                //         if (!enSplit) {
+                //             elem = elem.slice(0, j + 1) + '\n' + elem.slice(j + 1);
+                //         }
 
-                    }
-                }
+                //     }
+                // }
                 textobjects.push({
                     lineBreak: false,
                     text: elem,
@@ -565,10 +565,11 @@ async function initDoc(opts: Options) {
             });*/
         }
 
-        addTextbox(textobjects, doc, x * 72, y * 72, (width - textbox_width_error) * 72, { // 组件bug,text显示宽度比实际配置的width值要大
+        return addTextbox(textobjects, doc, x * 72, y * 72, (width - textbox_width_error) * 72, { // 组件bug,text显示宽度比实际配置的width值要大
+            font_height: print.font_height * 72,
             lineBreak: false,
             align: options.align,
-            baseline: 'top'
+            baseline: 'top',
         });
 
     };
@@ -663,11 +664,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     doc.info.Creator = 'betterfountain';
 
     // helper
-    var center = function (txt: string, y: number) {
+    var center = function (txt: string, y: number): number {
         // var txt_length = txt.replace(/\*/g, '').replace(/_/g, '').length;
-        var txt_length = get_text_display_len(clearFormatting(txt));
-        var feed = (print.page_width - txt_length * print.font_width) / 2;
-        doc.text2(txt, feed, y);
+        // var txt_length = get_text_display_len(clearFormatting(txt));
+        // var feed = (print.page_width - txt_length * print.font_width) / 2;
+        return doc.text2(txt, 0, y, { align: 'center' });
     };
 
     //var title_y = print.title_page.top_start;
@@ -849,21 +850,23 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 font_size,
                 angle = Math.atan(print.page_height / print.page_width) * 180 / Math.PI,
                 diagonal,
-                watermark, len;
+                watermark;
 
             // underline and rotate pdfkit bug (?) workaround
             watermark = cfg.print_watermark.replace(/_/g, '');
             // unformat
             // len = watermark.replace(/\*/g, '').length;
-            len = clearFormatting(watermark).length;
+            // len = clearFormatting(watermark).length;
 
             diagonal = Math.sqrt(Math.pow(print.page_width, 2) + Math.pow(print.page_height, 2));
             diagonal -= 4;
 
-            font_size = (1.667 * diagonal) / len * 72;
+            var lls = (watermark.split('\n').length / 2) + 1;
+            // font_size = (1.667 * diagonal) / len * 72;
+            font_size = print.font_size || 12;
             doc.fontSize(font_size);
             doc.rotate(angle, options);
-            doc.format_text(watermark, 2, -(font_size / 2) / 72, {
+            doc.format_text(watermark, 2, -(font_size * lls) / 72, {
                 color: '#eeeeee',
                 line_break: false,
                 width: diagonal,
@@ -875,22 +878,22 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     };
 
     // 显示长度
-    function get_text_display_len(text: any): any {
-        var len = 0;
-        for (var i = 0; i < text.length; i++) {
-            // 判断字符是否 双角
-            if (text.charCodeAt(i) > 255) {
-                // 是双角, 长度按 1.5 增加
-                len += 1.6;
-            } else if (text[i] === " ") {
-                //空格按0增加
-                len += 0.5;
-            } else {
-                len += 1;
-            }
-        }
-        return len;
-    }
+    // function get_text_display_len(text: any): any {
+    //     var len = 0;
+    //     for (var i = 0; i < text.length; i++) {
+    //         // 判断字符是否 双角
+    //         if (text.charCodeAt(i) > 255) {
+    //             // 是双角, 长度按 1.5 增加
+    //             len += 1.6;
+    //         } else if (text[i] === " ") {
+    //             //空格按0增加
+    //             len += 0.5;
+    //         } else {
+    //             len += 1;
+    //         }
+    //     }
+    //     return len;
+    // }
 
     function getOutlineChild(obj: any, targetDepth: number, currentDepth: number): any {
         if (currentDepth == targetDepth) {
@@ -910,8 +913,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var page_num_y = print.page_height - print.page_number_top_margin;
         if (cfg.show_page_numbers) {
             var page_num = cfg.show_page_numbers.replace("{n}", page.toFixed());
-            var number_x = print.action.feed + print.action.max * print.font_width - page_num.length * print.font_width;
-            doc.simple_text(page_num, number_x * 72, page_num_y * 72);
+            // var number_x = print.action.feed + print.action.max * print.font_width - page_num.length * print.font_width;
+            // doc.simple_text(page_num, number_x * 72, page_num_y * 72);
+            doc.text2(page_num, 0, page_num_y, { align: 'right', width: print.page_width - print.right_margin });
         }
     }
 
@@ -937,8 +941,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             if (cfg.scene_continuation_bottom && line.scene_split) {
                 var scene_continued_text = '(' + (cfg.text_scene_continued || 'CONTINUED') + ')';
-                var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued_text) * print.font_width;
-                doc.simple_text(scene_continued_text, feed * 72, (print.top_margin + print.font_height * (y + 2)) * 72);
+                // var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued_text) * print.font_width;
+                // doc.simple_text(scene_continued_text, feed * 72, (print.top_margin + print.font_height * (y + 2)) * 72);
+                doc.text2(scene_continued_text, 0, (print.top_margin + print.font_height * (y + 1)), { align: 'right', width: print.page_width - print.right_margin });
+
             }
 
             if (lineStructs) {
@@ -963,9 +969,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 scene_continued = clearFormatting(scene_continued);
                 // scene_continued = scene_continued.replace(/\*/g, '');
                 // scene_continued = scene_continued.replace(/_/g, '');
-                var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued) * print.font_width;
-                doc.simple_text(scene_continued, feed * 72, number_y * 72);
+                // var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued) * print.font_width;
+                // doc.simple_text(scene_continued, feed * 72, number_y * 72);
                 // prev_scene_continuation_header = scene_continued;
+                doc.text2(scene_continued, 0, number_y, { align: 'right', width: print.page_width - print.right_margin });
+
             }
 
             print_page_number();
@@ -990,7 +998,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 color: color,
                 highlight: false,
                 bold: false,
-                highlightcolor: [0, 0, 0]
+                highlightcolor: [0, 0, 0],
+                width: 0,
+                align: 'left',
             }
 
             function get_text_properties(lline = line, expcfg = exportcfg, old_text_properties = general_text_properties) {
@@ -1042,12 +1052,20 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
 
             if (line.type === 'centered') {
-                center(text, print.top_margin + print.font_height * y++);
+                var ls = center(text, print.top_margin + print.font_height * y++);
+                y += ls - 1;
+            } else if (line.type === "transition") {
+                var feed: number = print.action.feed;
+                text_properties.width = print.page_width - feed - feed;
+                text_properties.align = 'right';
+                var lss = doc.text2(text, feed, print.top_margin + print.font_height * y, text_properties);
+                y += lss - 1;
             } else {
                 var feed: number = (print[line.type] || {}).feed || print.action.feed;
-                if (line.type === "transition") {
-                    feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(line.text) * print.font_width;
-                }
+                text_properties.width = print.page_width - feed - print.right_margin;
+                // if (line.type === "transition") {
+                //     feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(line.text) * print.font_width;
+                // }
 
                 var hasInvisibleSection = (line.type === "scene_heading" && line.token.invisibleSections != undefined)
                 function processSection(sectiontoken: any) {
@@ -1114,6 +1132,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     } else {
                         feed = print.action.feed;
                     }
+                    text_properties.width = print.page_width - feed - feed;
                 }
 
 
@@ -1122,22 +1141,56 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
 
                 if (line.token && line.token.dual) {
+                    var feed_diff = 0.2;
                     if (line.right_column) {
                         var y_right = y;
                         line.right_column.forEach(function (right_line: any) {
-                            var feed_right = (print[right_line.type] || {}).feed || print.action.feed;
-                            feed_right -= (feed_right - print.left_margin) / 2;
-                            feed_right += (print.page_width - print.right_margin - print.left_margin) / 2;
-                            feed_right -= textbox_width_error;
                             var right_text_properties = get_text_properties(right_line);
+                            
+                            var feed_right = 0;
+
+                            if (right_line.type === "parenthetical") {
+                                feed_right = (print.page_width / 2) + feed_diff*2;
+                                right_text_properties.width = print.page_width/2 - print.action.feed - feed_diff*3;
+                            }
+                            else if (right_line.type === "character" || right_line.type === "more") {
+                                feed_right = (print.page_width / 2) + feed_diff*3;
+                                right_text_properties.width = print.page_width/2 - print.action.feed - feed_diff*5;
+                            } else {
+                                feed_right = (print.page_width / 2) + feed_diff;
+                                right_text_properties.width = print.page_width/2 - print.action.feed - feed_diff;
+                            }
+
+                            // var feed_right =( print.page_width+ print.left_margin)/2;
+                            // var feed_right = (print[right_line.type] || {}).feed || print.action.feed;
+                            // feed_right -= (feed_right + print.left_margin) / 2;
+                            // feed_right += (print.page_width - print.right_margin - print.left_margin) / 2;
+                            // feed_right += print.left_margin / 4;
+                            // feed_right -= 0.5; //textbox_width_error;
+                            
                             var tx = wrapCharAndDialog(right_line.text, right_line);
-                            doc.text2(tx, feed_right, print.top_margin + print.font_height * y_right++, right_text_properties);
+                            right_text_properties.width = print.page_width - feed_right - print.right_margin;
+                            var ls = doc.text2(tx, feed_right, print.top_margin + print.font_height * y_right++, right_text_properties);
+                            y_right += ls - 1;
                         });
                     }
-                    feed -= (feed - print.left_margin) / 2;
+                    
+                    if (line.type === "parenthetical") {
+                        feed = print.action.feed + feed_diff;
+                        text_properties.width = print.page_width/2 - print.action.feed - feed_diff*3;
+                    }
+                    else if (line.type === "character" || line.type === "more") {
+                        feed = print.action.feed + feed_diff*2;
+                        text_properties.width = print.page_width/2 - print.action.feed - feed_diff*5;
+                    } else {
+                        feed = print.action.feed
+                        text_properties.width = print.page_width/2 - print.action.feed - feed_diff;
+                    }
+                    // feed -= (feed) / 2;
                 }
-
-                doc.text2(text, feed, print.top_margin + print.font_height * y, text_properties);
+                
+                var lss = doc.text2(text, feed, print.top_margin + print.font_height * y, text_properties);
+                y += lss - 1;
                 if (line.linediff) {
                     y += line.linediff;
                 }
@@ -1156,12 +1209,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                     if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'left') {
                         shift_scene_number = (scene_text_length + 4) * print.font_width;
-                        doc.text2(scene_number, feed - shift_scene_number, print.top_margin + print.font_height * y, text_properties);
+                        var lss = doc.text2(scene_number, feed - shift_scene_number, print.top_margin + print.font_height * y, text_properties);
+                        y += lss - 1;
                     }
 
                     if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'right') {
                         shift_scene_number = (print.scene_heading.max + 1) * print.font_width;
-                        doc.text2(scene_number, feed + shift_scene_number, print.top_margin + print.font_height * y, text_properties);
+                        var lss = doc.text2(scene_number, feed + shift_scene_number, print.top_margin + print.font_height * y, text_properties);
+                        y += lss - 1;
                     }
                 }
                 y++;
@@ -1178,7 +1233,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         // clear after section
         if (line.type === 'section') {
             after_section = true;
-        } else if (line.type !== 'separator' && line.type !== 'synopsis' && line.type !== 'page_break') {
+        } else if (line.type === 'scene_heading') {
             after_section = false;
         }
 

@@ -1,4 +1,5 @@
 export class PrintProfile{
+    max:number;
     paper_size:string;
     font_size:number;
     lines_per_page:number;
@@ -37,12 +38,13 @@ var A4_DEFAULT_MAX = 57,
 
     export var print_profiles:{ [key: string]: PrintProfile } = {
         "a4": {
+            max: A4_DEFAULT_MAX,
             paper_size: "a4",
             font_size: 12,
             lines_per_page: 57,
             top_margin: 1.0,
-            page_width: 8.6,
-            page_height: 11.7,
+            page_width: 8.2,
+            page_height: 11.5,
             left_margin: 1,
             right_margin: 1,
             font_width: 0.1,
@@ -98,7 +100,7 @@ var A4_DEFAULT_MAX = 57,
                 italic: true,
                 color: '#888888',
                 padding: 0,
-                feed_with_last_section: false
+                feed_with_last_section: true
             },
             section: {
                 feed: 0.5,
@@ -112,16 +114,17 @@ var A4_DEFAULT_MAX = 57,
             }
         },
         "中文a4": {
+            max: CN_DEFAULT_MAX,
             paper_size: "a4",
             font_size: 12,
-            lines_per_page: 38,
+            lines_per_page: 42,
             top_margin: 0.7,
-            page_width: 8.6,
-            page_height: 11.4,
+            page_width: 8.2,
+            page_height: 11.2,
             left_margin: 0.5,
             right_margin: 0.5,
             font_width: 0.1,
-            font_height: 0.25,
+            font_height: 0.23,
             line_spacing: 1,
             page_number_top_margin: 0.2,
             dual_max_factor: 0.75,
@@ -173,7 +176,7 @@ var A4_DEFAULT_MAX = 57,
                 italic: true,
                 color: '#888888',
                 padding: 0,
-                feed_with_last_section: false
+                feed_with_last_section: true
             },
             section: {
                 feed: 0.2,

@@ -1,6 +1,6 @@
 const getFontAscent = require("./fontHandler");
 const { normalizeTexts, summarizeParagraphs } = require("./dataRearanger");
-const { measureTextsWidth } = require("./textMeasurement");
+const { measureTextsWidth,measureTextWidth } = require("./textMeasurement");
 const { lineWrapParagraph, removeSubsequentSpaces } = require("./lineWrapper");
 
 // This is the main package of textbox-for-pdfkit. It is the main function
@@ -27,6 +27,7 @@ const defaultStyle = {
 // are defined)
 
 function addTextbox(text, doc, posX, posY, width, style = {}) {
+  // width = width - 36;
   const textboxStyle = { ...defaultStyle, ...style };
   const normalizedTexts = normalizeTexts(text, textboxStyle);
   const textsWithWidth = measureTextsWidth(normalizedTexts, doc);
@@ -39,16 +40,32 @@ function addTextbox(text, doc, posX, posY, width, style = {}) {
   const baseline = style.baseline || "alphabetic";
 
   drawTextLinesOnPDF(optimizedLines, width, posX, posY, textboxStyle, doc, baseline);
+  
+  return optimizedLines.length;
 }
 
 // This function takes the prepared Data and draws everything on the right
 // position of the PDF
 
 function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baseline) {
-  let yPosition =
-    posY + getFontAscent(defaultStyle.font, defaultStyle.fontSize);
+  // let yPosition =
+  //   posY + getFontAscent(defaultStyle.font, defaultStyle.fontSize);
+  let yPosition = 0;
+  if(defaultStyle.font_height){
+    var k = getFontAscent(defaultStyle.font, defaultStyle.fontSize);
+    yPosition = posY + defaultStyle.font_height;
+  } else {
+    yPosition = posY + getFontAscent(defaultStyle.font, defaultStyle.fontSize);
+  }
   lines.forEach((line, index) => {
-    if (index !== 0) yPosition += line.lineHeight;
+    if (index !== 0) {
+      if(defaultStyle.font_height){
+        yPosition += defaultStyle.font_height;
+      } 
+      else {
+        yPosition += line.lineHeight;
+      }
+    }
     let xPosition = getLineStartXPosition(line, width, posX);
     line.texts.forEach((textPart) => {
       doc
@@ -87,4 +104,37 @@ function getLineStartXPosition(line, width, posX) {
   }
 }
 
-module.exports = addTextbox;
+function breakLines(text, width, font, fontSize, doc,exclude) {
+  // width = width - 36;
+  var res = [];
+  const lineBreakedText = text.split("\n")
+  
+  lineBreakedText.forEach((line) => {
+    var tx = "";
+    var tx2 = "";
+    var tx_l = "";
+    var w =0;
+    for (var i = 0; i < line.length; i ++) {
+      tx += line[i];
+      if(exclude.indexOf(line[i]) > -1) {
+        tx_l = tx;
+        continue
+      }
+      tx2 += line[i];
+      w = measureTextWidth(tx2, font, fontSize, doc);
+      if(w >= width) {
+        if(tx_l){
+          res.push(tx_l);
+        }
+        tx = line[i];
+        tx2 = line[i];
+      }
+      tx_l = tx;
+    }
+    res.push(tx);
+  });
+  
+  return res;
+}
+
+module.exports = {addTextbox,breakLines};

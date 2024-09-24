@@ -101,13 +101,43 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
     } else if (textFragment.text !== " ") {
       // If it doesn't fit, add full line to lines, and add text to new line.
       // If there are many spaces at a line end --> ignore them.
-      lines.push({ ...textPart, text: lineText, width: lineWidth });
-      lineText = "";
-      lineWidth = 0;
-      spaceLeft = widthTextbox;
-      lineWidth += textFragment.width;
-      spaceLeft -= textFragment.width;
-      lineText = lineText + textFragment.text;
+      if(textFragment.text.match(/^[a-zA-Zа-яА-ЯёЁéÈçÇàÀäÄöÖüÜïÏêÊîÎôÔñÑ\s\d]+$/u)){
+        // 字母和数字不截断
+        lines.push({ ...textPart, text: lineText, width: lineWidth });
+        lineWidth = 0;
+        spaceLeft = widthTextbox;
+        lineText = "";
+        // lineWidth = textFragment.width;
+        // spaceLeft = widthTextbox - textFragment.width;
+        // lineText = textFragment.text;
+      }
+      //  else {
+        var w = 0;
+        var txt = "";
+        var w_l = 0;
+        var txt_l = "";
+        for (let i = 0; i < textFragment.text.length; i++) {
+          txt += textFragment.text[i];
+          w = measureTextWidth(txt, font, fontSize, doc);
+          if (w >= spaceLeft){
+            if(txt_l){
+              lineWidth += w_l;
+              lineText = lineText + txt_l;
+            }
+            lines.push({ ...textPart, text: lineText, width: lineWidth });
+            lineWidth = 0;
+            spaceLeft = widthTextbox;
+            lineText = "";
+            txt = textFragment.text[i];
+            w = measureTextWidth(txt, font, fontSize, doc);
+          }
+          w_l = w;
+          txt_l = txt;
+        }
+        lineWidth += w;
+        spaceLeft -= lineWidth;
+        lineText = lineText + txt;
+      // }
     }
   });
   if (lineText !== "") {
