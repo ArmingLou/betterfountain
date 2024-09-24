@@ -581,6 +581,15 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         }
     }
     // var line_match_type = '';
+    // 不再自动提示标题页
+    const processTitlePageEnd = (line: number) => {
+        if (result.properties.firstTokenLine == Infinity) {
+            result.properties.firstTokenLine = line;
+            // 以第一个出现的场景 或 转场 或 section 等 为分割， 分割 title page 和 正文 的代码自动提示 之用。
+            // 第一个场景出现之后，后面的 title page 元素不再提供 自动提示 。后面 开始提供 场景 和 人物 的自动提示。
+        }
+    } 
+    
     let ignoredLastToken = false;
     var text_display = '';// 视乎打印设置是否打印note，可以包含 note 内容。
     var text_valid = '';// 去除 注解 和 note 后的 有效内容， 用来判定文本内容性质。
@@ -837,11 +846,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             if (is_block_begin_line) {
                 // 匹配需要前面是空行的情况
                 if (text_valid.match(regex.scene_heading)) {
-                    if (result.properties.firstTokenLine == Infinity) {
-                        result.properties.firstTokenLine = thistoken.line;
-                        // 以第一个出现的场景头为分割， 分割 title page 和 正文 的代码自动提示 之用。
-                        // 第一个场景出现之后，后面的 title page 元素不再提供 自动提示 。后面 开始提供 场景 和 人物 的自动提示。
-                    }
+                    processTitlePageEnd(i);
 
                     let sceneHeadingMatch = text_valid.match(regex.scene_heading);
 
@@ -939,10 +944,12 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     //下面再处理
                 }
                 else if (text_valid.match(regex.transition)) {
+                    processTitlePageEnd(i);
                     thistoken.text = text_display.replace(/(?<=(^.*?↻)|(^))\s*>\s*/, "");
                     processTokenTextStyleChar(thistoken);
                     thistoken.type = "transition";
                 } else if (text_valid.match(blockRegex.action_force)) {
+                    processTitlePageEnd(i);
                     // 强制 转换 action
                     thistoken.type = "action";
                     var mt = text_display.match(/^((?:.*?↻)?\s*)(\!)(.*)/);
@@ -950,6 +957,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     processTokenTextStyleChar(thistoken);
                     processActionBlock(thistoken); // 其他后续行，不转换！号
                 } else if (text_valid.match(regex.character)) {
+                    processTitlePageEnd(i);
                     state = "dialogue";
                     thistoken.type = "character";
                     thistoken.takeNumber = takeCount++;
@@ -1086,12 +1094,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
 
             if (action) {
                 if (text_valid.match(regex.centered)) {
+                    processTitlePageEnd(i);
                     thistoken.type = "centered";
                     var mt = text_display.match(/((?:^.*?↻)|^)[ \t]*>\s*(.+)\s*?<\s*((?:↺.*$)|$)/);
                     thistoken.text = mt[1].trim() + mt[2].trim() + mt[3].trim();
                     processTokenTextStyleChar(thistoken);
                 }
                 else if (text_valid.match(blockRegex.lyric)) {
+                    processTitlePageEnd(i);
                     // 强制 转换 action 中 歌词
                     thistoken.type = "action";
                     var mt = text_display.trimRight().match(/^((?:.*?↻)?\s*)(\~)(.*)/);
@@ -1103,6 +1113,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     processTokenTextStyleChar(thistoken);
                 }
                 else if (text_valid.match(regex.page_break)) {
+                    processTitlePageEnd(i);
                     thistoken.text = '';
                     thistoken.type = "page_break";
                     if (text_valid != text_display) {
@@ -1113,6 +1124,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     }
                 }
                 else if (text_valid.match(regex.synopsis)) {
+                    processTitlePageEnd(i);
                     match = text_display.match(/((?:^.*?↻)|^)[ \t]*(?:\=)(.*)/)
                     thistoken.text = match[1].trim() + match[2].trim();
                     processTokenTextStyleChar(thistoken);
@@ -1125,6 +1137,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     }
                 }
                 else if (match = text_valid.match(regex.section)) {
+                    processTitlePageEnd(i);
                     var matchdisplay = text_display.match(/((?:^.*?↻)|^)[ \t]*(#+)(?:\s*)(.*)/)
                     thistoken.text = matchdisplay[1].trim() + matchdisplay[3].trim();
                     thistoken.level = match[1].length;
@@ -1150,6 +1163,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     processTokenTextStyleChar(thistoken);
 
                 } else {
+                    // processTitlePageEnd(i); // title page 的 note 在开放打印时，可能进入这里
                     thistoken.type = "action"; // TODO Arming (2024-09-06) : 其他类型通通归于 action，
                     thistoken.text = text_display;
                     processTokenTextStyleChar(thistoken);
