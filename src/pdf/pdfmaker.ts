@@ -1126,13 +1126,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 text = wrapCharAndDialog(text, line)
 
                 if (line.type === 'synopsis') {
-                    feed += print.synopsis.padding || 0;
                     if (print.synopsis.feed_with_last_section && after_section) {
                         feed += current_section_level * print.section.level_indent;
                     } else {
                         feed = print.action.feed;
                     }
+                    feed += print.synopsis.padding || 0;
                     text_properties.width = print.page_width - feed - feed;
+                    // text_properties.align = 'center';
                 }
 
 

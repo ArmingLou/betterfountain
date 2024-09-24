@@ -437,6 +437,7 @@ export class Liner {
                     } else {
                         feed = cfg.print.action.feed
                     }
+                    feed += cfg.print.synopsis.padding || 0;
                 }
 
                 //Replace tabs with 4 spaces
