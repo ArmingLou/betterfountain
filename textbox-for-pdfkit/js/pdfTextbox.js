@@ -1,6 +1,6 @@
 const getFontAscent = require("./fontHandler");
 const { normalizeTexts, summarizeParagraphs } = require("./dataRearanger");
-const { measureTextsWidth,measureTextWidth } = require("./textMeasurement");
+const { measureTextsWidth, measureTextWidth } = require("./textMeasurement");
 const { lineWrapParagraph, removeSubsequentSpaces } = require("./lineWrapper");
 
 // This is the main package of textbox-for-pdfkit. It is the main function
@@ -40,7 +40,7 @@ function addTextbox(text, doc, posX, posY, width, style = {}) {
   const baseline = style.baseline || "alphabetic";
 
   drawTextLinesOnPDF(optimizedLines, width, posX, posY, textboxStyle, doc, baseline);
-  
+
   return optimizedLines.length;
 }
 
@@ -51,7 +51,7 @@ function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baselin
   // let yPosition =
   //   posY + getFontAscent(defaultStyle.font, defaultStyle.fontSize);
   let yPosition = 0;
-  if(defaultStyle.font_height){
+  if (defaultStyle.font_height) {
     var k = getFontAscent(defaultStyle.font, defaultStyle.fontSize);
     yPosition = posY + defaultStyle.font_height;
   } else {
@@ -59,9 +59,9 @@ function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baselin
   }
   lines.forEach((line, index) => {
     if (index !== 0) {
-      if(defaultStyle.font_height){
+      if (defaultStyle.font_height) {
         yPosition += defaultStyle.font_height;
-      } 
+      }
       else {
         yPosition += line.lineHeight;
       }
@@ -104,37 +104,113 @@ function getLineStartXPosition(line, width, posX) {
   }
 }
 
-function breakLines(text, width, font, fontSize, doc,exclude) {
+
+function measureTextFragmentsExclude(textArray, font, fontSize, doc, exclude) {
+  return textArray.map((textFragment) => {
+    if (textFragment === " ") {
+      return {
+        text: textFragment,
+        style_text: textFragment,
+        width: measureTextWidth(" ", font, fontSize, doc),
+      };
+    }
+    var tx = ""; // 带样式字符
+    var tx2 = ""; // 去掉样式字符后
+    for (var i = 0; i < textFragment.length; i++) {
+      tx += textFragment[i];
+      if (exclude.indexOf(textFragment[i]) < 0) {
+        tx2 += textFragment[i];
+      }
+    }
+    return {
+      text: tx2,
+      style_text: tx,
+      width: measureTextWidth(tx2, font, fontSize, doc),
+    };
+  });
+}
+
+// text 包含样式特殊字符的文本
+// width 需要断行的宽度
+// exclude 指定需要排除长度的样式特殊字符
+function breakLines(text, width, font, fontSize, doc, exclude) {
   // width = width - 36;
   var res = [];
   const lineBreakedText = text.split("\n")
-  
+
   lineBreakedText.forEach((line) => {
-    var tx = "";
-    var tx2 = "";
-    var tx_l = "";
-    var w =0;
-    for (var i = 0; i < line.length; i ++) {
-      tx += line[i];
-      if(exclude.indexOf(line[i]) > -1) {
-        tx_l = tx;
-        continue
-      }
-      tx2 += line[i];
-      w = measureTextWidth(tx2, font, fontSize, doc);
-      if(w >= width) {
-        if(tx_l){
-          res.push(tx_l);
+
+    const fragmentArray = line.split(/(?<=[ -])|(?= )/);
+    const fragmentArrayWithWidth = measureTextFragmentsExclude(
+      fragmentArray,
+      font,
+      fontSize,
+      doc,
+      exclude
+    );
+    // const lines = [];
+    let lineText = ""; // 含样式符号
+    // let lineWidth = 0;
+    let spaceLeft = width;
+    fragmentArrayWithWidth.forEach((textFragment) => {
+      // Here we fill fragment by Fragment in lines
+      if (textFragment.width <= spaceLeft) {
+        // If it fits in line --> Add to line
+        // lineWidth += textFragment.width;
+        spaceLeft -= textFragment.width;
+        lineText = lineText + textFragment.style_text;
+      } else if (textFragment.style_text !== " ") {
+        // If it doesn't fit, add full line to lines, and add text to new line.
+        // If there are many spaces at a line end --> ignore them.
+        if (textFragment.text.match(/^[a-zA-Zа-яА-ЯёЁéÈçÇàÀäÄöÖüÜïÏêÊîÎôÔñÑ\s\d]+$/u)) {
+          // 字母和数字不截断
+          res.push(lineText);
+          // lineWidth = 0;
+          spaceLeft = width;
+          lineText = "";
+          // lineWidth = textFragment.width;
+          // spaceLeft = widthTextbox - textFragment.width;
+          // lineText = textFragment.text;
         }
-        tx = line[i];
-        tx2 = line[i];
+
+
+        var tx = "";
+        var tx2 = ""; // 去掉style特殊字符
+        var tx_l = "";
+        var w = 0;
+        for (var i = 0; i < textFragment.style_text.length; i++) {
+          tx += textFragment.style_text[i];
+          if (exclude.indexOf(textFragment.style_text[i]) > -1) {
+            tx_l = tx;
+            continue
+          }
+          tx2 += textFragment.style_text[i];
+          w = measureTextWidth(tx2, font, fontSize, doc);
+          if (w >= spaceLeft) {
+            if (tx_l) {
+              lineText = lineText + tx_l;
+            }
+            res.push(lineText);
+            // lineWidth = 0;
+            spaceLeft = width;
+            lineText = "";
+            tx = textFragment.style_text[i];
+            tx2 = textFragment.style_text[i];
+            w = measureTextWidth(tx2, font, fontSize, doc);
+          }
+          tx_l = tx;
+        }
+        // lineWidth += w;
+        spaceLeft -= w;
+        lineText = lineText + tx;
       }
-      tx_l = tx;
+    });
+    if (lineText !== "") {
+      res.push(lineText);
     }
-    res.push(tx);
   });
-  
+
   return res;
 }
 
-module.exports = {addTextbox,breakLines};
+module.exports = { addTextbox, breakLines };
