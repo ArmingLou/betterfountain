@@ -943,11 +943,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     lines.forEach(function (line: any) {
 
         if (line.type === "page_break") {
-            if (line.text) {
-                // 可能是合并的空行，只含样式字符
-                // 绘制样式
-                doc.text2(line.text, 0, 0);
-            }
+            // if (line.text) {
+            //     // 可能是合并的空行，只含样式字符
+            //     // 绘制样式
+            //     doc.text2(line.text, 0, 0);
+            // }
 
             if (cfg.scene_continuation_bottom && line.scene_split) {
                 var scene_continued_text = '(' + (cfg.text_scene_continued || 'CONTINUED') + ')';

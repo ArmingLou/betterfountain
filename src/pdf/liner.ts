@@ -181,14 +181,14 @@ export class Liner {
                 if (after_is_fake) {
                     let moreitem = {
                         type: "more",
-                        text: " ",
+                        text: "",
                         start: token_on_break.start,
                         end: token_on_break.end,
                         token: token_on_break.token
                     };
                     lines.splice(index + 1, 0, new_page_character = this.h.create_line({
                         type: "character",
-                        text: " ", // 必须是有长度的空格，否则渲染会被忽略掉删除。
+                        text: "", 
                         start: token_after2.start,
                         end: token_after2.end,
                         token: token_on_break.token
@@ -253,8 +253,9 @@ export class Liner {
     };
 
     break_lines = (lines: any, max: number, breaker: any, cfg: any): any => {
-        while (lines.length && !(lines[0].text) && lines[0].type !== "page_break") {
-            lines.shift(); // 删除每页开头的空行
+        while (lines.length && (!(lines[0].text) || lines[0].type === "page_break") 
+          && lines[0].type !== "dialogue_fake" && lines[0].type !== "more" && lines[0].type !== "character") {
+            lines.shift(); // 删除每页开头的空行 包括换行. 但要保留对话换行的左右对齐补空行
         }
 
         var s = max;
@@ -274,7 +275,7 @@ export class Liner {
                 return lines;
             }
             do {
-                for (p = s - 1; p && this.isBlankLine(lines[p].text); p--) {
+                for (p = s - 1; p && (this.isBlankLine(lines[p].text)&&lines[p].type!=="dialogue_fake"); p--) { // TODO Arming (2024-09-25) : 
                 }
                 s = p;
             } while (p && !breaker(p, lines, cfg));
@@ -370,7 +371,7 @@ export class Liner {
                     insertArray.push(this.h.create_line({
                         type: 'dialogue_fake',
                         token: right_lines[ii + left_tokens].token,
-                        text: ' ', // 必须是有长度的空格，否则会被忽略，往前找断页行
+                        text: '',
                         start: lines[left_index + left_tokens].start,
                         end: lines[left_index + left_tokens].end,
                     }));
@@ -500,7 +501,7 @@ export class Liner {
                     if (cfg.merge_empty_lines) {
 
                         if (token.type === "page_break") {
-                            lastLineBlank = true;
+                            lastLineBlank = false; // 需要保留行
                         } else {
                             var currBlank = this.isBlankLine(line.text);
                             if (currBlank && lastLineBlank) {
