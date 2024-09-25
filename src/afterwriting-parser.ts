@@ -536,10 +536,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         token.textNoNotes = text_valid;
         let textWithoutNotes = "";
         // if (current_has_note) {
-            // textWithoutNotes = current_expet_note_text;
-            textWithoutNotes = text_valid;
+        // textWithoutNotes = current_expet_note_text;
+        textWithoutNotes = text_valid;
         // } else {
-            // textWithoutNotes = token.text;
+        // textWithoutNotes = token.text;
         // }
         token.time = calculateDialogueDuration(textWithoutNotes);
         // if (!cfg.print_notes) {
@@ -567,9 +567,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // token.time = calculateActionDuration(token.text.length - irrelevantActionLength);
         let textWithoutNotes = "";
         // if (current_has_note) {
-            textWithoutNotes = text_valid;
+        textWithoutNotes = text_valid;
         // } else {
-            // textWithoutNotes = token.text;
+        // textWithoutNotes = token.text;
         // }
         token.time = calculateActionDuration(textWithoutNotes);
         // if (!cfg.print_notes) {
@@ -589,8 +589,15 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             // 以第一个出现的场景 或 转场 或 section 等 为分割， 分割 title page 和 正文 的代码自动提示 之用。
             // 第一个场景出现之后，后面的 title page 元素不再提供 自动提示 。后面 开始提供 场景 和 人物 的自动提示。
         }
-    } 
-    
+    }
+
+    const isBlankLineAfterStlyle = (text: string) => {
+        let t = text.replace(new RegExp('[' + charOfStyleTag.all + ']', 'g'), '');
+        return t.trim().length === 0;
+    }
+
+    var lastIsBlankTitle = false; //上一个行是否是空行
+
     let ignoredLastToken = false;
     var text_display = '';// 视乎打印设置是否打印note，可以包含 note 内容。
     var text_valid = '';// 去除 注解 和 note 后的 有效内容， 用来判定文本内容性质。
@@ -734,7 +741,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     // note 里的延续空行 /或者 延续块内容的块内空行
                     if (result.tokens.length > 0) {
                         if (state === "title_page") {
-                            if(font_title) {
+                            if (font_title) {
                                 continue;
                             }
                             // result.tokens[result.tokens.length - 1].text += "\n";
@@ -805,6 +812,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     var mt = text_display.match(/^(.*?↻)?\s*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact(?: info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:(.*)/i)
                     thistoken.text = mt[3].trim();
                     processTokenTextStyleChar(thistoken);
+                    lastIsBlankTitle = false;
                 }
 
 
@@ -824,13 +832,25 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 // 标题页 字段内容的换行 内容。
                 if (font_title) {
                     thistoken.text = text_valid.trim();
-                    if(thistoken.text.length > 0){
+                    if (thistoken.text.length > 0) {
                         last_title_page_token.text += (last_title_page_token.text ? " " : "") + thistoken.text.trim();
                     }
                 } else {
                     thistoken.text = text_display.trim();
                     processTokenTextStyleChar(thistoken);
-                    last_title_page_token.text += (last_title_page_token.text ? "\n" : "") + thistoken.text.trim();
+                    var handl = false;
+                    if (cfg.merge_empty_lines) {
+                        var cuurBlank = isBlankLineAfterStlyle(thistoken.text);
+                        if (cuurBlank && lastIsBlankTitle) {
+                            handl = true;
+                            var t = thistoken.text.replace(/\s/g, '').trim(); // 剩下样式符号
+                            last_title_page_token.text += t;
+                        }
+                        lastIsBlankTitle = cuurBlank;
+                    }
+                    if(!handl){
+                        last_title_page_token.text += (last_title_page_token.text ? "\n" : "") + thistoken.text.trim();
+                    }
                 }
             }
             continue;
@@ -1273,7 +1293,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         processInlineNotes2()
         needProcessOutlineNote = 0;
     }
-    
+
     updatePreviousSceneLength();//统计最后一个场景的 时长
 
     // tidy up separators

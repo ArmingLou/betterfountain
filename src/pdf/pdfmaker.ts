@@ -339,6 +339,7 @@ async function initDoc(opts: Options) {
         doc.font('ScriptNormal');
         doc.text.apply(doc, arguments);
     };
+    // 缓存doc样式画了后，再恢复之前的样式
     doc.format_text = function (text: string, x: number, y: number, options: any) {
         var cache_current_state = doc.format_state;
         doc.reset_format();
@@ -915,7 +916,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             var page_num = cfg.show_page_numbers.replace("{n}", page.toFixed());
             // var number_x = print.action.feed + print.action.max * print.font_width - page_num.length * print.font_width;
             // doc.simple_text(page_num, number_x * 72, page_num_y * 72);
-            doc.text2(page_num, 0, page_num_y, { align: 'right', width: print.page_width - print.right_margin });
+            doc.format_text(page_num, 0, page_num_y, { align: 'right', width: print.page_width - print.right_margin });
         }
     }
 
@@ -935,15 +936,23 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     let currentScene: string = "";
     let currentSections: string[] = [];
     let currentDuration: number = 0;
+    let right_column_pass: number = 0;
+    let right_column_temp: any[] = [];
+    let y_right = 0;
     lines.forEach(function (line: any) {
 
         if (line.type === "page_break") {
+            if (line.text) {
+                // 可能是合并的空行，只含样式字符
+                // 绘制样式
+                doc.text2(line.text, 0, 0);
+            }
 
             if (cfg.scene_continuation_bottom && line.scene_split) {
                 var scene_continued_text = '(' + (cfg.text_scene_continued || 'CONTINUED') + ')';
                 // var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued_text) * print.font_width;
                 // doc.simple_text(scene_continued_text, feed * 72, (print.top_margin + print.font_height * (y + 2)) * 72);
-                doc.text2(scene_continued_text, 0, (print.top_margin + print.font_height * (y + 1)), { align: 'right', width: print.page_width - print.right_margin });
+                doc.format_text(scene_continued_text, 0, (print.top_margin + print.font_height * (y + 1)), { align: 'right', width: print.page_width - print.right_margin });
 
             }
 
@@ -972,7 +981,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued) * print.font_width;
                 // doc.simple_text(scene_continued, feed * 72, number_y * 72);
                 // prev_scene_continuation_header = scene_continued;
-                doc.text2(scene_continued, 0, number_y, { align: 'right', width: print.page_width - print.right_margin });
+                doc.format_text(scene_continued, 0, number_y, { align: 'right', width: print.page_width - print.right_margin });
 
             }
 
@@ -982,6 +991,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // prev_scene_continuation_header = '';
 
         } else if (line.type === "separator") {
+            if (line.text) {
+                // 可能是合并的空行，只含样式字符
+                // 绘制样式
+                doc.text2(line.text, 0, print.top_margin + print.font_height * y);
+            }
+
             y++;
             if (lineStructs) {
                 if (line.token.line && !lineStructs.has(line.token.line)) {
@@ -1142,24 +1157,53 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
 
                 if (line.token && line.token.dual) {
-                    var feed_diff = 0.2;
                     if (line.right_column) {
-                        var y_right = y;
-                        line.right_column.forEach(function (right_line: any) {
-                            var right_text_properties = get_text_properties(right_line);
-                            
-                            var feed_right = 0;
+                        // 缓存，画完左边再回头画右边
+                        right_column_pass = 0;
+                        right_column_temp = line.right_column;
+                        y_right = y;
+                    }
+                    var feed_diff = 0.2;
 
+                    if (line.type === "parenthetical") {
+                        feed = print.action.feed + feed_diff;
+                        text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 3;
+                    }
+                    else if (line.type === "character" || line.type === "more") {
+                        feed = print.action.feed + feed_diff * 2;
+                        text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 5;
+                    } else {
+                        feed = print.action.feed
+                        text_properties.width = print.page_width / 2 - print.action.feed - feed_diff;
+                    }
+                    // feed -= (feed) / 2;
+                }
+
+                var lss = doc.text2(text, feed, print.top_margin + print.font_height * y, text_properties);
+                y += lss - 1;
+                if (line.linediff) {
+                    y += line.linediff;
+                }
+
+                // 先画左对话，再画右
+                if (right_column_temp.length > 0) {
+                    right_column_pass++;
+                    if (right_column_pass >= right_column_temp.length) {
+                        var feed_diff = 0.2;
+                        right_column_temp.forEach(function (right_line: any) {
+                            var right_text_properties = get_text_properties(right_line);
+
+                            var feed_right = 0;
                             if (right_line.type === "parenthetical") {
-                                feed_right = (print.page_width / 2) + feed_diff*2;
-                                right_text_properties.width = print.page_width/2 - print.action.feed - feed_diff*3;
+                                feed_right = (print.page_width / 2) + feed_diff * 2;
+                                right_text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 3;
                             }
                             else if (right_line.type === "character" || right_line.type === "more") {
-                                feed_right = (print.page_width / 2) + feed_diff*3;
-                                right_text_properties.width = print.page_width/2 - print.action.feed - feed_diff*5;
+                                feed_right = (print.page_width / 2) + feed_diff * 3;
+                                right_text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 5;
                             } else {
                                 feed_right = (print.page_width / 2) + feed_diff;
-                                right_text_properties.width = print.page_width/2 - print.action.feed - feed_diff;
+                                right_text_properties.width = print.page_width / 2 - print.action.feed - feed_diff;
                             }
 
                             // var feed_right =( print.page_width+ print.left_margin)/2;
@@ -1168,32 +1212,16 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             // feed_right += (print.page_width - print.right_margin - print.left_margin) / 2;
                             // feed_right += print.left_margin / 4;
                             // feed_right -= 0.5; //textbox_width_error;
-                            
+
                             var tx = wrapCharAndDialog(right_line.text, right_line);
                             right_text_properties.width = print.page_width - feed_right - print.right_margin;
                             var ls = doc.text2(tx, feed_right, print.top_margin + print.font_height * y_right++, right_text_properties);
                             y_right += ls - 1;
                         });
+                        
+                        right_column_temp = [];
+                        right_column_pass = 0;
                     }
-                    
-                    if (line.type === "parenthetical") {
-                        feed = print.action.feed + feed_diff;
-                        text_properties.width = print.page_width/2 - print.action.feed - feed_diff*3;
-                    }
-                    else if (line.type === "character" || line.type === "more") {
-                        feed = print.action.feed + feed_diff*2;
-                        text_properties.width = print.page_width/2 - print.action.feed - feed_diff*5;
-                    } else {
-                        feed = print.action.feed
-                        text_properties.width = print.page_width/2 - print.action.feed - feed_diff;
-                    }
-                    // feed -= (feed) / 2;
-                }
-                
-                var lss = doc.text2(text, feed, print.top_margin + print.font_height * y, text_properties);
-                y += lss - 1;
-                if (line.linediff) {
-                    y += line.linediff;
                 }
 
                 if (line.number) {

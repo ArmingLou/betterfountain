@@ -106,7 +106,8 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
         text_more: config.text_more,
         text_contd: config.text_contd,
         split_dialogue: config.split_dialogue,
-        font: font
+        font: font,
+        merge_empty_lines: config.merge_empty_lines
     });
 
     var pdf_options: pdfmaker.Options = {

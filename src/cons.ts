@@ -16,6 +16,7 @@ export const charOfStyleTag: { [index: string]: string } = {
     style_right_pop: "↜",
     italic_global_begin: "⇂",
     italic_global_end: "↿",
+    all: "☄☈↭↯↺↻↬☍☋↷↶⇂↿↝↜𓆡",
 }
 
 export const blockRegex: { [index: string]: RegExp } = {

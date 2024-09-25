@@ -85,6 +85,8 @@ export class Liner {
         })].concat(this.split_text(text.substr(nextStarIdx), max, index + nextStarIdx, token));
     };
 
+
+
     split_token = (token: any, max: number) => {
         // token.lines = this.split_text(token.text || "", max, token.start, token);
         token.lines = this.split_text(token.text || "", max, token.start, token);
@@ -252,24 +254,26 @@ export class Liner {
 
     break_lines = (lines: any, max: number, breaker: any, cfg: any): any => {
         while (lines.length && !(lines[0].text)) {
-            lines.shift();
+            lines.shift(); // 删除每页开头的空行
         }
 
         var s = max;
         var p, internal_break = 0;
+        var found_internal_break = false;
 
         for (var i = 0; i < lines.length && i < max; i++) {
             if (lines[i].type === "page_break") {
                 internal_break = i;
+                found_internal_break = true;
             }
         }
 
-        if (!internal_break) {
+        if (!found_internal_break) {
             if (lines.length <= max) {
                 return lines;
             }
             do {
-                for (p = s - 1; p && !(lines[p].text); p--) {
+                for (p = s - 1; p && this.isBlankLine(lines[p].text); p--) {
                 }
                 s = p;
             } while (p && !breaker(p, lines, cfg));
@@ -277,7 +281,7 @@ export class Liner {
                 p = max;
             }
         } else {
-            p = internal_break - 1;
+            p = internal_break ;
         }
         var page = lines.slice(0, p + 1);
 
@@ -296,10 +300,14 @@ export class Liner {
             scene_split = true;
         }
 
-        page.push(this.h.create_line({
-            type: "page_break",
-            scene_split: scene_split
-        }));
+        if (found_internal_break){
+            page[page.length - 1].scene_split = scene_split;
+        } else {
+            page.push(this.h.create_line({
+                type: "page_break",
+                scene_split: scene_split
+            }));
+        }
         var append = this.break_lines(lines.slice(p + 1), max, breaker, cfg);
         return page.concat(append);
     };
@@ -363,7 +371,7 @@ export class Liner {
                         token: right_lines[ii + left_tokens].token,
                         text: ' ', // 必须是有长度的空格，否则会被忽略，往前找断页行
                         start: lines[left_index + left_tokens].start,
-                        end: lines[left_index + left_tokens].end
+                        end: lines[left_index + left_tokens].end,
                     }));
                     insertLength--;
                     ii++;
@@ -381,6 +389,13 @@ export class Liner {
             }
         }
 
+    };
+
+
+
+    isBlankLine = (text: string) => {
+        let t = text.replace(new RegExp('[' + charOfStyleTag.all + ']', 'g'), '');
+        return t.trim().length === 0;
     };
 
 
@@ -425,6 +440,8 @@ export class Liner {
         }
         doc.font(cfg.font);
         doc.fontSize(cfg.print.font_size);
+
+        var lastLineBlank = false;
 
         tokens.forEach((token: any) => {
             if (!token.hide) {
@@ -471,16 +488,34 @@ export class Liner {
                 }
 
                 // var w = 72 * (cfg.print.page_width - cfg.print.left_margin - cfg.print.right_margin);
-                this.split_token2(token, w, cfg.font, cfg.print.font_size, doc, "☄☈↭↯↺↻↬☍☋↷↶⇂↿↝↜");
+                this.split_token2(token, w, cfg.font, cfg.print.font_size, doc, charOfStyleTag.all);
 
                 if (token.is("scene_heading") && lines.length) {
                     token.lines[0].number = token.number;
                 }
 
                 token.lines.forEach((line: any, index: any) => {
-                    line.local_index = index;
-                    line.global_index = global_index++;
-                    lines.push(line);
+                    var pushed = true;
+                    if (cfg.merge_empty_lines) {
+
+                        if (token.type === "page_break") {
+                            lastLineBlank = true;
+                        } else {
+                            var currBlank = this.isBlankLine(line.text);
+                            if (currBlank && lastLineBlank) {
+                                var t = line.text.replace(/\s/g, '').trim(); // 剩下样式符号
+                                // 加到上一行
+                                lines[lines.length - 1].text += t;
+                                pushed = false;
+                            }
+                            lastLineBlank = currBlank;
+                        }
+                    }
+                    if (pushed) {
+                        line.local_index = index;
+                        line.global_index = global_index++;
+                        lines.push(line);
+                    }
                 });
 
                 if (token.type === 'section') {
@@ -493,7 +528,7 @@ export class Liner {
         });
 
         this.fold_dual_dialogue(lines);
-        lines = this.break_lines(lines, cfg.print.lines_per_page, cfg.lines_breaker || this.default_breaker, cfg);
+        lines = this.break_lines(lines, cfg.print.lines_per_page, cfg.lines_breaker || this.default_breaker, cfg);//删除每页开始的空行，以及断页行
 
         return lines;
     };
