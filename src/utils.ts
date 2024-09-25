@@ -7,6 +7,7 @@ import * as telemetry from "./telemetry";
 import * as sceneNumbering from './scenenumbering';
 import * as fs from "fs";
 import { getFountainConfig } from "./configloader";
+import { charOfStyleTag } from "./cons";
 
 /**
  * @returns {vscode.Uri} relevant fountain document for the currently selected preview or text editor
@@ -623,4 +624,9 @@ export function median(values: number[]): number {
 		return values[half];
 	else
 		return (values[half - 1] + values[half]) / 2.0;
+}
+
+export function isBlankLineAfterStlyle(text: string): boolean {
+	let t = text.replace(new RegExp('[' + charOfStyleTag.all + ']', 'g'), '');
+	return t.trim().length === 0;
 }

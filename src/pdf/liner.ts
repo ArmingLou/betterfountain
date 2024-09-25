@@ -2,6 +2,7 @@ import { charOfStyleTag } from "../cons";
 import { token } from "../token";
 import { breakLines } from 'textbox-for-pdfkit';
 import * as path from 'path';
+import { isBlankLineAfterStlyle } from "../utils";
 
 export class Liner {
     printTakeNumbers: boolean = false;
@@ -188,7 +189,7 @@ export class Liner {
                     };
                     lines.splice(index + 1, 0, new_page_character = this.h.create_line({
                         type: "character",
-                        text: "", 
+                        text: "",
                         start: token_after2.start,
                         end: token_after2.end,
                         token: token_on_break.token
@@ -253,16 +254,38 @@ export class Liner {
     };
 
     break_lines = (lines: any, max: number, breaker: any, cfg: any): any => {
-        while (lines.length && (!(lines[0].text) || lines[0].type === "page_break") 
-          && lines[0].type !== "dialogue_fake" && lines[0].type !== "more" && lines[0].type !== "character") {
-            lines.shift(); // 删除每页开头的空行 包括换行. 但要保留对话换行的左右对齐补空行
+
+        var maxPlus = max;
+        // 删除每页开头的空行 包括换行. 但要保留对话左右对齐补的空行
+        for (var i = 0; i < lines.length; i++) {
+            if (lines[0].type === "dialogue_fake" || lines[0].type === "more" || lines[0].type === "character") {
+                break;
+            }
+            if (lines[i].type === "page_break" || lines[i].text.trim().length === 0) {
+                // 删除
+                lines.splice(i, 1);
+                i--;
+            } else if (isBlankLineAfterStlyle(lines[i].text)) {
+                // 只含有样式字符
+                // 保留
+                maxPlus ++; // 后面绘制时，会忽略页面开头的空样式行，所以最多行max值要增加
+            } else {
+                // 当页第一个非空行
+                break
+            }
         }
 
-        var s = max;
+
+        // while (lines.length && (!(lines[0].text) || lines[0].type === "page_break")
+        //     && lines[0].type !== "dialogue_fake" && lines[0].type !== "more" && lines[0].type !== "character") {
+        //     lines.shift();
+        // }
+
+        var s = maxPlus;
         var p, internal_break = 0;
         var found_internal_break = false;
 
-        for (var i = 0; i < lines.length && i < max; i++) {
+        for (var i = 0; i < lines.length && i < maxPlus; i++) {
             if (lines[i].type === "page_break") {
                 internal_break = i;
                 found_internal_break = true;
@@ -271,19 +294,19 @@ export class Liner {
         }
 
         if (!found_internal_break) {
-            if (lines.length <= max) {
+            if (lines.length <= maxPlus) {
                 return lines;
             }
             do {
-                for (p = s - 1; p && (this.isBlankLine(lines[p].text)&&lines[p].type!=="dialogue_fake"); p--) { // TODO Arming (2024-09-25) : 
+                for (p = s - 1; p && (isBlankLineAfterStlyle(lines[p].text) && lines[p].type !== "dialogue_fake"); p--) { 
                 }
                 s = p;
             } while (p && !breaker(p, lines, cfg));
             if (!p) {
-                p = max;
+                p = maxPlus;
             }
         } else {
-            p = internal_break ;
+            p = internal_break;
         }
         var page = lines.slice(0, p + 1);
 
@@ -302,7 +325,7 @@ export class Liner {
             scene_split = true;
         }
 
-        if (found_internal_break){
+        if (found_internal_break) {
             page[page.length - 1].scene_split = scene_split;
         } else {
             page.push(this.h.create_line({
@@ -393,12 +416,6 @@ export class Liner {
 
     };
 
-
-
-    isBlankLine = (text: string) => {
-        let t = text.replace(new RegExp('[' + charOfStyleTag.all + ']', 'g'), '');
-        return t.trim().length === 0;
-    };
 
 
     line = async (tokens: any, cfg: any): Promise<any> => {
@@ -503,7 +520,7 @@ export class Liner {
                         if (token.type === "page_break") {
                             lastLineBlank = false; // 需要保留行
                         } else {
-                            var currBlank = this.isBlankLine(line.text);
+                            var currBlank = isBlankLineAfterStlyle(line.text);
                             if (currBlank && lastLineBlank) {
                                 var t = line.text.replace(/\s/g, '').trim(); // 剩下样式符号
                                 // 加到上一行

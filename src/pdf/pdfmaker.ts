@@ -5,7 +5,7 @@ import * as print from "./print";
 import * as path from 'path';
 import * as vscode from 'vscode';
 import helpers from "../helpers";
-import { openFile, revealFile, trimCharacterExtension, wordToColor } from "../utils";
+import { isBlankLineAfterStlyle, openFile, revealFile, trimCharacterExtension, wordToColor } from "../utils";
 import * as he from 'he';
 import { addTextbox } from 'textbox-for-pdfkit';
 import { regex } from "../afterwriting-parser";
@@ -939,7 +939,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     let right_column_pass: number = 0;
     let right_column_temp: any[] = [];
     let y_right = 0;
-    
+
     lines.forEach(function (line: any) {
 
         if (line.type === "page_break") {
@@ -991,14 +991,27 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             print_header_and_footer();
             // prev_scene_continuation_header = '';
 
-        } else if (line.type === "separator") {
-            if (line.text) {
-                // 可能是合并的空行，只含样式字符
-                // 绘制样式
-                doc.text2(line.text, 0, print.top_margin + print.font_height * y);
+        }
+        else if (y === 0
+            && line.type !== "dialogue_fake" && line.type !== "more" && line.type !== "character"
+            && isBlankLineAfterStlyle(line.text)) {
+
+            // 每页开头的 空行（只有样式字符），不增加行，只绘制样式，当删除空行处理
+
+            // 绘制样式
+            doc.text2(line.text, 0, print.top_margin + print.font_height * y);
+
+
+            if (lineStructs) {
+                if (line.token.line && !lineStructs.has(line.token.line)) {
+                    lineStructs.set(line.token.line, { page: page, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
+                }
             }
+        }
+        else if (line.type === "separator") {
 
             y++;
+
             if (lineStructs) {
                 if (line.token.line && !lineStructs.has(line.token.line)) {
                     lineStructs.set(line.token.line, { page: page, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
@@ -1219,7 +1232,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             var ls = doc.text2(tx, feed_right, print.top_margin + print.font_height * y_right++, right_text_properties);
                             y_right += ls - 1;
                         });
-                        
+
                         right_column_temp = [];
                         right_column_pass = 0;
                     }

@@ -1,4 +1,4 @@
-import { calculateDialogueDuration, trimCharacterExtension, last, trimCharacterForceSymbol, parseLocationInformation, slugify, calculateActionDuration } from "./utils";
+import { calculateDialogueDuration, trimCharacterExtension, last, trimCharacterForceSymbol, parseLocationInformation, slugify, calculateActionDuration, isBlankLineAfterStlyle } from "./utils";
 import { token, create_token } from "./token";
 import { Range, Position } from "vscode";
 import { getFountainConfig } from "./configloader";
@@ -591,10 +591,6 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         }
     }
 
-    const isBlankLineAfterStlyle = (text: string) => {
-        let t = text.replace(new RegExp('[' + charOfStyleTag.all + ']', 'g'), '');
-        return t.trim().length === 0;
-    }
 
     var lastIsBlankTitle = false; //上一个行是否是空行
 
@@ -1262,7 +1258,11 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             //         }
             //     }
             // }
-
+            
+            if (notetoken) {
+                // thistoken = notetoken;
+                pushToken(notetoken);
+            }
             if (thistoken.ignore) {
                 ignoredLastToken = true;
             }
@@ -1271,10 +1271,6 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 pushToken(thistoken);
             }
 
-            if (notetoken) {
-                thistoken = notetoken;
-                pushToken(thistoken);
-            }
         }
 
     }
