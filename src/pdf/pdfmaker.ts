@@ -939,6 +939,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     let right_column_pass: number = 0;
     let right_column_temp: any[] = [];
     let y_right = 0;
+    
     lines.forEach(function (line: any) {
 
         if (line.type === "page_break") {

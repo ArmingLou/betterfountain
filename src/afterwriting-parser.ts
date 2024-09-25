@@ -1184,7 +1184,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     processTokenTextStyleChar(thistoken);
 
                 } else {
-                    // processTitlePageEnd(i); // title page 的 note 在开放打印时，可能进入这里
+                    processTitlePageEnd(i); // title page 的 note 在开放打印时，可能进入这里
                     thistoken.type = "action"; // TODO Arming (2024-09-06) : 其他类型通通归于 action，
                     thistoken.text = text_display;
                     processTokenTextStyleChar(thistoken);

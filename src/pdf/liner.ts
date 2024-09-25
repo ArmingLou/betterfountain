@@ -253,7 +253,7 @@ export class Liner {
     };
 
     break_lines = (lines: any, max: number, breaker: any, cfg: any): any => {
-        while (lines.length && !(lines[0].text)) {
+        while (lines.length && !(lines[0].text) && lines[0].type !== "page_break") {
             lines.shift(); // 删除每页开头的空行
         }
 
@@ -265,6 +265,7 @@ export class Liner {
             if (lines[i].type === "page_break") {
                 internal_break = i;
                 found_internal_break = true;
+                break;
             }
         }
 
