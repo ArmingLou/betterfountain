@@ -182,6 +182,18 @@ export const findCharacterThatSpokeBeforeTheLast = (
 
 	return characterBeforeLast;
 }
+
+// 对白中有效计算时长的标点数量
+export const getDialogueVaildPounchCount = (text: string): number => {
+	var rec = /(\.|\?|\!|\:|。|？|！|：)|(\,|，|;|；|、)/g
+	return text.match(rec) ? text.match(rec).length : 0
+}
+
+// 去除空格，标点，特殊字符
+export const calculateChars = (text: string): string => {
+	return text.replace(/\s|\p{P}|\p{S}/giu, '');
+}
+
 export const calculateActionDuration = (actionText: string): number => {
 	var duration = 0;
 
@@ -191,7 +203,7 @@ export const calculateActionDuration = (actionText: string): number => {
 		x = config.calculate_duration_action
 	}
 	// var sanitized = actionText.replace(new RegExp(regex.note_inline, 'g'), '');
-	var sanitized = actionText.replace(/\s|\p{P}|\p{S}/giu, '');
+	var sanitized = calculateChars(actionText);
 	duration += sanitized.length * x; // TODO Arming (2024-09-03) : 动作时长预估
 	return duration
 }
@@ -217,7 +229,7 @@ export const calculateDialogueDuration = (dialogue: string): number => {
 
 	//According to this paper: http://www.office.usp.ac.jp/~klinger.w/2010-An-Analysis-of-Articulation-Rates-in-Movies.pdf
 	//The average amount of syllables per second in the 14 movies analysed is 5.13994 (0.1945548s/syllable)
-	var sanitized = dialogue.replace(/\s|\p{P}|\p{S}/giu, '');
+	var sanitized = calculateChars(dialogue);
 	duration += sanitized.length * x; // TODO Arming (2024-08-29) : 时间预估算法, 由统计已知道 0.1945548s / 每音节。 而一个中文字正好是一个音节，中文直接乘以字数就好了。
 	//duration += syllable(dialogue)*0.1945548;
 

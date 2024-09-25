@@ -2,7 +2,7 @@ import { parseoutput, regex, StructToken } from "./afterwriting-parser"
 import { GeneratePdf } from "./pdf/pdf"
 import { ExportConfig, FountainConfig } from "./configloader"
 import { pdfstats } from "./pdf/pdfmaker"
-import { calculateDialogueDuration, isMonologue, rgbToHex, wordToColor, median, mapToObject } from "./utils"
+import { calculateDialogueDuration, isMonologue, rgbToHex, wordToColor, median, mapToObject, calculateChars, getDialogueVaildPounchCount } from "./utils"
 import readabilityScores = require("readability-scores")
 
 type dialoguePiece = {
@@ -130,7 +130,8 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
             var speech = "";
             while (i++ && i < parsed.tokens.length) {
                 if (parsed.tokens[i].type === "dialogue") {
-                    speech += parsed.tokens[i].text + " "
+                    // speech += parsed.tokens[i].text + " " 
+                    speech += parsed.tokens[i].textNoNotes + " " 
                 }
                 else if (parsed.tokens[i].type === "character") {
                     break;
@@ -185,7 +186,8 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
                 gradeToAge(readability.gunningFog)) / 6;
             if (averageComplexity > 0) speechcomplexityArray.push(averageComplexity);
         }
-        const wordsSpoken = getCharacterCountWithoutWhitespace(allDialogueCombined);
+        // const wordsSpoken = getCharacterCountWithoutWhitespace(allDialogueCombined);
+        const wordsSpoken = calculateChars(allDialogueCombined).length + getDialogueVaildPounchCount(allDialogueCombined);
         characterStats.push({
             name: singledialPerChar,
             color: rgbToHex(wordToColor(singledialPerChar)),
@@ -331,7 +333,7 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                 let currentCharacter = characters.get(element.character);
                 let dialogueLength = 0;
                 let wordsLength = 0;
-                let wordcount = getWordCount(element.text);
+                let wordcount = getWordCount(element.text); // 写作统计，劳动力，可以用 显示的text
                 let time = Number(element.time);
                 if (!currentCharacter) {
                     characters.set(element.character, []);

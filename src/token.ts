@@ -1,5 +1,6 @@
 export function create_token(text?: string, cursor?: number, line?: number, new_line_length?: number, type?:string){
     var t:token={
+        textNoNotes:undefined,
         text:text,
         type:type,
         start:cursor,
@@ -63,7 +64,8 @@ export function create_token(text?: string, cursor?: number, line?: number, new_
     return t;
 }
 export interface token {
-    text:string;
+    textNoNotes:string; //不包含note的text,且格式化特殊字符转换前的text
+    text:string; //显示的text，可能包含note内容，以及格式化特殊字符
     type:string;
     start:number;
     end:number;

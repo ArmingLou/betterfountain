@@ -533,6 +533,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     const processDialogueBlock = (token: token) => {
         // let textWithoutNotes = token.text.replace(regex.note_inline, "");
         // processInlineNote(token.text, token.line);
+        token.textNoNotes = text_valid;
         let textWithoutNotes = "";
         // if (current_has_note) {
             // textWithoutNotes = current_expet_note_text;
@@ -1272,6 +1273,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         processInlineNotes2()
         needProcessOutlineNote = 0;
     }
+    
+    updatePreviousSceneLength();//统计最后一个场景的 时长
 
     // tidy up separators
 
