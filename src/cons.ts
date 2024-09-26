@@ -6,7 +6,7 @@ export const charOfStyleTag: { [index: string]: string } = {
     bold: "↭",
     bold_italic: "↯",
     underline: "☄",
-    italic_underline: "↬",
+    italic_underline: "⇀",
     bold_underline: "☍",
     bold_italic_underline: "☋",
     link: "𓆡",
@@ -14,9 +14,12 @@ export const charOfStyleTag: { [index: string]: string } = {
     style_left_pop: "↶",
     style_right_stash: "↝",
     style_right_pop: "↜",
-    italic_global_begin: "⇂",
+    style_global_stash: "↬",
+    style_global_pop: "↫",
+    style_global_clean: "⇜",
+    italic_global_begin: "↾",
     italic_global_end: "↿",
-    all: "☄☈↭↯↺↻↬☍☋↷↶⇂↿↝↜𓆡",
+    all: "☄☈↭↯↺↻↬↫☍☋↷↶↾↿↝↜⇀𓆡⇜",
 }
 
 export const blockRegex: { [index: string]: RegExp } = {
@@ -33,7 +36,7 @@ export const tokenRegex: { [index: string]: RegExp } = {
     note_inline: /(?:↺)([\s\S]+?)(?:↻)/g,
     underline: /(☄(?=.+☄))(.+?)(☄)/g,
     italic: /(☈(?=.+☈))(.+?)(☈)/g,
-    italic_global: /(⇂)([^↿]*)(↿)/g,
+    italic_global: /(↾)([^↿]*)(↿)/g,
     bold: /(↭(?=.+↭))(.+?)(↭)/g,
     bold_italic: /(↯(?=.+↯))(.+?)(↯)/g,
     italic_underline: /(?:☄☈(?=.+☈☄)|☈☄(?=.+☄☈))(.+?)(☈☄|☄☈)/g,

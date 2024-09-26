@@ -138,6 +138,15 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
             italic_global: false,
             italic_dynamic: false
         },
+        stash_style_global_clumn: {
+            bold_italic: false,
+            bold: false,
+            italic: false,
+            underline: false,
+            override_color: "",
+            italic_global: false,
+            italic_dynamic: false
+        },
         italic_global: false,
         italic_dynamic: false
     }

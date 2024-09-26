@@ -5,7 +5,7 @@ import * as print from "./print";
 import * as path from 'path';
 import * as vscode from 'vscode';
 import helpers from "../helpers";
-import { isBlankLineAfterStlyle, openFile, revealFile, trimCharacterExtension, wordToColor } from "../utils";
+import { cleanStlyleChars, isBlankLineAfterStlyle, openFile, revealFile, trimCharacterExtension, wordToColor } from "../utils";
 import * as he from 'he';
 import { addTextbox } from 'textbox-for-pdfkit';
 import { regex } from "../afterwriting-parser";
@@ -25,6 +25,7 @@ export class Options {
     font_bold_italic: string;
     stash_style_right_clumn: StyleStash;
     stash_style_left_clumn: StyleStash;
+    stash_style_global_clumn: StyleStash;
     italic_global: boolean;
     italic_dynamic: boolean;
 }
@@ -332,8 +333,40 @@ async function initDoc(opts: Options) {
             underline: false,
             override_color: null
         };
+        opts.italic_global = false;
+        opts.italic_dynamic = false;
     };
     doc.reset_format();
+    // doc.format_state = {
+    //     bold_italic: false,
+    //     bold: false,
+    //     italic: false,
+    //     underline: false,
+    //     override_color: null
+    // };
+
+    doc.global_stash = function () {
+        opts.stash_style_global_clumn = {
+            bold_italic: doc.format_state.bold_italic,
+            bold: doc.format_state.bold,
+            italic: doc.format_state.italic,
+            underline: doc.format_state.underline,
+            override_color: doc.format_state.override_color,
+            italic_global: opts.italic_global,
+            italic_dynamic: opts.italic_dynamic,
+        }
+        doc.reset_format();
+    };
+    doc.global_pop = function () {
+        doc.format_state.bold_italic = opts.stash_style_global_clumn.bold_italic;
+        doc.format_state.bold = opts.stash_style_global_clumn.bold;
+        doc.format_state.italic = opts.stash_style_global_clumn.italic;
+        doc.format_state.underline = opts.stash_style_global_clumn.underline;
+        doc.format_state.override_color = opts.stash_style_global_clumn.override_color;
+        opts.italic_global = opts.stash_style_global_clumn.italic_global;
+        opts.italic_dynamic = opts.stash_style_global_clumn.italic_dynamic;
+    };
+
     //var inner_text = doc.text;
     doc.simple_text = function () {
         doc.font('ScriptNormal');
@@ -341,10 +374,9 @@ async function initDoc(opts: Options) {
     };
     // 缓存doc样式画了后，再恢复之前的样式
     doc.format_text = function (text: string, x: number, y: number, options: any) {
-        var cache_current_state = doc.format_state;
-        doc.reset_format();
+        doc.global_stash();
         doc.text2(text, x, y, options);
-        doc.format_state = cache_current_state;
+        doc.global_pop();
     };
     doc.text2 = function (text: string, x: number, y: number, options: any): number {
         options = options || {};
@@ -395,7 +427,7 @@ async function initDoc(opts: Options) {
 
         //Further sub-split for bold, italic, underline, etc...
         for (let i = 0; i < split_for_formatting.length; i++) {
-            var innersplit = split_for_formatting[i].split(/(☄)|(☈)|(↭)|(↯)|(↺)|(↻)|(↬)|(☍)|(☋)|(↷)|(↶)|(⇂)|(↿)|(↝)|(↜)/g).filter(function (a) {
+            var innersplit = split_for_formatting[i].split(new RegExp('([' + charOfStyleTag.all + '])', 'g')).filter(function (a) {
                 return a;
             });
             split_for_formatting.splice(i, 1, ...innersplit);
@@ -409,7 +441,18 @@ async function initDoc(opts: Options) {
         // var currentWidth = 0;
         for (var i = 0; i < split_for_formatting.length; i++) {
             var elem = split_for_formatting[i];
-            if (elem === charOfStyleTag.style_left_stash) {
+            if (elem === charOfStyleTag.style_global_clean) {
+                doc.reset_format();
+                color = options.color || 'black';
+
+            } else if (elem === charOfStyleTag.style_global_stash) {
+                doc.global_stash();
+                color = options.color || 'black';
+
+            } else if (elem === charOfStyleTag.style_global_pop) {
+                doc.global_pop();
+            }
+            else if (elem === charOfStyleTag.style_left_stash) {
                 opts.stash_style_left_clumn = {
                     bold_italic: doc.format_state.bold_italic,
                     bold: doc.format_state.bold,
@@ -419,13 +462,7 @@ async function initDoc(opts: Options) {
                     italic_global: opts.italic_global,
                     italic_dynamic: opts.italic_dynamic,
                 }
-                doc.format_state.bold_italic = false;
-                doc.format_state.bold = false;
-                doc.format_state.italic = false;
-                doc.format_state.underline = false;
-                opts.italic_global = false;
-                opts.italic_dynamic = false;
-                doc.format_state.override_color = null;
+                doc.reset_format();
                 color = options.color || 'black';
 
             } else if (elem === charOfStyleTag.style_left_pop) {
@@ -436,7 +473,8 @@ async function initDoc(opts: Options) {
                 doc.format_state.override_color = opts.stash_style_left_clumn.override_color;
                 opts.italic_global = opts.stash_style_left_clumn.italic_global;
                 opts.italic_dynamic = opts.stash_style_left_clumn.italic_dynamic;
-            } else if (elem === charOfStyleTag.style_right_stash) {
+            }
+            else if (elem === charOfStyleTag.style_right_stash) {
                 opts.stash_style_right_clumn = {
                     bold_italic: doc.format_state.bold_italic,
                     bold: doc.format_state.bold,
@@ -446,13 +484,7 @@ async function initDoc(opts: Options) {
                     italic_global: opts.italic_global,
                     italic_dynamic: opts.italic_dynamic,
                 }
-                doc.format_state.bold_italic = false;
-                doc.format_state.bold = false;
-                doc.format_state.italic = false;
-                doc.format_state.underline = false;
-                opts.italic_global = false;
-                opts.italic_dynamic = false;
-                doc.format_state.override_color = null;
+                doc.reset_format();
                 color = options.color || 'black';
             } else if (elem === charOfStyleTag.style_right_pop) {
                 doc.format_state.bold_italic = opts.stash_style_right_clumn.bold_italic;
@@ -616,7 +648,8 @@ async function initDoc(opts: Options) {
 }
 
 function clearFormatting(text: string) {
-    var clean = text.replace(/☈|↭|↯|☄|↬|☍|☋|/g, '');
+    // var clean = text.replace(/☈|↭|↯|☄|↬|☍|☋|/g, '');
+    var clean = cleanStlyleChars(text);
     // var clean = text.replace(/\*/g, '');
     // clean = clean.replace(/_/g, '');
     return clean;
@@ -1009,6 +1042,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
         }
         else if (line.type === "separator") {
+            if (line.text) {
+                // 绘制样式. 可能是连续块最后一行后的空行样式字符，清理样式。
+                doc.text2(line.text, 0, print.top_margin + print.font_height * y);
+            }
 
             y++;
 
@@ -1054,12 +1091,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     if (cfg.embolden_character_names) {
                         if (intput.endsWith(cfg.text_contd)) {
                             intput = intput.substring(0, intput.length - cfg.text_contd.length);
-                            intput = charOfStyleTag.bold + intput + charOfStyleTag.bold + cfg.text_contd;
+                            // intput = charOfStyleTag.bold + intput + charOfStyleTag.bold + cfg.text_contd;
+                            intput = addTagAfterBrokenNote(intput, charOfStyleTag.bold) + charOfStyleTag.bold + cfg.text_contd;
                         } else {
-                            intput = charOfStyleTag.bold + intput + charOfStyleTag.bold;
+                            // intput = charOfStyleTag.bold + intput + charOfStyleTag.bold;
+                            intput = addTagAfterBrokenNote(intput, charOfStyleTag.bold) + charOfStyleTag.bold;
                         }
                     }
-                    // intput = charOfStyleTag.style_stash + intput + charOfStyleTag.style_pop;
+                    // intput = charOfStyleTag.style_global_stash + intput;
                 }
                 // if (lline.type === "more") {
                 //     intput = charOfStyleTag.style_stash + intput + charOfStyleTag.style_pop;
@@ -1073,6 +1112,26 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // }
                 return intput
             }
+            function ifResetFormat(intput: any, lline = line): any {
+                if (lline.type === "character" || lline.type === "scene_heading" || lline.type === "synopsis"
+                    || lline.type === "centered" || lline.type === "section" || lline.type === "transition"
+                    || lline.type === "lyric"
+                ) {
+                    return addTagAfterBrokenNote(intput, charOfStyleTag.style_global_clean);
+                }
+                return intput;
+
+            }
+            function addTagAfterBrokenNote(intput: any, tag: string): any {
+                var istart = intput.indexOf(charOfStyleTag.note_begin);
+                var iend = intput.indexOf(charOfStyleTag.note_end);
+                if (iend >= 0) {
+                    if (istart < 0 || iend < istart) {
+                        return intput.substring(0, iend + 1) + tag + intput.substring(iend + 1);
+                    }
+                }
+                return tag + intput;
+            }
 
             var text_properties = get_text_properties();
 
@@ -1081,12 +1140,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
 
             if (line.type === 'centered') {
+                text = ifResetFormat(text, line);
                 var ls = center(text, print.top_margin + print.font_height * y++);
                 y += ls - 1;
             } else if (line.type === "transition") {
                 var feed: number = print.action.feed;
                 text_properties.width = print.page_width - feed - feed;
                 text_properties.align = 'right';
+                text = ifResetFormat(text, line);
                 var lss = doc.text2(text, feed, print.top_margin + print.font_height * y, text_properties);
                 y += lss - 1;
             } else {
@@ -1145,11 +1206,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     }
                     currentScene = text;
                     if (cfg.embolden_scene_headers) {
-                        text = charOfStyleTag.bold + text + charOfStyleTag.bold;
+                        // text = charOfStyleTag.bold + text + charOfStyleTag.bold;
+                        text = addTagAfterBrokenNote(text, charOfStyleTag.bold) + charOfStyleTag.bold;
                     }
                     if (cfg.underline_scene_headers) {
-                        text = charOfStyleTag.underline + text + charOfStyleTag.underline;
+                        // text = charOfStyleTag.underline + text + charOfStyleTag.underline;
+                        text = addTagAfterBrokenNote(text, charOfStyleTag.underline) + charOfStyleTag.underline;
                     }
+                    // text = charOfStyleTag.style_global_stash + text;
                 }
 
                 text = wrapCharAndDialog(text, line)
@@ -1167,7 +1231,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
 
                 if (print[line.type] && print[line.type].italic && text) {
-                    text = charOfStyleTag.italic + text + charOfStyleTag.italic;
+                    // text = charOfStyleTag.italic + text + charOfStyleTag.italic;
+                    text = addTagAfterBrokenNote(text, charOfStyleTag.italic) + charOfStyleTag.italic;
                 }
 
                 if (line.token && line.token.dual) {
@@ -1193,6 +1258,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     // feed -= (feed) / 2;
                 }
 
+                text = ifResetFormat(text, line);
                 var lss = doc.text2(text, feed, print.top_margin + print.font_height * y, text_properties);
                 y += lss - 1;
                 if (line.linediff) {
@@ -1229,6 +1295,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                             var tx = wrapCharAndDialog(right_line.text, right_line);
                             right_text_properties.width = print.page_width - feed_right - print.right_margin;
+                            tx = ifResetFormat(tx, right_line);
                             var ls = doc.text2(tx, feed_right, print.top_margin + print.font_height * y_right++, right_text_properties);
                             y_right += ls - 1;
                         });

@@ -1,4 +1,4 @@
-import { calculateDialogueDuration, trimCharacterExtension, last, trimCharacterForceSymbol, parseLocationInformation, slugify, calculateActionDuration, isBlankLineAfterStlyle } from "./utils";
+import { calculateDialogueDuration, trimCharacterExtension, last, trimCharacterForceSymbol, parseLocationInformation, slugify, calculateActionDuration, isBlankLineAfterStlyle, cleanStlyleChars } from "./utils";
 import { token, create_token } from "./token";
 import { Range, Position } from "vscode";
 import { getFountainConfig } from "./configloader";
@@ -167,6 +167,8 @@ export function lexer(s: string, type: string, replacer: LexerReplacements, titl
     // s = s.replace(/\[star\]/g, '*').replace(/\[underline\]/g, '_');
     if (type != "action")
         s = s.trim();
+
+    s = cleanStlyleChars(s);
     return s;
 }
 export class Location {
@@ -731,6 +733,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     state = "normal";
 
                     thistoken.type = "separator"; // TODO Arming (2024-09-05) : 对应就是 没有对话，也没有非对话块 的空行，对应 state = normal， 能产生pdf一条空行。
+                    thistoken.text = charOfStyleTag.style_global_clean; //重置样式;
                     pushToken(thistoken);
                     last_was_separator = true;
                 } else {
@@ -805,9 +808,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     thistoken.text = fontMt[2].trim();
                 } else {
                     font_title = false;
-                    var mt = text_display.match(/^(.*?↻)?\s*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact(?: info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:(.*)/i)
+                    var mt = text_display.match(/^(.*?↻)??\s*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact(?: info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:(.*)/i)
                     thistoken.text = mt[3].trim();
                     processTokenTextStyleChar(thistoken);
+                    thistoken.text = charOfStyleTag.style_global_stash + thistoken.text; //重置样式，每个字段开始
                     lastIsBlankTitle = false;
                 }
 
@@ -844,7 +848,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         }
                         lastIsBlankTitle = cuurBlank;
                     }
-                    if(!handl){
+                    if (!handl) {
                         last_title_page_token.text += (last_title_page_token.text ? "\n" : "") + thistoken.text.trim();
                     }
                 }
@@ -1120,7 +1124,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 else if (text_valid.match(blockRegex.lyric)) {
                     processTitlePageEnd(i);
                     // 强制 转换 action 中 歌词
-                    thistoken.type = "action";
+                    thistoken.type = "lyric";
                     var mt = text_display.trimRight().match(/^((?:.*?↻)?\s*)(\~)(.*)/);
                     var ct = mt[3];
                     if (ct) {
@@ -1258,7 +1262,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             //         }
             //     }
             // }
-            
+
             if (notetoken) {
                 // thistoken = notetoken;
                 pushToken(notetoken);

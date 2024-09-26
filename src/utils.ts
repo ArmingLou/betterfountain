@@ -630,3 +630,8 @@ export function isBlankLineAfterStlyle(text: string): boolean {
 	let t = text.replace(new RegExp('[' + charOfStyleTag.all + ']', 'g'), '');
 	return t.trim().length === 0;
 }
+
+export function cleanStlyleChars(text: string): string {
+	let t = text.replace(new RegExp('[' + charOfStyleTag.all + ']', 'g'), '');
+	return t;
+}
