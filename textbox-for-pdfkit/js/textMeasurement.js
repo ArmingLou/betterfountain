@@ -7,6 +7,9 @@
 function measureTextWidth(text, font, fontSize, doc) {
   return doc.font(font).fontSize(fontSize).widthOfString(text);
 }
+function measureTextHeight(text, font, fontSize, doc) {
+  return doc.font(font).fontSize(fontSize).heightOfString(text);
+}
 
 function measureTextsWidth(texts, doc) {
   const textsWithWidth = texts.map((textPart) => {
@@ -39,5 +42,6 @@ function measureTextFragments(textArray, spaceWidth, font, fontSize, doc) {
 
 exports.measureTextsWidth = measureTextsWidth;
 exports.measureTextWidth = measureTextWidth;
+exports.measureTextHeight = measureTextHeight;
 exports.checkParagraphFitsInLine = checkParagraphFitsInLine;
 exports.measureTextFragments = measureTextFragments;

@@ -1,6 +1,6 @@
 const getFontAscent = require("./fontHandler");
 const { normalizeTexts, summarizeParagraphs } = require("./dataRearanger");
-const { measureTextsWidth, measureTextWidth } = require("./textMeasurement");
+const { measureTextsWidth, measureTextWidth, measureTextHeight } = require("./textMeasurement");
 const { lineWrapParagraph, removeSubsequentSpaces } = require("./lineWrapper");
 
 // This is the main package of textbox-for-pdfkit. It is the main function
@@ -40,8 +40,8 @@ function addTextbox(text, doc, posX, posY, width, style = {}) {
   const baseline = style.baseline || "alphabetic";
 
   drawTextLinesOnPDF(optimizedLines, width, posX, posY, textboxStyle, doc, baseline);
-  
-  if (optimizedLines.length <=0) {
+
+  if (optimizedLines.length <= 0) {
     // 至少有一行
     return 1;
   }
@@ -55,29 +55,37 @@ function addTextbox(text, doc, posX, posY, width, style = {}) {
 function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baseline) {
   // let yPosition =
   //   posY + getFontAscent(defaultStyle.font, defaultStyle.fontSize);
-  let yPosition = 0;
-  if (defaultStyle.font_height) {
-    var k = getFontAscent(defaultStyle.font, defaultStyle.fontSize);
-    yPosition = posY + defaultStyle.font_height;
-  } else {
-    yPosition = posY + getFontAscent(defaultStyle.font, defaultStyle.fontSize);
-  }
+  let yPosition = posY;
+  // if (defaultStyle.font_height) {
+  //   // var k = getFontAscent(defaultStyle.font, defaultStyle.fontSize);
+  //   yPosition = posY + defaultStyle.font_height;
+  // } else {
+  //   yPosition = posY + getFontAscent(defaultStyle.font, defaultStyle.fontSize);
+  // }
   lines.forEach((line, index) => {
-    if (index !== 0) {
+    // if (index !== 0) {
       if (defaultStyle.font_height) {
         yPosition += defaultStyle.font_height;
       }
       else {
         yPosition += line.lineHeight;
       }
-    }
+    // }
     let xPosition = getLineStartXPosition(line, width, posX);
     line.texts.forEach((textPart) => {
+      // var y = getFontAscent(textPart.font, textPart.fontSize)
+      var y = measureTextHeight(textPart.text[0], textPart.font, textPart.fontSize, doc);
+      // var y = 0;
+      if (defaultStyle.font_height) {
+        y = defaultStyle.font_height - y;
+      }else {
+        y = line.lineHeight - y;
+      }
       doc
         .font(textPart.font)
         .fontSize(textPart.fontSize)
         .fillColor(textPart.color)
-        .text(textPart.text, xPosition, yPosition, {
+        .text(textPart.text, xPosition, yPosition + y, {
           link: textPart.link,
           align: "left",
           baseline: baseline,
@@ -169,7 +177,7 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
         // If there are many spaces at a line end --> ignore them.
         if (textFragment.text.match(/^[a-zA-Zа-яА-ЯёЁéÈçÇàÀäÄöÖüÜïÏêÊîÎôÔñÑ\s\d]+$/u)) {
           // 字母和数字不截断
-          if(lineText) {
+          if (lineText) {
             res.push(lineText);
           }
           // lineWidth = 0;
