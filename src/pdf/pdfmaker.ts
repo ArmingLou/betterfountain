@@ -1153,7 +1153,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             if (line.type === 'centered') {
                 text = ifResetFormat(text, line);
-                var ls = center(text, print.top_margin + print.font_height * y++);
+                var ls = center(text, print.top_margin + print.font_height * y);
                 y += ls - 1;
             } else if (line.type === "transition") {
                 var feed: number = print.action.feed;
@@ -1341,8 +1341,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         y += lss - 1;
                     }
                 }
-                y++;
             }
+            y++;
             if (lineStructs) {
                 if (line.token.line && !lineStructs.has(line.token.line)) {
                     if (line.token.time) currentDuration += line.token.time;
