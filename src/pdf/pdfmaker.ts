@@ -44,7 +44,7 @@ var PDFDocument = require('pdfkit'),
     //helper = require('../helpers'),
     Blob = require('blob');
 
-const textbox_width_error = 0;
+// const textbox_width_error = 0;
 
 var create_simplestream = function (filepath: string) {
     var simplestream: any = {
@@ -598,13 +598,13 @@ async function initDoc(opts: Options) {
             });*/
         }
 
-        return addTextbox(textobjects, doc, x * 72, y * 72, (width - textbox_width_error) * 72, { // 组件bug,text显示宽度比实际配置的width值要大
+        return addTextbox(textobjects, doc, x * 72, y * 72,  width * 72, { // 组件bug,text显示宽度比实际配置的width值要大
             lineHeight: options.lineHeight || print.font_height * 72,
             lineBreak: false,
             align: options.align,
             baseline: 'top',
             fontSize: options.fontSize || print.font_size || 12,
-        });
+        })/72;
 
     };
 
@@ -850,7 +850,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         opts.hooks.before_script(doc);
     }
 
-    var y = 0,
+    var height = 0, // 绘制了的高度
         page = 0,
         scene_number: string,
         // prev_scene_continuation_header = '',
@@ -998,7 +998,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 var scene_continued_text = '(' + (cfg.text_scene_continued || 'CONTINUED') + ')';
                 // var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued_text) * print.font_width;
                 // doc.simple_text(scene_continued_text, feed * 72, (print.top_margin + print.font_height * (y + 2)) * 72);
-                doc.format_text(scene_continued_text, 0, (print.top_margin + print.font_height * (y + 1)), { align: 'right', width: print.page_width - print.right_margin });
+                doc.format_text(scene_continued_text, 0, (print.top_margin + height + print.font_height ), { align: 'right', width: print.page_width - print.right_margin });
 
             }
 
@@ -1008,7 +1008,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
 
-            y = 0;
+            height = 0;
             doc.addPage();
             page++;
 
@@ -1037,14 +1037,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // prev_scene_continuation_header = '';
 
         }
-        else if (y === 0
+        else if (height === 0
             && line.type !== "dialogue_fake" && line.type !== "more" && line.type !== "character"
             && isBlankLineAfterStlyle(line.text)) {
 
             // 每页开头的 空行（只有样式字符），不增加行，只绘制样式，当删除空行处理
 
             // 绘制样式
-            doc.text2(line.text, 0, print.top_margin + print.font_height * y);
+            doc.text2(line.text, 0, 0);
 
 
             if (lineStructs) {
@@ -1056,10 +1056,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         else if (line.type === "separator") {
             if (line.text) {
                 // 绘制样式. 可能是连续块最后一行后的空行样式字符，清理样式。
-                doc.text2(line.text, 0, print.top_margin + print.font_height * y);
+                doc.text2(line.text, 0, 0);
             }
 
-            y++;
+            // y++;
+            height += print.font_height;
 
             if (lineStructs) {
                 if (line.token.line && !lineStructs.has(line.token.line)) {
@@ -1129,7 +1130,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     || lline.type === "centered" || lline.type === "section" || lline.type === "transition"
                     || lline.type === "lyric"
                 ) {
-                    return addTagAfterBrokenNote(intput, charOfStyleTag.style_global_clean);
+                    if(!lline.isWrap) {
+                        return addTagAfterBrokenNote(intput, charOfStyleTag.style_global_clean);
+                    }
                 }
                 return intput;
 
@@ -1153,15 +1156,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             if (line.type === 'centered') {
                 text = ifResetFormat(text, line);
-                var ls = center(text, print.top_margin + print.font_height * y);
-                y += ls - 1;
+                height += center(text, print.top_margin + height);
             } else if (line.type === "transition") {
                 var feed: number = print.action.feed;
                 text_properties.width = print.page_width - feed - feed;
                 text_properties.align = 'right';
                 text = ifResetFormat(text, line);
-                var lss = doc.text2(text, feed, print.top_margin + print.font_height * y, text_properties);
-                y += lss - 1;
+                height += doc.text2(text, feed, print.top_margin + height, text_properties);
             } else {
                 var feed: number = (print[line.type] || {}).feed || print.action.feed;
                 text_properties.width = print.page_width - feed - print.right_margin;
@@ -1252,7 +1253,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         // 缓存，画完左边再回头画右边
                         right_column_pass = 0;
                         right_column_temp = line.right_column;
-                        y_right = y;
+                        y_right = height;
                     }
                     var feed_diff = 0.2;
 
@@ -1271,11 +1272,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
 
                 text = ifResetFormat(text, line);
-                var lss = doc.text2(text, feed, print.top_margin + print.font_height * y, text_properties);
-                y += lss - 1;
-                if (line.linediff) {
-                    y += line.linediff;
-                }
+                height += doc.text2(text, feed, print.top_margin + height, text_properties);
+                // if (line.linediff) {
+                //     y += line.linediff;
+                // }
 
                 // 先画左对话，再画右
                 if (right_column_temp.length > 0) {
@@ -1308,8 +1308,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             var tx = wrapCharAndDialog(right_line.text, right_line);
                             right_text_properties.width = print.page_width - feed_right - print.right_margin;
                             tx = ifResetFormat(tx, right_line);
-                            var ls = doc.text2(tx, feed_right, print.top_margin + print.font_height * y_right++, right_text_properties);
-                            y_right += ls - 1;
+                            y_right += doc.text2(tx, feed_right, print.top_margin + y_right, right_text_properties);
                         });
 
                         right_column_temp = [];
@@ -1331,18 +1330,16 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                     if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'left') {
                         shift_scene_number = (scene_text_length + 4) * print.font_width;
-                        var lss = doc.text2(scene_number, feed - shift_scene_number, print.top_margin + print.font_height * y, text_properties);
-                        y += lss - 1;
+                        height += doc.text2(scene_number, feed - shift_scene_number, print.top_margin + height, text_properties);
                     }
 
                     if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'right') {
                         shift_scene_number = (print.scene_heading.max + 1) * print.font_width;
-                        var lss = doc.text2(scene_number, feed + shift_scene_number, print.top_margin + print.font_height * y, text_properties);
-                        y += lss - 1;
+                        height +=  doc.text2(scene_number, feed + shift_scene_number, print.top_margin + height, text_properties);
                     }
                 }
             }
-            y++;
+            // y++;
             if (lineStructs) {
                 if (line.token.line && !lineStructs.has(line.token.line)) {
                     if (line.token.time) currentDuration += line.token.time;

@@ -28,6 +28,9 @@ const defaultStyle = {
 
 function addTextbox(text, doc, posX, posY, width, style = {}) {
   // width = width - 36;
+  if (text.length <= 0) {
+    text = [""];
+  }
   const textboxStyle = { ...defaultStyle, ...style };
   const normalizedTexts = normalizeTexts(text, textboxStyle);
   const textsWithWidth = measureTextsWidth(normalizedTexts, doc);
@@ -39,23 +42,24 @@ function addTextbox(text, doc, posX, posY, width, style = {}) {
 
   const baseline = style.baseline || "alphabetic";
 
-  drawTextLinesOnPDF(optimizedLines, width, posX, posY, textboxStyle, doc, baseline);
+  return drawTextLinesOnPDF(optimizedLines, width, posX, posY, textboxStyle, doc, baseline);
 
-  if (optimizedLines.length <= 0) {
-    // 至少有一行
-    return 1;
-  }
+  // if (optimizedLines.length <= 0) {
+  //   // 至少有一行
+  //   return 1;
+  // }
 
-  return optimizedLines.length;
+  // return optimizedLines.length;
 }
 
 // This function takes the prepared Data and draws everything on the right
 // position of the PDF
 
 function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baseline) {
+  let h = 0;
   // let yPosition =
   //   posY + getFontAscent(defaultStyle.font, defaultStyle.fontSize);
-  let yPosition = posY;
+  // let yPosition = posY;
   // if (defaultStyle.font_height) {
   //   // var k = getFontAscent(defaultStyle.font, defaultStyle.fontSize);
   //   yPosition = posY + defaultStyle.font_height;
@@ -64,14 +68,15 @@ function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baselin
   // }
   lines.forEach((line, index) => {
     // if (index !== 0) {
-      // if (defaultStyle.font_height) {
-      //   yPosition += defaultStyle.font_height;
-      // }
-      // else {
-        // yPosition += line.lineHeight;
-      // }
+    // if (defaultStyle.font_height) {
+    //   yPosition += defaultStyle.font_height;
+    // }
+    // else {
+    // yPosition += line.lineHeight;
+    // }
     // }
     let xPosition = getLineStartXPosition(line, width, posX);
+    let yPosition = posY + h;
     line.texts.forEach((textPart) => {
       // var y = getFontAscent(textPart.font, textPart.fontSize)
       var y = measureTextHeight(textPart.text, textPart.font, textPart.fontSize, doc);
@@ -79,7 +84,7 @@ function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baselin
       // if (defaultStyle.font_height) {
       //   y = defaultStyle.font_height - y;
       // }else {
-        y = line.lineHeight - y;
+      y = line.lineHeight - y;
       // }
       doc
         .font(textPart.font)
@@ -96,9 +101,10 @@ function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baselin
         });
       xPosition += textPart.width;
     });
-    
-    yPosition += line.lineHeight;
+    h += line.lineHeight;
   });
+
+  return h;
 }
 
 // This function handles the setting of the line start X-position
@@ -165,6 +171,7 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
     );
     // const lines = [];
     let lineText = ""; // 含样式符号
+    let isWrap = false; // 该行是超长截断自动换行的情况，每个/n换行后重置。
     // let lineWidth = 0;
     let spaceLeft = width;
     fragmentArrayWithWidth.forEach((textFragment) => {
@@ -180,7 +187,8 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
         if (textFragment.text.match(/^[a-zA-Zа-яА-ЯёЁéÈçÇàÀäÄöÖüÜïÏêÊîÎôÔñÑ\s\d]+$/u)) {
           // 字母和数字不截断
           if (lineText) {
-            res.push(lineText);
+            res.push({ text: lineText, isWrap: isWrap });
+            isWrap = true; // push了第一行以后，都是wrap
           }
           // lineWidth = 0;
           spaceLeft = width;
@@ -208,7 +216,8 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
               lineText = lineText + tx_l;
             }
             if (lineText) {
-              res.push(lineText);
+              res.push({ text: lineText, isWrap: isWrap });
+              isWrap = true; // push了第一行以后，都是wrap
             }
             // lineWidth = 0;
             spaceLeft = width;
@@ -225,7 +234,7 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
       }
     });
     // if (lineText !== "") {
-    res.push(lineText);
+    res.push({ text: lineText, isWrap: isWrap });
     // }
   });
 

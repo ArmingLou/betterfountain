@@ -109,9 +109,10 @@ export class Liner {
             res.push(this.h.create_line({
                 type: token.type,
                 token: token,
-                text: bl[i],
+                text: bl[i].text,
                 start: st,
-                end: st + l - 1
+                end: st + l - 1,
+                isWrap: bl[i].isWrap, // 该行是否超width自动换行
             }))
             st += l;
         }
@@ -268,7 +269,7 @@ export class Liner {
             } else if (isBlankLineAfterStlyle(lines[i].text)) {
                 // 只含有样式字符
                 // 保留
-                maxPlus ++; // 后面绘制时，会忽略页面开头的空样式行，所以最多行max值要增加
+                maxPlus++; // 后面绘制时，会忽略页面开头的空样式行，所以最多行max值要增加
             } else {
                 // 当页第一个非空行
                 break
@@ -298,7 +299,7 @@ export class Liner {
                 return lines;
             }
             do {
-                for (p = s - 1; p && (isBlankLineAfterStlyle(lines[p].text) && lines[p].type !== "dialogue_fake"); p--) { 
+                for (p = s - 1; p && (isBlankLineAfterStlyle(lines[p].text) && lines[p].type !== "dialogue_fake"); p--) {
                 }
                 s = p;
             } while (p && !breaker(p, lines, cfg));
