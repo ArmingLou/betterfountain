@@ -103,7 +103,7 @@ export class Liner {
 
         var bl = breakLines(tmpText, width, font, fontSize, doc, exclude);
         var res = [];
-        var st = 0;
+        var st = token.start;
         for (var i = 0; i < bl.length; i++) {
             var l = bl[i].length;
             res.push(this.h.create_line({

@@ -598,13 +598,13 @@ async function initDoc(opts: Options) {
             });*/
         }
 
-        return addTextbox(textobjects, doc, x * 72, y * 72,  width * 72, { // 组件bug,text显示宽度比实际配置的width值要大
+        return addTextbox(textobjects, doc, x * 72, y * 72, width * 72, { // 组件bug,text显示宽度比实际配置的width值要大
             lineHeight: options.lineHeight || print.font_height * 72,
             lineBreak: false,
             align: options.align,
             baseline: 'top',
             fontSize: options.fontSize || print.font_size || 12,
-        })/72;
+        }) / 72;
 
     };
 
@@ -998,7 +998,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 var scene_continued_text = '(' + (cfg.text_scene_continued || 'CONTINUED') + ')';
                 // var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued_text) * print.font_width;
                 // doc.simple_text(scene_continued_text, feed * 72, (print.top_margin + print.font_height * (y + 2)) * 72);
-                doc.format_text(scene_continued_text, 0, (print.top_margin + height + print.font_height ), { align: 'right', width: print.page_width - print.right_margin });
+                doc.format_text(scene_continued_text, 0, (print.top_margin + height + print.font_height), { align: 'right', width: print.page_width - print.right_margin });
 
             }
 
@@ -1130,7 +1130,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     || lline.type === "centered" || lline.type === "section" || lline.type === "transition"
                     || lline.type === "lyric"
                 ) {
-                    if(!lline.isWrap) {
+                    if (!lline.isWrap) {
                         return addTagAfterBrokenNote(intput, charOfStyleTag.style_global_clean);
                     }
                 }
@@ -1159,13 +1159,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 height += center(text, print.top_margin + height);
             } else if (line.type === "transition") {
                 var feed: number = print.action.feed;
-                text_properties.width = print.page_width - feed - feed;
+                text_properties.width = print.page_width - feed;
                 text_properties.align = 'right';
                 text = ifResetFormat(text, line);
-                height += doc.text2(text, feed, print.top_margin + height, text_properties);
+                height += doc.text2(text, 0, print.top_margin + height, text_properties);
             } else {
                 var feed: number = (print[line.type] || {}).feed || print.action.feed;
-                text_properties.width = print.page_width - feed - print.right_margin;
+                // text_properties.width = print.page_width - feed - print.right_margin;
                 // if (line.type === "transition") {
                 //     feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(line.text) * print.font_width;
                 // }
@@ -1238,14 +1238,36 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         feed = print.action.feed;
                     }
                     feed += print.synopsis.padding || 0;
-                    text_properties.width = print.page_width - feed - feed;
-                    // text_properties.align = 'center';
+                    // text_properties.width = print.page_width - feed - feed;
                 }
 
 
                 if (print[line.type] && print[line.type].italic && text) {
                     // text = charOfStyleTag.italic + text + charOfStyleTag.italic;
                     text = addTagAfterBrokenNote(text, charOfStyleTag.italic) + charOfStyleTag.italic;
+                }
+
+                if (line.number) {
+                    scene_number = String(line.number);
+                    var scene_text_length = scene_number.length;
+                    if (cfg.embolden_scene_headers) {
+                        scene_number = charOfStyleTag.bold + scene_number + charOfStyleTag.bold;
+                    }
+                    if (cfg.underline_scene_headers) {
+                        scene_number = charOfStyleTag.underline + scene_number + charOfStyleTag.underline;
+                    }
+
+                    var shift_scene_number;
+
+                    if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'left') {
+                        shift_scene_number = (scene_text_length + 4) * print.font_width;
+                        doc.text2(scene_number, feed - shift_scene_number, print.top_margin + height, text_properties);
+                    }
+
+                    if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'right') {
+                        shift_scene_number = (print.scene_heading.max + 1) * print.font_width;
+                        doc.text2(scene_number, feed + shift_scene_number, print.top_margin + height, text_properties);
+                    }
                 }
 
                 if (line.token && line.token.dual) {
@@ -1259,14 +1281,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                     if (line.type === "parenthetical") {
                         feed = print.action.feed + feed_diff;
-                        text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 3;
+                        // text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 3;
                     }
                     else if (line.type === "character" || line.type === "more") {
                         feed = print.action.feed + feed_diff * 2;
-                        text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 5;
+                        // text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 5;
                     } else {
                         feed = print.action.feed
-                        text_properties.width = print.page_width / 2 - print.action.feed - feed_diff;
+                        // text_properties.width = print.page_width / 2 - print.action.feed - feed_diff;
                     }
                     // feed -= (feed) / 2;
                 }
@@ -1288,14 +1310,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             var feed_right = 0;
                             if (right_line.type === "parenthetical") {
                                 feed_right = (print.page_width / 2) + feed_diff * 2;
-                                right_text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 3;
+                                // right_text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 3;
                             }
                             else if (right_line.type === "character" || right_line.type === "more") {
                                 feed_right = (print.page_width / 2) + feed_diff * 3;
-                                right_text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 5;
+                                // right_text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 5;
                             } else {
                                 feed_right = (print.page_width / 2) + feed_diff;
-                                right_text_properties.width = print.page_width / 2 - print.action.feed - feed_diff;
+                                // right_text_properties.width = print.page_width / 2 - print.action.feed - feed_diff;
                             }
 
                             // var feed_right =( print.page_width+ print.left_margin)/2;
@@ -1306,7 +1328,6 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             // feed_right -= 0.5; //textbox_width_error;
 
                             var tx = wrapCharAndDialog(right_line.text, right_line);
-                            right_text_properties.width = print.page_width - feed_right - print.right_margin;
                             tx = ifResetFormat(tx, right_line);
                             y_right += doc.text2(tx, feed_right, print.top_margin + y_right, right_text_properties);
                         });
@@ -1316,28 +1337,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     }
                 }
 
-                if (line.number) {
-                    scene_number = String(line.number);
-                    var scene_text_length = scene_number.length;
-                    if (cfg.embolden_scene_headers) {
-                        scene_number = charOfStyleTag.bold + scene_number + charOfStyleTag.bold;
-                    }
-                    if (cfg.underline_scene_headers) {
-                        scene_number = charOfStyleTag.underline + scene_number + charOfStyleTag.underline;
-                    }
 
-                    var shift_scene_number;
-
-                    if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'left') {
-                        shift_scene_number = (scene_text_length + 4) * print.font_width;
-                        height += doc.text2(scene_number, feed - shift_scene_number, print.top_margin + height, text_properties);
-                    }
-
-                    if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'right') {
-                        shift_scene_number = (print.scene_heading.max + 1) * print.font_width;
-                        height +=  doc.text2(scene_number, feed + shift_scene_number, print.top_margin + height, text_properties);
-                    }
-                }
             }
             // y++;
             if (lineStructs) {
