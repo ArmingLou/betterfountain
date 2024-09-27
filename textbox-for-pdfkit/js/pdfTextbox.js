@@ -12,7 +12,7 @@ const { lineWrapParagraph, removeSubsequentSpaces } = require("./lineWrapper");
 const defaultStyle = {
   font: "Times-Roman",
   fontSize: 12,
-  lineHeight: 1,
+  // lineHeight: 12,
   align: "left",
   color: "#000000",
   removeSubsequentSpaces: true,
@@ -64,23 +64,23 @@ function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baselin
   // }
   lines.forEach((line, index) => {
     // if (index !== 0) {
-      if (defaultStyle.font_height) {
-        yPosition += defaultStyle.font_height;
-      }
-      else {
-        yPosition += line.lineHeight;
-      }
+      // if (defaultStyle.font_height) {
+      //   yPosition += defaultStyle.font_height;
+      // }
+      // else {
+        // yPosition += line.lineHeight;
+      // }
     // }
     let xPosition = getLineStartXPosition(line, width, posX);
     line.texts.forEach((textPart) => {
       // var y = getFontAscent(textPart.font, textPart.fontSize)
-      var y = measureTextHeight(textPart.text[0], textPart.font, textPart.fontSize, doc);
+      var y = measureTextHeight(textPart.text, textPart.font, textPart.fontSize, doc);
       // var y = 0;
-      if (defaultStyle.font_height) {
-        y = defaultStyle.font_height - y;
-      }else {
+      // if (defaultStyle.font_height) {
+      //   y = defaultStyle.font_height - y;
+      // }else {
         y = line.lineHeight - y;
-      }
+      // }
       doc
         .font(textPart.font)
         .fontSize(textPart.fontSize)
@@ -96,6 +96,8 @@ function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baselin
         });
       xPosition += textPart.width;
     });
+    
+    yPosition += line.lineHeight;
   });
 }
 

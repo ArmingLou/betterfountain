@@ -5,10 +5,10 @@
 // which uses the "widthOfString" function of pdfKit document.
 
 function measureTextWidth(text, font, fontSize, doc) {
-  return doc.font(font).fontSize(fontSize).widthOfString(text);
+  return doc.font(font).fontSize(fontSize).widthOfString(text, { lineBreak: false });
 }
 function measureTextHeight(text, font, fontSize, doc) {
-  return doc.font(font).fontSize(fontSize).heightOfString(text);
+  return doc.font(font).fontSize(fontSize).heightOfString(text, { lineBreak: false });
 }
 
 function measureTextsWidth(texts, doc) {

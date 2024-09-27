@@ -21,18 +21,41 @@ function normalizeTexts(textArray, textboxStyle) {
 
 function normalizeLineHeight(text, textboxStyle) {
   if (text.hasOwnProperty("lineHeight")) {
-    if (text.hasOwnProperty("fontSize")) {
-      return { ...text, lineHeight: text.lineHeight * text.fontSize };
-    } else {
-      return { ...text, lineHeight: text.lineHeight * textboxStyle.fontSize };
-    }
-  } else {
-    // If there is no line height specified, it just gets the standard textbox Line Height
+    return text;
+  }
+  
+  if (textboxStyle.lineHeight) {
     return {
       ...text,
-      lineHeight: textboxStyle.lineHeight * textboxStyle.fontSize,
+      lineHeight: textboxStyle.lineHeight,
     };
+  } else {
+     if (text.hasOwnProperty("fontSize")) {
+      return {
+        ...text,
+        lineHeight: text.fontSize,
+      };
+    } else {
+      return {
+        ...text,
+        lineHeight: textboxStyle.fontSize,
+      };
+    }
   }
+
+  // if (text.hasOwnProperty("lineHeight")) {
+  //   if (text.hasOwnProperty("fontSize")) {
+  //     return { ...text, lineHeight: text.lineHeight * text.fontSize };
+  //   } else {
+  //     return { ...text, lineHeight: text.lineHeight * textboxStyle.fontSize };
+  //   }
+  // } else {
+  //   // If there is no line height specified, it just gets the standard textbox Line Height
+  //   return {
+  //     ...text,
+  //     lineHeight: textboxStyle.lineHeight * textboxStyle.fontSize,
+  //   };
+  // }
 }
 
 function normalizeLinebreaks(normalizedTextWithLinebreaks) {

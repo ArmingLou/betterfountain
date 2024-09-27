@@ -599,10 +599,11 @@ async function initDoc(opts: Options) {
         }
 
         return addTextbox(textobjects, doc, x * 72, y * 72, (width - textbox_width_error) * 72, { // 组件bug,text显示宽度比实际配置的width值要大
-            font_height: print.font_height * 72,
+            lineHeight: options.lineHeight || print.font_height * 72,
             lineBreak: false,
             align: options.align,
             baseline: 'top',
+            fontSize: options.fontSize || print.font_size || 12,
         });
 
     };
@@ -890,24 +891,35 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             watermark = cfg.print_watermark.replace(/_/g, '');
             // unformat
             // len = watermark.replace(/\*/g, '').length;
-            // len = clearFormatting(watermark).length;
 
             diagonal = Math.sqrt(Math.pow(print.page_width, 2) + Math.pow(print.page_height, 2));
             diagonal -= 4;
 
-            var lls = (watermark.split('\n').length / 2) + 1;
-            // font_size = (1.667 * diagonal) / len * 72;
-            font_size = print.font_size || 12;
-            doc.fontSize(font_size);
+            var spl = watermark.trim().split('\n');
+            var lls = (spl.length) / 2;
+
+            var len = 1;
+            for (var i = 0; i < spl.length; i++) {
+                var l = clearFormatting(spl[i]).trim().length;
+                if (l > len) {
+                    len = l;
+                }
+            }
+            font_size = diagonal * 72 / len;
+            if (font_size < print.font_size) {
+                font_size = print.font_size
+            }
+            // font_size = 40;
             doc.rotate(angle, options);
             doc.format_text(watermark, 2, -(font_size * lls) / 72, {
                 color: '#eeeeee',
                 line_break: false,
                 width: diagonal,
                 align: 'center',
+                fontSize: font_size,
+                lineHeight: font_size
             });
             doc.rotate(-angle, options);
-            doc.fontSize(print.font_size || 12);
         }
     };
 

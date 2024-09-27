@@ -849,7 +849,12 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         lastIsBlankTitle = cuurBlank;
                     }
                     if (!handl) {
-                        last_title_page_token.text += (last_title_page_token.text ? "\n" : "") + thistoken.text.trim();
+                        // if( last_title_page_token.text.trim() === charOfStyleTag.style_global_stash){
+                        //     // 去除前面的空行
+                        //     last_title_page_token.text += + thistoken.text.trim();
+                        // } else {
+                            last_title_page_token.text += (!isBlankLineAfterStlyle(last_title_page_token.text) ? "\n" : "") + thistoken.text.trim();
+                        // }
                     }
                 }
             }
