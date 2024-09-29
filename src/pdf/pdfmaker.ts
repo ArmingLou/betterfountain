@@ -419,15 +419,15 @@ async function initDoc(opts: Options) {
         doc.text2(text, x, y, 0, 0, 0, 0, 0, options);
         doc.global_pop();
     };
-    
+
     doc.text2 = function (text: string, x: number, y: number, posTop: number, firstBreakHeight: number, breakHeight: number, switchPageFrom: number, switchPageTo: number, options: any): { height: number, breaks: number, switches: number } {
         options = options || {};
         var color = options.color || 'black';
         color = doc.format_state.override_color ? doc.format_state.override_color : color;
 
         doc.fill(color);
-        
-        
+
+
 
         if (options.highlight) {
             doc.highlight(x * 72, (y * 72) + doc.currentLineHeight() / 2, doc.widthOfString(text), doc.currentLineHeight(), { color: options.highlightcolor });
@@ -567,7 +567,7 @@ async function initDoc(opts: Options) {
                 let font = 'ScriptNormal';
                 var fontSize = undefined;
                 fontSize = options.fontSize || print.font_size || 12;
-                if(doc.format_state.override_color){
+                if (doc.format_state.override_color) {
                     // 注释中
                     fontSize = fontSize * 0.75;
                 }
@@ -1421,7 +1421,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 text_properties.width = print.page_width - feed - feed;
                 text_properties.align = 'right';
                 text = ifResetFormat(text, line);
-                text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, text_properties, 0, 0);
+                text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height,  0, 0, text_properties);
                 if (text2Result.breaks > 0) {
                     height = text2Result.height;
                 } else {

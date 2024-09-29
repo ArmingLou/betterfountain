@@ -103,13 +103,14 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
       // If there are many spaces at a line end --> ignore them.
       if (textFragment.text.match(/^[a-zA-Zа-яА-ЯёЁéÈçÇàÀäÄöÖüÜïÏêÊîÎôÔñÑ\s\d]+$/u)) {
         // 字母和数字不截断
-        if (lineText) {
+        // if (lineText) {
           lines.push({ ...textPart, text: lineText, width: lineWidth });
-        } else {
-          if (spaceLeft < widthTextbox) {
-            lines.push({ ...textPart, text: " ", width: widthTextbox - spaceLeft });//进入第一次前，已经是有前置内容。需要返回内容填充以使其换行，否则前置行会过长
-          }
-        }
+        // }
+        //  else {
+        //   if (spaceLeft < widthTextbox) {
+        //     lines.push({ ...textPart, text: "           ", width: 0 });//进入第一次前，已经是有前置内容。需要返回内容填充以使其换行，否则前置行会过长
+        //   }
+        // }
         lineWidth = 0;
         spaceLeft = widthTextbox;
         lineText = "";
@@ -130,9 +131,9 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
             lineWidth += w_l;
             lineText = lineText + txt_l;
           }
-          if (lineText) {
+          // if (lineText) {
             lines.push({ ...textPart, text: lineText, width: lineWidth });
-          }
+          // }
           lineWidth = 0;
           spaceLeft = widthTextbox;
           lineText = "";
