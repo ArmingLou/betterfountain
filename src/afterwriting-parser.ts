@@ -811,7 +811,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     var mt = text_display.match(/^(.*?↻)??\s*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact(?: info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:(.*)/i)
                     thistoken.text = mt[3].trim();
                     processTokenTextStyleChar(thistoken);
-                    thistoken.text = charOfStyleTag.style_global_stash + thistoken.text; //重置样式，每个字段开始
+                    thistoken.text = charOfStyleTag.style_global_clean + thistoken.text; //重置样式，每个字段开始
                     lastIsBlankTitle = false;
                 }
 

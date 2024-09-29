@@ -419,12 +419,15 @@ async function initDoc(opts: Options) {
         doc.text2(text, x, y, 0, 0, 0, 0, 0, options);
         doc.global_pop();
     };
+    
     doc.text2 = function (text: string, x: number, y: number, posTop: number, firstBreakHeight: number, breakHeight: number, switchPageFrom: number, switchPageTo: number, options: any): { height: number, breaks: number, switches: number } {
         options = options || {};
         var color = options.color || 'black';
         color = doc.format_state.override_color ? doc.format_state.override_color : color;
 
         doc.fill(color);
+        
+        
 
         if (options.highlight) {
             doc.highlight(x * 72, (y * 72) + doc.currentLineHeight() / 2, doc.widthOfString(text), doc.currentLineHeight(), { color: options.highlightcolor });
@@ -562,6 +565,12 @@ async function initDoc(opts: Options) {
                 color = options.color || 'black';
             } else {
                 let font = 'ScriptNormal';
+                var fontSize = undefined;
+                fontSize = options.fontSize || print.font_size || 12;
+                if(doc.format_state.override_color){
+                    // 注释中
+                    fontSize = fontSize * 0.75;
+                }
                 var oblique = undefined;
                 var stroke = undefined;
                 if (doc.format_state.bold_italic) {
@@ -616,6 +625,7 @@ async function initDoc(opts: Options) {
                     strokeColor: coloer2,
                     oblique: oblique,
                     stroke: stroke,
+                    fontSize: fontSize,
                 }
 
                 textobjects.push(tobj);
@@ -634,7 +644,7 @@ async function initDoc(opts: Options) {
                 lineHeight: options.lineHeight || print.font_height * 72,
                 lineBreak: false,
                 align: options.align,
-                baseline: 'top',
+                baseline: 'bottom',
                 fontSize: options.fontSize || print.font_size || 12,
             });
         return {
@@ -1067,7 +1077,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     let currentSections: string[] = [];
     let currentDuration: number = 0;
 
-    let notes: any[] = [];
+    // let notes: any[] = [];
 
     let last_dual_left_start_pageIdx = -1;
     let last_dual_left_start_height = 0;
@@ -1235,9 +1245,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     scene_split = true;
                 }
             }
-            
+
             pageStarted = true;
-            
+
             // 页面首个非空行开始
 
             page++
@@ -1251,8 +1261,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 doc.switchToPage(pageIdx);
                 print_scene_split_top();
             }
-            
-            if(lines[ii].type === "dialogue" || lines[ii].type === "parenthetical" ){
+
+            if (lines[ii].type === "dialogue" || lines[ii].type === "parenthetical") {
                 doc.switchToPage(pageIdx - 1);
                 print_dialogue_split_more(lashHeight);
                 doc.switchToPage(pageIdx);

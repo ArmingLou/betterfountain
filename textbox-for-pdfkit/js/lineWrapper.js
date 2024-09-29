@@ -101,10 +101,14 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
     } else if (textFragment.text !== " ") {
       // If it doesn't fit, add full line to lines, and add text to new line.
       // If there are many spaces at a line end --> ignore them.
-      if(textFragment.text.match(/^[a-zA-Zа-яА-ЯёЁéÈçÇàÀäÄöÖüÜïÏêÊîÎôÔñÑ\s\d]+$/u)){
+      if (textFragment.text.match(/^[a-zA-Zа-яА-ЯёЁéÈçÇàÀäÄöÖüÜïÏêÊîÎôÔñÑ\s\d]+$/u)) {
         // 字母和数字不截断
-        if (lineText){
+        if (lineText) {
           lines.push({ ...textPart, text: lineText, width: lineWidth });
+        } else {
+          if (spaceLeft < widthTextbox) {
+            lines.push({ ...textPart, text: " ", width: widthTextbox - spaceLeft });//进入第一次前，已经是有前置内容。需要返回内容填充以使其换行，否则前置行会过长
+          }
         }
         lineWidth = 0;
         spaceLeft = widthTextbox;
@@ -114,38 +118,38 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
         // lineText = textFragment.text;
       }
       //  else {
-        var w = 0;
-        var txt = "";
-        var w_l = 0;
-        var txt_l = "";
-        for (let i = 0; i < textFragment.text.length; i++) {
-          txt += textFragment.text[i];
-          w = measureTextWidth(txt, font, fontSize, doc);
-          if (w >= spaceLeft){
-            if(txt_l){
-              lineWidth += w_l;
-              lineText = lineText + txt_l;
-            }
-            if (lineText) {
-              lines.push({ ...textPart, text: lineText, width: lineWidth });
-            }
-            lineWidth = 0;
-            spaceLeft = widthTextbox;
-            lineText = "";
-            txt = textFragment.text[i];
-            w = measureTextWidth(txt, font, fontSize, doc);
+      var w = 0;
+      var txt = "";
+      var w_l = 0;
+      var txt_l = "";
+      for (let i = 0; i < textFragment.text.length; i++) {
+        txt += textFragment.text[i];
+        w = measureTextWidth(txt, font, fontSize, doc);
+        if (w >= spaceLeft) {
+          if (txt_l) {
+            lineWidth += w_l;
+            lineText = lineText + txt_l;
           }
-          w_l = w;
-          txt_l = txt;
+          if (lineText) {
+            lines.push({ ...textPart, text: lineText, width: lineWidth });
+          }
+          lineWidth = 0;
+          spaceLeft = widthTextbox;
+          lineText = "";
+          txt = textFragment.text[i];
+          w = measureTextWidth(txt, font, fontSize, doc);
         }
-        lineWidth += w;
-        spaceLeft -= lineWidth;
-        lineText = lineText + txt;
+        w_l = w;
+        txt_l = txt;
+      }
+      lineWidth += w;
+      spaceLeft -= lineWidth;
+      lineText = lineText + txt;
       // }
     }
   });
   // if (lineText !== "") {
-    lines.push({ ...textPart, text: lineText, width: lineWidth });
+  lines.push({ ...textPart, text: lineText, width: lineWidth });
   // }
   return lines;
 }

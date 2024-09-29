@@ -40,7 +40,7 @@ function addTextbox(text, doc, posX, posY, width, posTop, firstBreakHeight, brea
   });
   const optimizedLines = removeSubsequentSpaces(lines, doc);
 
-  const baseline = style.baseline || "alphabetic";
+  const baseline = 'top';// style.baseline || "alphabetic";
 
   return drawTextLinesOnPDF(optimizedLines, width, firstBreakHeight, breakHeight, switchPageFrom, switchPageTo, posX, posY, posTop, textboxStyle, doc, baseline);
 
