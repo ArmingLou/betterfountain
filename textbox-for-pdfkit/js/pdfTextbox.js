@@ -26,7 +26,7 @@ const defaultStyle = {
 // are doing can be found in the respective packages (where the functions
 // are defined)
 
-function addTextbox(text, doc, posX, posY, width, style = {}) {
+function addTextbox(text, doc, posX, posY, width, posTop, firstBreakHeight, breakHeight, switchPageFrom, switchPageTo, style = {}) {
   // width = width - 36;
   if (text.length <= 0) {
     text = [""];
@@ -42,7 +42,7 @@ function addTextbox(text, doc, posX, posY, width, style = {}) {
 
   const baseline = style.baseline || "alphabetic";
 
-  return drawTextLinesOnPDF(optimizedLines, width, posX, posY, textboxStyle, doc, baseline);
+  return drawTextLinesOnPDF(optimizedLines, width, firstBreakHeight, breakHeight, switchPageFrom, switchPageTo, posX, posY, posTop, textboxStyle, doc, baseline);
 
   // if (optimizedLines.length <= 0) {
   //   // 至少有一行
@@ -55,8 +55,12 @@ function addTextbox(text, doc, posX, posY, width, style = {}) {
 // This function takes the prepared Data and draws everything on the right
 // position of the PDF
 
-function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baseline) {
+function drawTextLinesOnPDF(lines, width, firstBreakHeight, breakHeight, switchPageFrom, switchPageTo, posX, posY, posTop, defaultStyle, doc, baseline) {
   let h = 0;
+  let breaks = 0;
+  let bh = firstBreakHeight || breakHeight || 0;
+  var pageIdx = switchPageFrom || 0;
+  var switches = 0;
   // let yPosition =
   //   posY + getFontAscent(defaultStyle.font, defaultStyle.fontSize);
   // let yPosition = posY;
@@ -67,6 +71,20 @@ function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baselin
   //   yPosition = posY + getFontAscent(defaultStyle.font, defaultStyle.fontSize);
   // }
   lines.forEach((line, index) => {
+    if (bh && h + line.lineHeight > bh + 0.0001) { // 0.0001 for rounding errors
+    // if (bh && h + line.lineHeight > bh ) { // 0.0001 for rounding errors
+      if (switchPageTo > pageIdx) {
+        pageIdx++;
+        doc.switchToPage(pageIdx);
+        switches++;
+      } else {
+        doc.addPage();
+        breaks++;
+      }
+      h = 0;
+      bh = breakHeight;
+      posY = posTop;
+    }
     // if (index !== 0) {
     // if (defaultStyle.font_height) {
     //   yPosition += defaultStyle.font_height;
@@ -90,6 +108,7 @@ function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baselin
         .font(textPart.font)
         .fontSize(textPart.fontSize)
         .fillColor(textPart.color)
+        .strokeColor(textPart.color)
         .text(textPart.text, xPosition, yPosition + y, {
           link: textPart.link,
           align: "left",
@@ -97,6 +116,7 @@ function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baselin
           oblique: textPart.oblique,
           underline: textPart.underline,
           strike: textPart.strike,
+          stroke: textPart.stroke,
           width: width,
         });
       xPosition += textPart.width;
@@ -104,7 +124,7 @@ function drawTextLinesOnPDF(lines, width, posX, posY, defaultStyle, doc, baselin
     h += line.lineHeight;
   });
 
-  return h;
+  return { height: h, breaks: breaks, switches: switches };
 }
 
 // This function handles the setting of the line start X-position

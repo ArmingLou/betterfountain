@@ -99,9 +99,9 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
     } else {
         config.print_footer = vscode.workspace.getConfiguration("fountain.pdf").get("pageFooter");
     }
- 
 
-    parsedDocument.lines = await liner.line(parsedDocument.tokens, {
+
+    parsedDocument.lines = await liner.line2(parsedDocument.tokens, {
         print: print.print_profiles[config.print_profile || "a4"],
         text_more: config.text_more,
         text_contd: config.text_contd,
@@ -148,7 +148,10 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
             italic_dynamic: false
         },
         italic_global: false,
-        italic_dynamic: false
+        italic_dynamic: false,
+        found_font_italic: false,
+        found_font_bold: false,
+        found_font_bold_italic: false,
     }
 
     if (outputpath == "$STATS$")
