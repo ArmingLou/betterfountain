@@ -46,6 +46,8 @@ const fountainConfig: FountainConfig  = {
     number_sections: false,
     use_dual_dialogue: false,
     print_notes: false,
+    note_position_bottom: false,
+    text_note: undefined as unknown as string,
     print_header: undefined as unknown as string,
     print_footer: undefined as unknown as string,
     print_watermark: undefined as unknown as string,
