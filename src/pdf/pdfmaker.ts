@@ -1098,7 +1098,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     let lastCharacterFeed = 0;
 
     function if_dual_right_end(idx: number): boolean {
-        if (lines[ii].type === "page_break" || lines[idx].token && lines[idx].token.dual === "right") {
+        if (lines[idx].type === "page_break" || lines[idx].token && lines[idx].token.dual === "right") {
             return false;
         } else {
             if (last_dual_right_end_pageIdx >= 0) {
