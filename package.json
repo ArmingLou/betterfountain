@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "5.8.3",
+	"version": "5.8.5",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -298,6 +298,17 @@
 						"default": false,
 						"description": "Print notes (text enclosed between [[two brackets]])"
 					},
+					"fountain.pdf.notePositionBottom": {
+						"type": "boolean",
+						"default": false,
+						"markdownDescription": "If `#fountain.pdf.printNotes#` are enabled，是否将标注内容集中在页面底部显示，否则直接在标注位置显示标注内容。"
+					},
+					"fountain.pdf.textNote": {
+						"type": "string",
+						"default": "NOTE:",
+						"markdownDescription": "Text to print if `#fountain.pdf.printNotes#` and `#fountain.pdf.notePositionBottom#` are enabled are enabled - `NOTE:` in English.(底部集中显示标注内容时，标注标题显示什么)"
+					},
+					
 					"fountain.pdf.pageHeader": {
 						"type": "string",
 						"default": "",

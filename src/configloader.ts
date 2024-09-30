@@ -25,6 +25,8 @@ export class FountainConfig{
     number_sections:boolean;
     use_dual_dialogue:boolean;
     print_notes:boolean;
+    note_position_bottom:boolean;
+    text_note:string;
     print_header:string;
     print_footer:string;
     print_watermark:string;
@@ -133,6 +135,8 @@ export var getFountainConfig = function(docuri:vscode.Uri):FountainConfig{
         number_sections: pdfConfig.numberSections,
         use_dual_dialogue: pdfConfig.useDualDialogue,
         print_notes: pdfConfig.printNotes,
+        note_position_bottom: pdfConfig.notePositionBottom,
+        text_note: pdfConfig.textNote,
         print_header: pdfConfig.pageHeader,
         print_footer: pdfConfig.pageFooter,
         print_watermark: pdfConfig.watermark,

@@ -2,6 +2,7 @@ export class PrintProfile{
     max:number;
     paper_size:string;
     font_size:number;
+    note_font_size:number;
     lines_per_page:number;
     top_margin:number;
     page_width:number;
@@ -10,6 +11,7 @@ export class PrintProfile{
     right_margin:number;
     font_width:number;
     font_height:number;
+    note_line_height:number;
     line_spacing:number;
     page_number_top_margin:number;
     dual_max_factor:number;
@@ -41,6 +43,7 @@ var A4_DEFAULT_MAX = 57,
             max: A4_DEFAULT_MAX,
             paper_size: "a4",
             font_size: 12,
+            note_font_size: 9,
             lines_per_page: 57,
             top_margin: 1.2,
             page_width: 8.2,
@@ -49,6 +52,7 @@ var A4_DEFAULT_MAX = 57,
             right_margin: 1,
             font_width: 0.1,
             font_height: 0.1667,
+            note_line_height: 0.1667,
             line_spacing: 1,
             page_number_top_margin: 0.5,
             dual_max_factor: 0.75,
@@ -117,6 +121,7 @@ var A4_DEFAULT_MAX = 57,
             max: CN_DEFAULT_MAX,
             paper_size: "a4",
             font_size: 12,
+            note_font_size: 9,
             lines_per_page: 41,
             top_margin: 1.1,
             page_width: 8.2,
@@ -125,6 +130,7 @@ var A4_DEFAULT_MAX = 57,
             right_margin: 0.5,
             font_width: 0.1,
             font_height: 0.23,
+            note_line_height: 0.17,
             line_spacing: 1,
             page_number_top_margin: 0.4,
             dual_max_factor: 0.75,
