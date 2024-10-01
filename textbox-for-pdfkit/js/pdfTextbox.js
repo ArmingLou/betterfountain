@@ -64,6 +64,8 @@ function drawTextLinesOnPDF(lines, width, firstBreakHeight, breakHeight, switchP
   let bh = firstBreakHeight || breakHeight || 0;
   var pageIdx = switchPageFrom || 0;
   var switches = 0;
+  var breakIdx = 0;
+  
   // let yPosition =
   //   posY + getFontAscent(defaultStyle.font, defaultStyle.fontSize);
   // let yPosition = posY;
@@ -91,6 +93,10 @@ function drawTextLinesOnPDF(lines, width, firstBreakHeight, breakHeight, switchP
       h = 0;
       bh = breakHeight;
       posY = posTop;
+      breakIdx = index;
+      if(onlyGetLines) {
+        bh = 0;
+      }
     }
     // if (index !== 0) {
     // if (defaultStyle.font_height) {
@@ -136,7 +142,7 @@ function drawTextLinesOnPDF(lines, width, firstBreakHeight, breakHeight, switchP
   if (!onlyGetLines) {
     return { height: h, breaks: breaks, switches: switches };
   } else {
-    return { height: h, breaks: breaks, switches: switches, lines: lines, width: width, posX: posX };
+    return { height: h, breaks: breaks, switches: switches, lines: lines, width: width, posX: posX, breakIdx: breakIdx };
   }
 }
 
