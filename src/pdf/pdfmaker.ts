@@ -585,31 +585,6 @@ async function initDoc(opts: Options) {
                 }
             } else if (elem === charOfStyleTag.underline) {
                 doc.format_state.underline = !doc.format_state.underline;
-            } else if (elem === charOfStyleTag.note_begin) {
-                doc.format_state.override_color = (print.note && print.note.color) || '#000000';
-                if (catchNotes) {
-                    var no = 1;
-                    if (notesPage[pageIdx]) {
-                        if (notesPage[pageIdx].length > 0) {
-                            if (notesPage[pageIdx][notesPage[pageIdx].length - 1].length > 0) {
-                                no = notesPage[pageIdx][notesPage[pageIdx].length - 1][notesPage[pageIdx][notesPage[pageIdx].length - 1].length - 1].no + 1
-                            }
-                        }
-                    }
-
-                    doc.currentNote = {
-                        pageIdx: pageIdx,
-                        note: { no: no, text: [] },
-                    };
-                    if (!notesPage[doc.currentNote.pageIdx]) {
-                        notesPage[doc.currentNote.pageIdx] = [];
-                    }
-                    if (currentLineNotes.length === 0) {
-                        notesPage[doc.currentNote.pageIdx].push([]);// 加一个token行
-                    }
-                    notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1].push({ no: no, text: [] });
-                    currentLineNotes.push({ no: no, text: [] });
-                }
             } else if (elem === charOfStyleTag.note_end) {
                 doc.format_state.override_color = null;
                 color = options.color || 'black';
@@ -635,81 +610,126 @@ async function initDoc(opts: Options) {
                     doc.currentNote.pageIdx = -1;
                 }
             } else {
-                if (catchNotes) {
-                    if (doc.currentNote.pageIdx >= 0) {
-                        doc.currentNote.note.text.push(elem);
-                        if (doc.currentNote.note.text.length === 1) {
-                            elem = '[' + doc.currentNote.note.no + ']';
-                        } else {
-                            elem = ''
-                        }
-                    }
-                }
-                let font = 'ScriptNormal';
-                var fontSize = undefined;
-                fontSize = options.fontSize || print.font_size || 12;
-                if (doc.format_state.override_color) {
-                    // 注释中
-                    fontSize = print.note_font_size;
-                }
-                var oblique = undefined;
-                var stroke = undefined;
-                if (doc.format_state.bold_italic) {
-                    if (opts.found_font_bold_italic) {
-                        font = 'ScriptBoldOblique';
-                    } else {
-                        if (opts.found_font_italic) {
-                            font = 'ScriptOblique';
-                            stroke = true;
-                        }
-                        else if (opts.found_font_bold) {
-                            font = 'ScriptBold';
-                            oblique = true;
-                        }
-                        else {
-                            oblique = true;
-                            stroke = true;
-                        }
+                // 特殊标示 note_begin 以及 正常字符，进入。
+                if (elem === charOfStyleTag.note_begin) {
+                    doc.format_state.override_color = (print.note && print.note.color) || '#000000';
+                    if (catchNotes) {
+                        var no = 1;
+                        // if (notesPage[pageIdx]) {
+                        //     if (notesPage[pageIdx].length > 0) {
+                        //         if (notesPage[pageIdx][notesPage[pageIdx].length - 1].length > 0) {
+                        //             no = notesPage[pageIdx][notesPage[pageIdx].length - 1][notesPage[pageIdx][notesPage[pageIdx].length - 1].length - 1].no + 1
+                        //         }
+                        //     }
+                        // }
 
+                        doc.currentNote = {
+                            pageIdx: pageIdx,
+                            note: { no: no, text: [] },
+                        };
+                        if (!notesPage[doc.currentNote.pageIdx]) {
+                            notesPage[doc.currentNote.pageIdx] = [];
+                        }
+                        if (currentLineNotes.length === 0) {
+                            notesPage[doc.currentNote.pageIdx].push([]);// 加一个token行
+                        }
+                        notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1].push({ no: no, text: [] });
+                        currentLineNotes.push({ no: no, text: [] });
                     }
-                } else if (doc.format_state.bold || options.bold) {
-                    if (opts.found_font_bold) {
-                        font = 'ScriptBold';
-                    } else {
-                        stroke = true;
-                    }
-                } else if (doc.format_state.italic) {
-                    if (opts.found_font_italic) {
-                        font = 'ScriptOblique';
-                    } else {
-                        oblique = true;
-                    }
-                }
-                // if (elem === '\\_' || elem === '\\*') {
-                //     elem = elem.substr(1, 1);
-                // }
-                var linkurl = undefined;
-                for (const link of links) {
-                    if (link.start <= currentIndex && currentIndex < link.start + link.length) {
-                        linkurl = link.url;
-                    }
-                }
-                var coloer2 = doc.format_state.override_color ? doc.format_state.override_color : color
-
-                var tobj = {
-                    lineBreak: false,
-                    text: elem,
-                    link: linkurl,
-                    font: font,
-                    underline: linkurl || doc.format_state.underline,
-                    color: coloer2,
-                    strokeColor: coloer2,
-                    oblique: oblique,
-                    stroke: stroke,
-                    fontSize: fontSize,
                 }
 
-                textobjects.push(tobj);
+                if (elem !== charOfStyleTag.note_begin || catchNotes) {
+
+                    var draw = true;
+                    if (elem !== charOfStyleTag.note_begin) {
+                        if (catchNotes) {
+                            if (doc.currentNote.pageIdx >= 0) {
+                                doc.currentNote.note.text.push(elem);
+                                // if (doc.currentNote.note.text.length === 1) {
+                                //     elem = charOfStyleTag.note_begin;//'[' + doc.currentNote.note.no + ']';
+                                // } else {
+                                elem = ''
+                                draw = false;
+                                // }
+                            }
+                        }
+                    } else {
+                        if (!catchNotes) {
+                            elem = '';
+                            draw = false;
+                        }
+                    }
+
+                    if (draw) {
+
+                        let font = 'ScriptNormal';
+                        var fontSize = undefined;
+                        fontSize = options.fontSize || print.font_size || 12;
+                        if (doc.format_state.override_color) {
+                            // 注释中
+                            fontSize = print.note_font_size;
+                        }
+                        var oblique = undefined;
+                        var stroke = undefined;
+                        if (doc.format_state.bold_italic) {
+                            if (opts.found_font_bold_italic) {
+                                font = 'ScriptBoldOblique';
+                            } else {
+                                if (opts.found_font_italic) {
+                                    font = 'ScriptOblique';
+                                    stroke = true;
+                                }
+                                else if (opts.found_font_bold) {
+                                    font = 'ScriptBold';
+                                    oblique = true;
+                                }
+                                else {
+                                    oblique = true;
+                                    stroke = true;
+                                }
+
+                            }
+                        } else if (doc.format_state.bold || options.bold) {
+                            if (opts.found_font_bold) {
+                                font = 'ScriptBold';
+                            } else {
+                                stroke = true;
+                            }
+                        } else if (doc.format_state.italic) {
+                            if (opts.found_font_italic) {
+                                font = 'ScriptOblique';
+                            } else {
+                                oblique = true;
+                            }
+                        }
+                        // if (elem === '\\_' || elem === '\\*') {
+                        //     elem = elem.substr(1, 1);
+                        // }
+                        var linkurl = undefined;
+                        for (const link of links) {
+                            if (link.start <= currentIndex && currentIndex < link.start + link.length) {
+                                linkurl = link.url;
+                            }
+                        }
+                        var coloer2 = doc.format_state.override_color ? doc.format_state.override_color : color
+
+                        var tobj = {
+                            lineBreak: false,
+                            text: elem,
+                            link: linkurl,
+                            font: font,
+                            underline: linkurl || doc.format_state.underline,
+                            color: coloer2,
+                            strokeColor: coloer2,
+                            oblique: oblique,
+                            stroke: stroke,
+                            fontSize: fontSize,
+                        }
+
+                        textobjects.push(tobj);
+                    }
+
+                }
             }
             currentIndex += elem.length;
             /*inner_text.call(doc, elem, x * 72, y * 72, {
@@ -1260,8 +1280,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
         var notesNext = [];
         var notesCurr = [];
-        var breakText = "";
-        var breakTextBefore = "";
+        // var breakText = "";
+        // var breakTextBefore = "";
+
+
+        var pid = pageIdx;
+        if (line.token && line.token.dual === "right") {
+            pid = last_dual_right_end_pageIdx
+        }
 
         if (text2Result.switches + text2Result.breaks > 0) {
             brk = true;
@@ -1269,14 +1295,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 const element = text2Result.lines[i];
                 if (i < text2Result.breakIdx) {
                     drawLine.push(element)
-                    element.texts.forEach((textPart: { text: string; }) => {
-                        breakTextBefore += textPart.text
-                    });
+                    // element.texts.forEach((textPart: { text: string; }) => {
+                    //     var 
+                    // });
                 } else {
                     drawLineNext.push(element)
-                    element.texts.forEach((textPart: { text: string; }) => {
-                        breakText += textPart.text
-                    });
+                    // element.texts.forEach((textPart: { text: string; }) => {
+                    //     breakText += textPart.text
+                    // });
                 }
             }
 
@@ -1285,44 +1311,97 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 lines: drawLineNext,
             }
 
-            if (currentLineNotes && currentLineNotes.length > 0) {
-                for (let i = 0; i < currentLineNotes.length; i++) {
-                    const note = currentLineNotes[i];
-                    if (breakTextBefore.indexOf('[' + note.no + ']') > -1) {
-                        notesCurr.push(note);
-                    }
-                    else if (breakText.indexOf('[' + note.no + ']') > -1) {
-                        notesNext.push(note);
-                    }
-                    else if (breakText.startsWith(note.no + ']')) {
-                        notesNext.push(note);
-                    } else {
-                        notesCurr.push(note);
-                    }
-                }
-
-                if (notesNext.length > 0) {
-                    var pid = pageIdx;
-                    if (line.token && line.token.dual === "right") {
-                        pid = last_dual_right_end_pageIdx
-                    }
-                    notesPage[pid].pop();
-                    if(notesCurr.length > 0){
-                        notesPage[pid].push(notesCurr);
-                    }
-
-                    if (doc.currentNote.padgeIdx >= 0) {
-                        doc.currentNote.padgeIdx = pid + 1
-                    }
-
-                    // currentLineNotes = notesNext
-                }
-
-
-            }
-
         } else {
             drawLine = text2Result.lines;
+        }
+
+        if (currentLineNotes && currentLineNotes.length > 0) {
+
+            var currPageNoStart = 1;
+            var nextPageNoStart = 1;
+
+            if (notesPage[pid]) {
+                if (notesPage[pid].length > 1) {
+                    if (notesPage[pid][notesPage[pid].length - 2].length > 0) { // -2,➡因为当前预先text2时已经插入了，排除自己。
+                        currPageNoStart = notesPage[pid][notesPage[pid].length - 2][notesPage[pid][notesPage[pid].length - 2].length - 1].no + 1
+                    }
+                }
+            }
+
+            if (notesPage[pid + 1]) {
+                if (notesPage[pid + 1].length > 0) {
+                    if (notesPage[pid + 1][notesPage[pid + 1].length - 1].length > 0) {
+                        nextPageNoStart = notesPage[pid + 1][notesPage[pid + 1].length - 1][notesPage[pid + 1][notesPage[pid + 1].length - 1].length - 1].no + 1
+                    }
+                }
+            }
+
+
+
+            var i = 0;
+
+            for (let j = 0; j < drawLine.length; j++) {
+                const line = drawLine[j];
+                for (let k = 0; k < line.texts.length; k++) {
+                    var t = line.texts[k].text;
+                    var txt = "";
+                    for (let l = 0; l < t.length; l++) {
+                        if (t[l] == charOfStyleTag.note_begin) {
+
+                            currentLineNotes[i].no = currPageNoStart;
+                            txt += '[' + currPageNoStart + ']';
+                            currPageNoStart++;
+
+                            notesCurr.push(currentLineNotes[i]);
+                            i++;
+                        } else {
+                            txt += t[l];
+                        }
+                    }
+
+                    drawLine[j].texts[k].text = txt
+                }
+            }
+
+            for (let j = 0; j < drawLineNext.length; j++) {
+                const line = drawLineNext[j];
+                for (let k = 0; k < line.texts.length; k++) {
+                    var t = line.texts[k].text;
+                    var txt = "";
+                    for (let l = 0; l < t.length; l++) {
+                        if (t[l] == charOfStyleTag.note_begin) {
+
+                            currentLineNotes[i].no = nextPageNoStart;
+                            txt += '[' + nextPageNoStart + ']';
+                            nextPageNoStart++;
+
+                            notesNext.push(currentLineNotes[i]);
+                            i++;
+                        } else {
+                            txt += t[l];
+                        }
+                    }
+
+                    drawLineNext[j].texts[k].text = txt
+                }
+            }
+
+
+            // if (notesNext.length > 0) {
+
+            notesPage[pid].pop();
+            if (notesCurr.length > 0) {
+                notesPage[pid].push(notesCurr);
+            }
+
+            if (doc.currentNote.padgeIdx >= 0) {
+                doc.currentNote.padgeIdx = pid + 1
+            }
+
+            // currentLineNotes = notesNext
+            // }
+
+
         }
 
         if (line.token && line.token.dual === "right") {
@@ -1387,10 +1466,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
 
         } else {
-            
+
             if (drawLine.length > 0) {
                 var res = drawTextLinesOnPDF(drawLine, text2Result.width, 0, 0, 0, 0, text2Result.posX, (print.top_margin + height) * 72, 0, doc, false)
-                
+
                 if (line.number) {
                     scene_number = String(line.number);
                     var scene_text_length = scene_number.length;
@@ -1413,7 +1492,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         doc.text2(scene_number, feed + shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
                     }
                 }
-                
+
                 height += res.height / 72;
             }
 
@@ -1596,7 +1675,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             lines: [],
             width: 0,
             posX: 0,
-            breakIdx:0,
+            breakIdx: 0,
         };
         currentLineNotes = [];
 
