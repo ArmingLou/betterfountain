@@ -1435,7 +1435,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 if (last_dual_right_end_height > (left_lines(last_dual_right_end_pageIdx) - 2) * print.font_height) {
                     // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
-                    if (nextLine.type === "character") {
+                    if (nextLine &&nextLine.type === "character") {
                         brk = true;
                     }
                 }
@@ -1544,7 +1544,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 if (height > (left_lines(pageIdx) - 5) * print.font_height) {
                     // 每页最后 4 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
-                    if (nextLine.type === "scene_heading" || nextLine.type === "section") {
+                    if (nextLine && (nextLine.type === "scene_heading" || nextLine.type === "section")) {
                         brk = true;
                         brkNew = true;
                     }
@@ -1554,7 +1554,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 if (height > (left_lines(pageIdx) - 2) * print.font_height) {
                     // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
-                    if (nextLine.type === "character") {
+                    if (nextLine && nextLine.type === "character") {
                         brk = true;
                         brkNew = true;
                     }
