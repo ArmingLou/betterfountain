@@ -1733,7 +1733,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
         }
         else if (line.type === "redraw") {
-            currentLineNotes = line.notes;
+            // currentLineNotes = line.notes;
             if (last_dual_right_end_pageIdx >= 0) {
                 if (!notesPage[last_dual_right_end_pageIdx]) {
                     notesPage[last_dual_right_end_pageIdx] = [];
