@@ -1247,14 +1247,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 } else if (last_dual_left_end_pageIdx > last_dual_right_end_pageIdx) {
                     // pageIdx = last_dual_left_end_pageIdx;
                     // height = last_dual_left_end_height;
-                    // doc.switchToPage(pageIdx);
-
-                    doc.switchToPage(last_dual_right_end_pageIdx);
-                    print_scene_split_continue(lashHeight > lashHeightRight ? lashHeight : lashHeightRight);
                     doc.switchToPage(pageIdx);
-                    print_scene_split_top();
 
-                    wait_right_end_print_scene_split = false;
+                    // doc.switchToPage(last_dual_right_end_pageIdx);
+                    // print_scene_split_continue(lashHeight > lashHeightRight ? lashHeight : lashHeightRight);
+                    // doc.switchToPage(pageIdx);
+                    // print_scene_split_top();
+
+                    // wait_right_end_print_scene_split = false;
 
                 } else if (last_dual_right_end_height > last_dual_left_end_height) {
                     height = last_dual_right_end_height;
