@@ -1231,6 +1231,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     let lastCharacter = "";
     let lastCharacterFeed = 0;
 
+    let wait_right_end_print_scene_split = false;
+
     // 结束右侧对话的处理
     function if_dual_right_end(idx: number): boolean {
         if (lines[idx].type === "page_break" || lines[idx].type === "page_switch" || (lines[idx].token && lines[idx].token.dual === "right") ||
@@ -1251,6 +1253,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     print_scene_split_continue(lashHeight > lashHeightRight ? lashHeight : lashHeightRight);
                     doc.switchToPage(pageIdx);
                     print_scene_split_top();
+
+                    wait_right_end_print_scene_split = false;
 
                 } else if (last_dual_right_end_height > last_dual_left_end_height) {
                     height = last_dual_right_end_height;
@@ -1435,7 +1439,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 if (last_dual_right_end_height > (left_lines(last_dual_right_end_pageIdx) - 2) * print.font_height) {
                     // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
-                    if (nextLine &&nextLine.type === "character") {
+                    if (nextLine && nextLine.type === "character") {
                         brk = true;
                     }
                 }
@@ -1613,8 +1617,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             var scene_split = false;
             if (lines[ii].type === "redraw") {
                 // 重新绘制
-                if (lines[ii].line.type === "scene_heading" || (lines[ii].line.token && lines[ii].line.token.dual === "left" && lines[ii].line.type !== "character")) {
+                if (lines[ii].line.type === "scene_heading") {
                     scene_split = false;
+                } else if (lines[ii].line.token && lines[ii].line.token.dual === "left" && lines[ii].line.type !== "character") {
+                    scene_split = false;
+                    wait_right_end_print_scene_split = true;
                 } else {
                     scene_split = true;
                 }
@@ -1628,8 +1635,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 continue;
             } else {
                 // 当页第一个非空行
-                if (lines[ii].type === "scene_heading" || (lines[ii].token && lines[ii].token.dual === "left" && lines[ii].type !== "character")) {
+                if (lines[ii].type === "scene_heading") {
                     scene_split = false;
+                } else if (lines[ii].token && lines[ii].token.dual === "left" && lines[ii].type !== "character") {
+                    scene_split = false;
+                    wait_right_end_print_scene_split = true;
                 } else {
                     scene_split = true;
                 }
@@ -1657,6 +1667,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
 
             if (scene_split && lashHeight) { // 左侧对话换页时，不会在此打印。 右侧触发的换页会。
+                wait_right_end_print_scene_split = false;
                 doc.switchToPage(pageIdx - 1);
                 print_scene_split_continue(lashHeight > lashHeightRight ? lashHeight : lashHeightRight);
                 doc.switchToPage(pageIdx);
@@ -1667,6 +1678,21 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
 
         if_dual_right_end(ii);
+
+        if (wait_right_end_print_scene_split) {
+            if (lines[ii].type === "page_break" || lines[ii].type === "page_switch" || (lines[ii].token && lines[ii].token.dual === "right") ||
+                lines[ii].type === "redraw" || lines[ii].type === "separator" || lines[ii].type === "dialogue" || lines[ii].type === "parenthetical"
+            ) {
+            } else {
+                // 没有右侧对话，单出来的。 补充绘制 场景分页标题
+                wait_right_end_print_scene_split = false;
+
+                doc.switchToPage(pageIdx - 1);
+                print_scene_split_continue(lashHeight);
+                doc.switchToPage(pageIdx);
+                print_scene_split_top();
+            }
+        }
 
         text2Result = {
             height: 0,
@@ -1730,6 +1756,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 print_scene_split_continue(lashHeight > lashHeightRight ? lashHeight : lashHeightRight);
                 doc.switchToPage(last_dual_right_end_pageIdx);
                 print_scene_split_top();
+
+                wait_right_end_print_scene_split = false;
             }
         }
         else if (line.type === "redraw") {
