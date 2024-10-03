@@ -512,6 +512,7 @@ async function initDoc(opts: Options) {
         // var font_width = print.font_width;
         var textobjects = [];
         var currentIndex = 0;
+        var onlyNoteContent = catchNotes && doc.currentNote.pageIdx > -1;
         // var currentWidth = 0;
         for (var i = 0; i < split_for_formatting.length; i++) {
             var elem = split_for_formatting[i];
@@ -654,6 +655,8 @@ async function initDoc(opts: Options) {
                                 elem = ''
                                 draw = false;
                                 // }
+                            } else {
+                                onlyNoteContent = false;
                             }
                         }
                     } else {
@@ -741,6 +744,10 @@ async function initDoc(opts: Options) {
                 width: options.width * 72,
                 align: options.align
             });*/
+        }
+
+        if (textobjects.length === 0 && onlyNoteContent) {
+            return { height: 0, breaks: 0, switches: 0, lines: [] }
         }
 
         var firstBreakHeight = firstBreakHeight * 72;
@@ -841,6 +848,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     var pageIdx = 0;
 
     var bottom_notes = cfg.note_position_bottom
+
+    var pagesHeight: { [key: number]: number } = {};
 
     var title_token = get_title_page_token(parsed, 'title');
     var author_token = get_title_page_token(parsed, 'author');
@@ -1171,9 +1180,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
 
 
-    let notesPage: any = {};
+    let notesPage: { [key: number]: any } = {};
     let currentLineNotes: any[] = [];
-    function left_lines(pageIdx: number) {
+    function left_lines(pageIdx: any) {
         var l = 0;
         var notes = notesPage[pageIdx];
         if (notes) {
@@ -1693,7 +1702,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             if (scene_split && lashHeight) { // 左侧对话换页时，不会在此打印。 右侧触发的换页会。其他非对话中的换页也会在此。
                 doc.switchToPage(pageIdx - 1);
-                print_scene_split_continue(lashHeight > lashHeightRight ? lashHeight : lashHeightRight);
+                var h = lashHeight > lashHeightRight ? lashHeight : lashHeightRight;
+                print_scene_split_continue(h);
+                pagesHeight[pageIdx - 1] = h;
                 doc.switchToPage(pageIdx);
                 print_scene_split_top(scene_number, count_scene_split_top());
             }
@@ -1745,15 +1756,17 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
 
+            // 要对比之前左侧的 lashHeight ，谁更低。
             if (last_dual_right_end_pageIdx >= 0) {
-                // 要对比之前左侧的 lashHeight ，谁更低。
                 // lashHeight = last_dual_right_end_height;
                 lashHeightRight = last_dual_right_end_height;
                 last_dual_right_end_height = 0;
                 last_dual_right_end_pageIdx++;
-            } else {
-                lashHeight = height;
             }
+            // else {
+            //     lashHeight = height;
+            // }
+            lashHeight = height;
             doc.addPage();
             height = 0;
             pageIdx++;
@@ -1783,7 +1796,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // print_scene_split_continue(lashHeight > last_dual_right_end_height ? lashHeight : last_dual_right_end_height);
                 // doc.switchToPage(last_dual_right_end_pageIdx);
                 // print_scene_split_top(scene_number, count_scene_split_top());
-                
+
                 if (wait_right_end_print_scene_split.has(last_dual_right_end_pageIdx)) {
                     var p = wait_right_end_print_scene_split.get(last_dual_right_end_pageIdx)
                     p.rightHeight = last_dual_right_end_height
@@ -2205,26 +2218,78 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     //处理 右侧 对话未换页，导致 换页时 场景分割 标题未打印的情况
     wait_right_end_print_scene_split.forEach((v, pid) => {
         doc.switchToPage(pid - 1);
-        print_scene_split_continue(v.leftHeight > v.rightHeight ? v.leftHeight : v.rightHeight);
+        var h = v.leftHeight > v.rightHeight ? v.leftHeight : v.rightHeight;
+        print_scene_split_continue(h);
+        pagesHeight[pid - 1] = h;
         doc.switchToPage(pid);
         print_scene_split_top(v.sceneNumber, v.count);
     })
 
     // print notes
-    var noteFontSize = print.note_font_size;
-    var lineHeight = print.note_line_height;
-    var feed_note_no = print.action.feed;
-    var feed_note = feed_note_no + (1.5 * lineHeight);
-    var width_note = print.page_width - print.left_margin - print.right_margin;
     for (var pIdx in notesPage) {
+
+        var noteFontSize = print.note_font_size;
+        var lineHeight = print.note_line_height;
+        var feed_note_no = print.action.feed;
+        var feed_note = feed_note_no + (1.5 * lineHeight);
+        var width_note = print.page_width - feed_note_no - feed_note_no - (1.5 * lineHeight);
+        // 预计高度，修正打印尺寸
+        var expH = left_lines(pIdx) * print.font_height
+
+        var useDoubleColumn = false;
+        var feed_note_no_right = 0;
+        var feed_note_right = 0;
+
         var notes = notesPage[pIdx];
+
+        var rightLines = 0;
+
+        if (expH + 0.0001 < pagesHeight[pIdx]) {
+            if (notes.length > 1) {
+                useDoubleColumn = true;
+                width_note = width_note / 2 - 0.2;
+                feed_note_no_right = (print.page_width) / 2 + 0.2
+                feed_note_right = feed_note_no_right + (1.5 * lineHeight);
+
+                var diffLines = Math.round((pagesHeight[pIdx] - expH) / print.font_height);
+                var l_lines = print.lines_per_page - Math.round(pagesHeight[pIdx] / print.font_height);
+
+                if (l_lines <= diffLines + 1) {
+                    rightLines = diffLines
+                } else {
+                    rightLines = diffLines + Math.floor((l_lines - diffLines) / 2);
+                }
+            }
+        }
+
+
         doc.switchToPage(pIdx);
-        var yPos = print.page_height - print.page_number_top_margin - lineHeight * 0.5;
+        var yPosBottom = print.page_height - print.page_number_top_margin - lineHeight * 0.5;
+        var yPos = yPosBottom;
+        var drawLeftEver = false;
+        var drawRightLatestPosy = 0;
 
         for (var i = notes.length - 1; i >= 0; i--) {
             // token 行
             var token = notes[i];
             for (var j = token.length - 1; j >= 0; j--) {
+
+                var drawRight = false;
+
+                if (useDoubleColumn && rightLines > 0) {
+                    // var noteLine = 0;
+                    // for (var k = token[j].text.length - 1; k >= 0; k--) {
+                    //     noteLine++;
+                    // }
+                    // if (noteLine > rightLines) {
+                    //     rightLines = 0;
+                    //     yPos = yPosBottom;
+                    //     j++;
+                    //     continue;
+                    // }
+                    drawRight = true;
+                }
+
 
                 for (var k = token[j].text.length - 1; k >= 0; k--) {
                     yPos = yPos - lineHeight;
@@ -2238,7 +2303,16 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         //去掉最后一个字符
                         text = text.substring(0, text.length - 1);
                     }
-                    doc.format_text(text, feed_note, yPos, {
+
+                    var x = feed_note;
+                    if (drawRight) {
+                        drawRightLatestPosy = yPos;
+                        x = feed_note_right;
+                        rightLines--;
+                    } else {
+                        drawLeftEver = true;
+                    }
+                    doc.format_text(text, x, yPos, {
                         color: '#868686',
                         line_break: false,
                         width: width_note,
@@ -2247,7 +2321,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         lineHeight: lineHeight
                     });
                 }
-                doc.format_text('[' + token[j].no + ']', feed_note_no, yPos, {
+                doc.format_text('[' + token[j].no + ']', drawRight ? feed_note_no_right : feed_note_no, yPos, {
                     color: '#000000',
                     line_break: false,
                     width: width_note,
@@ -2255,17 +2329,36 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     fontSize: noteFontSize,
                     lineHeight: lineHeight
                 });
+
+                if (drawRight) {
+                    if (rightLines <= 0) {
+                        rightLines = 0;
+                        yPos = yPosBottom;
+                    }
+                }
             }
         }
         if (notes.length > 0) {
-            doc.format_text(cfg.text_note || 'NOTE:', 0, yPos, {
-                color: '#000000',
-                line_break: false,
-                width: feed_note_no - 0.5 * lineHeight,
-                align: 'right',
-                fontSize: print.font_size,
-                lineHeight: print.font_height
-            });
+            if (drawLeftEver) {
+                doc.format_text(cfg.text_note || 'NOTE:', 0, yPos, {
+                    color: '#000000',
+                    line_break: false,
+                    width: feed_note_no - 0.5 * lineHeight,
+                    align: 'right',
+                    fontSize: print.font_size,
+                    lineHeight: print.font_height
+                });
+            }
+            if (drawRightLatestPosy) {
+                doc.format_text(cfg.text_note || 'NOTE:', feed_note_no_right, drawRightLatestPosy - lineHeight, {
+                    color: '#000000',
+                    line_break: false,
+                    width: width_note,
+                    align: 'left',
+                    fontSize: print.font_size,
+                    lineHeight: print.font_height
+                });
+            }
         }
     }
 }
