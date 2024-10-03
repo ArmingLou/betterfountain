@@ -453,6 +453,9 @@ async function initDoc(opts: Options) {
                     }
                 }
             }
+            // if(l>0){
+            //     l +=1;
+            // }
             return l;
         }
 
@@ -742,7 +745,7 @@ async function initDoc(opts: Options) {
 
         var firstBreakHeight = firstBreakHeight * 72;
         if (catchNotes) {
-            firstBreakHeight = firstBreakHeight - note_lines(pageIdx) * print.font_height * 72;
+            firstBreakHeight = firstBreakHeight - (note_lines(pageIdx) * print.font_height * 72);
         }
 
         return addTextbox(textobjects, doc, x * 72, y * 72, width * 72, posTop * 72, firstBreakHeight, breakHeight * 72, switchPageFrom, switchPageTo, onlyGetLines,
@@ -1126,15 +1129,23 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
     }
 
-    function print_scene_split_top() {
-        var number_y = print.font_height * 0.5 + print.page_number_top_margin;
-
+    function count_scene_split_top() {
         if (cfg.scene_continuation_top) {
             scene_continuations[scene_number] = scene_continuations[scene_number] || 0;
             scene_continuations[scene_number]++;
+            return scene_continuations[scene_number]//scene_number
+        }
+        return 0;
+    }
+    function print_scene_split_top(sceneNumber: string, count: number) {
+        var number_y = print.font_height * 0.5 + print.page_number_top_margin;
 
-            var scene_continued = (cfg.scenes_numbers !== 'none' && scene_number ? scene_number + ' ' : '') + (cfg.text_scene_continued || 'CONTINUED') + ':';
-            scene_continued += scene_continuations[scene_number] > 1 ? ' (' + scene_continuations[scene_number] + ')' : '';
+        if (cfg.scene_continuation_top) {
+            // scene_continuations[sceneNumber] = scene_continuations[sceneNumber] || 0;
+            // scene_continuations[sceneNumber]++;//scene_number
+
+            var scene_continued = (cfg.scenes_numbers !== 'none' && sceneNumber ? sceneNumber + ' ' : '') + (cfg.text_scene_continued || 'CONTINUED') + ':';
+            scene_continued += count > 1 ? ' (' + count + ')' : '';
 
             scene_continued = clearFormatting(scene_continued);
             // scene_continued = scene_continued.replace(/\*/g, '');
@@ -1171,18 +1182,19 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // token 行
                 for (let j = 0; j < notes[i].length; j++) {
                     // 每个token有几个note
-                    for (let k = 0; k < notes[i][j].length; k++) {
+                    for (let k = 0; k < notes[i][j].text.length; k++) {
                         // 每个note的行
                         l++;
                     }
                 }
             }
         }
-        if (l > 0) {
-            return print.lines_per_page - l - 1;
-        } else {
-            return print.lines_per_page;
-        }
+        // if (l > 0) {
+        //     return print.lines_per_page - l - 1;
+        // } else {
+        //     return print.lines_per_page;
+        // }
+        return print.lines_per_page - l;
     }
 
 
@@ -1231,12 +1243,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     let lastCharacter = "";
     let lastCharacterFeed = 0;
 
-    let wait_right_end_print_scene_split = false;
+    let wait_right_end_print_scene_split = new Map();
 
     // 结束右侧对话的处理
     function if_dual_right_end(idx: number): boolean {
-        if (lines[idx].type === "page_break" || lines[idx].type === "page_switch" || (lines[idx].token && lines[idx].token.dual === "right") ||
-            lines[idx].type === "redraw"
+        if (lines[idx].type === "page_break" || lines[idx].type === "page_switch" || (lines[idx].token && lines[idx].token.dual === "right")
+            // ||lines[idx].type === "redraw"
         ) {
             return false;
         } else {
@@ -1255,6 +1267,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     // print_scene_split_top();
 
                     // wait_right_end_print_scene_split = false;
+
+                    if (wait_right_end_print_scene_split.has(last_dual_right_end_pageIdx + 1)) {
+                        var p = wait_right_end_print_scene_split.get(last_dual_right_end_pageIdx + 1)
+                        p.rightHeight = last_dual_right_end_height
+                        wait_right_end_print_scene_split.set(last_dual_right_end_pageIdx + 1, p);
+
+                    }
 
                 } else if (last_dual_right_end_height > last_dual_left_end_height) {
                     height = last_dual_right_end_height;
@@ -1277,6 +1296,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var brk = false;
         var brkNew = false;
         var line = lines[idx]
+        // if(line.type === "redraw"){
+        //     line = line.line
+        // }
         var lastLines = null;
         var toPage = -1;
         var drawLine = [];
@@ -1322,7 +1344,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         if (currentLineNotes && currentLineNotes.length > 0) {
 
             var currPageNoStart = 1;
-            var nextPageNoStart = 1;
+            // var nextPageNoStart = 1;
 
             if (notesPage[pid]) {
                 if (notesPage[pid].length > 1) {
@@ -1332,13 +1354,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
 
-            if (notesPage[pid + 1]) {
-                if (notesPage[pid + 1].length > 0) {
-                    if (notesPage[pid + 1][notesPage[pid + 1].length - 1].length > 0) {
-                        nextPageNoStart = notesPage[pid + 1][notesPage[pid + 1].length - 1][notesPage[pid + 1][notesPage[pid + 1].length - 1].length - 1].no + 1
-                    }
-                }
-            }
+            // if (notesPage[pid + 1]) {
+            //     if (notesPage[pid + 1].length > 0) {
+            //         if (notesPage[pid + 1][notesPage[pid + 1].length - 1].length > 0) {
+            //             nextPageNoStart = notesPage[pid + 1][notesPage[pid + 1].length - 1][notesPage[pid + 1][notesPage[pid + 1].length - 1].length - 1].no + 1
+            //         }
+            //     }
+            // }
 
 
 
@@ -1367,28 +1389,28 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
 
-            for (let j = 0; j < drawLineNext.length; j++) {
-                const line = drawLineNext[j];
-                for (let k = 0; k < line.texts.length; k++) {
-                    var t = line.texts[k].text;
-                    var txt = "";
-                    for (let l = 0; l < t.length; l++) {
-                        if (t[l] == charOfStyleTag.note_begin) {
+            // for (let j = 0; j < drawLineNext.length; j++) {
+            //     const line = drawLineNext[j];
+            //     for (let k = 0; k < line.texts.length; k++) {
+            //         var t = line.texts[k].text;
+            //         var txt = "";
+            //         for (let l = 0; l < t.length; l++) {
+            //             if (t[l] == charOfStyleTag.note_begin) {
 
-                            currentLineNotes[i].no = nextPageNoStart;
-                            txt += '[' + nextPageNoStart + ']';
-                            nextPageNoStart++;
+            //                 currentLineNotes[i].no = nextPageNoStart;
+            //                 txt += '[' + nextPageNoStart + ']';
+            //                 nextPageNoStart++;
 
-                            notesNext.push(currentLineNotes[i]);
-                            i++;
-                        } else {
-                            txt += t[l];
-                        }
-                    }
+            //                 notesNext.push(currentLineNotes[i]);
+            //                 i++;
+            //             } else {
+            //                 txt += t[l];
+            //             }
+            //         }
 
-                    drawLineNext[j].texts[k].text = txt
-                }
-            }
+            //         drawLineNext[j].texts[k].text = txt
+            //     }
+            // }
 
 
             // if (notesNext.length > 0) {
@@ -1398,9 +1420,15 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 notesPage[pid].push(notesCurr);
             }
 
-            if (doc.currentNote.padgeIdx >= 0) {
-                doc.currentNote.padgeIdx = pid + 1
+            if (currentLineNotes.length - notesCurr.length > 0) {
+
+                notesNext = currentLineNotes.slice(notesCurr.length);
+
+                if (doc.currentNote.padgeIdx >= 0) {
+                    doc.currentNote.padgeIdx = pid + 1
+                }
             }
+
 
             // currentLineNotes = notesNext
             // }
@@ -1436,7 +1464,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             //     brk = true;
             // }
             if (!brk) {
-                if (last_dual_right_end_height > (left_lines(last_dual_right_end_pageIdx) - 2) * print.font_height) {
+                if (last_dual_right_end_height >= (left_lines(last_dual_right_end_pageIdx) - 1) * print.font_height) {
                     // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
                     if (nextLine && nextLine.type === "character") {
@@ -1545,7 +1573,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // }
             // TODO Arming (2024-09-28) : 提前分页的情况
             if (!brk) {
-                if (height > (left_lines(pageIdx) - 5) * print.font_height) {
+                if (height >= (left_lines(pageIdx) - 4) * print.font_height) {
                     // 每页最后 4 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
                     if (nextLine && (nextLine.type === "scene_heading" || nextLine.type === "section")) {
@@ -1555,7 +1583,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
             if (!brk) {
-                if (height > (left_lines(pageIdx) - 2) * print.font_height) {
+                if (height >= (left_lines(pageIdx) - 1) * print.font_height) {
                     // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
                     if (nextLine && nextLine.type === "character") {
@@ -1582,7 +1610,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         if (lastLines) {
             lines.splice(idx + 1, 0, {
                 type: "redraw",
-                line: line,
+                // line: line,
+                text: "",
+                token: line.token,
                 lastLines: lastLines,
                 notes: notesNext,
             });
@@ -1602,6 +1632,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             lines.splice(idx + 1, 0, {
                 type: "page_switch",
                 toPage: toPage,
+                text: "",
             });
         }
 
@@ -1615,34 +1646,30 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         // 去除页面前面的空行
         if (!pageStarted) {
             var scene_split = false;
-            if (lines[ii].type === "redraw") {
-                // 重新绘制
-                if (lines[ii].line.type === "scene_heading") {
-                    scene_split = false;
-                } else if (lines[ii].line.token && lines[ii].line.token.dual === "left" && lines[ii].line.type !== "character") {
-                    scene_split = false;
-                    wait_right_end_print_scene_split = true;
-                } else {
-                    scene_split = true;
+
+            if (lines[ii].type !== "redraw") {
+
+                if (lines[ii].type === "page_break" || lines[ii].text.trim().length === 0) {
+                    // 跳过空行
+                    continue;
                 }
-            } else if (lines[ii].type === "page_break" || lines[ii].text.trim().length === 0) {
-                // 跳过空行
-                continue;
-            } else if (isBlankLineAfterStlyle(lines[ii].text)) {
-                // 只含有样式字符
-                // 只绘制样式，再跳过
-                doc.text2(lines[ii].text, 0, 0, 0, 0, 0, 0, 0, false);
-                continue;
+
+                if (isBlankLineAfterStlyle(lines[ii].text)) {
+                    // 只含有样式字符
+                    // 只绘制样式，再跳过
+                    doc.text2(lines[ii].text, 0, 0, 0, 0, 0, 0, 0, false);
+                    continue;
+                }
+            }
+
+            // 当页第一个非空行
+            if (lines[ii].token && lines[ii].token.type === "scene_heading") { //redraw 也可能进入
+                scene_split = false;
+            } else if (lines[ii].token && lines[ii].token.dual === "left" && lines[ii].token.type !== "character") {
+                scene_split = false;
+                wait_right_end_print_scene_split.set(pageIdx, { sceneNumber: scene_number, count: count_scene_split_top(), leftHeight: lashHeight, rightHeight: 0 });
             } else {
-                // 当页第一个非空行
-                if (lines[ii].type === "scene_heading") {
-                    scene_split = false;
-                } else if (lines[ii].token && lines[ii].token.dual === "left" && lines[ii].type !== "character") {
-                    scene_split = false;
-                    wait_right_end_print_scene_split = true;
-                } else {
-                    scene_split = true;
-                }
+                scene_split = true;
             }
 
             pageStarted = true;
@@ -1653,9 +1680,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             print_watermark();
             print_header_and_footer();
 
-            if (lines[ii].type === "dialogue" || lines[ii].type === "parenthetical" ||
-                (lines[ii].type === "redraw" && (lines[ii].line.type === "dialogue" || lines[ii].line.type === "parenthetical"))
-            ) {
+            if (lines[ii].token && (lines[ii].token.type === "dialogue" || lines[ii].token.type === "parenthetical")) {
                 doc.switchToPage(pageIdx - 1);
                 if (last_dual_right_end_pageIdx >= 0) {
                     print_dialogue_split_more(lashHeightRight);
@@ -1666,33 +1691,37 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 print_dialogue_split_top();
             }
 
-            if (scene_split && lashHeight) { // 左侧对话换页时，不会在此打印。 右侧触发的换页会。
-                wait_right_end_print_scene_split = false;
+            if (scene_split && lashHeight) { // 左侧对话换页时，不会在此打印。 右侧触发的换页会。其他非对话中的换页也会在此。
                 doc.switchToPage(pageIdx - 1);
                 print_scene_split_continue(lashHeight > lashHeightRight ? lashHeight : lashHeightRight);
                 doc.switchToPage(pageIdx);
-                print_scene_split_top();
+                print_scene_split_top(scene_number, count_scene_split_top());
             }
 
+            lashHeightRight = 0;
 
         }
 
         if_dual_right_end(ii);
 
-        if (wait_right_end_print_scene_split) {
-            if (lines[ii].type === "page_break" || lines[ii].type === "page_switch" || (lines[ii].token && lines[ii].token.dual === "right") ||
-                lines[ii].type === "redraw" || lines[ii].type === "separator" || lines[ii].type === "dialogue" || lines[ii].type === "parenthetical"
-            ) {
-            } else {
-                // 没有右侧对话，单出来的。 补充绘制 场景分页标题
-                wait_right_end_print_scene_split = false;
+        // if (wait_right_end_print_scene_split > 0) {
+        //     if (lines[ii].type === "page_break" || lines[ii].type === "page_switch" || (lines[ii].token && lines[ii].token.dual === "right") ||
+        //         lines[ii].type === "separator" || (lines[ii].token && (lines[ii].token.type === "dialogue" || lines[ii].token.type === "parenthetical"))
+        //     ) {
+        //     } else {
 
-                doc.switchToPage(pageIdx - 1);
-                print_scene_split_continue(lashHeight);
-                doc.switchToPage(pageIdx);
-                print_scene_split_top();
-            }
-        }
+        //         for (let i = wait_right_end_print_scene_split; i <= pageIdx; i++) {
+        //             doc.switchToPage(i - 1);
+        //             print_scene_split_continue(lashHeight);
+        //             doc.switchToPage(i);
+        //             print_scene_split_top();
+        //         }
+
+        //         // 没有右侧对话，单出来的。 补充绘制 场景分页标题
+        //         wait_right_end_print_scene_split = 0;
+
+        //     }
+        // }
 
         text2Result = {
             height: 0,
@@ -1745,23 +1774,29 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             if (last_dual_right_end_pageIdx >= 0) {
                 // lashHeight = last_dual_right_end_height;
-                lashHeightRight = last_dual_right_end_height;
-                last_dual_right_end_height = 0;
-                print_dialogue_split_more(lashHeightRight);
+                print_dialogue_split_more(last_dual_right_end_height);
                 last_dual_right_end_pageIdx++;
                 doc.switchToPage(last_dual_right_end_pageIdx);
                 print_dialogue_split_top();
 
-                doc.switchToPage(last_dual_right_end_pageIdx - 1);
-                print_scene_split_continue(lashHeight > lashHeightRight ? lashHeight : lashHeightRight);
-                doc.switchToPage(last_dual_right_end_pageIdx);
-                print_scene_split_top();
+                // doc.switchToPage(last_dual_right_end_pageIdx - 1);
+                // print_scene_split_continue(lashHeight > last_dual_right_end_height ? lashHeight : last_dual_right_end_height);
+                // doc.switchToPage(last_dual_right_end_pageIdx);
+                // print_scene_split_top(scene_number, count_scene_split_top());
+                
+                if (wait_right_end_print_scene_split.has(last_dual_right_end_pageIdx)) {
+                    var p = wait_right_end_print_scene_split.get(last_dual_right_end_pageIdx)
+                    p.rightHeight = last_dual_right_end_height
+                    wait_right_end_print_scene_split.set(last_dual_right_end_pageIdx, p);
+                }
 
-                wait_right_end_print_scene_split = false;
+                last_dual_right_end_height = 0;
+                // wait_right_end_print_scene_split = false;
+                // wait_right_end_print_scene_split.delete(last_dual_right_end_pageIdx);
             }
         }
         else if (line.type === "redraw") {
-            // currentLineNotes = line.notes;
+            currentLineNotes = line.notes;
             if (last_dual_right_end_pageIdx >= 0) {
                 if (!notesPage[last_dual_right_end_pageIdx]) {
                     notesPage[last_dual_right_end_pageIdx] = [];
@@ -1769,9 +1804,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 if (line.notes.length > 0) {
                     notesPage[last_dual_right_end_pageIdx].push(line.notes);
                 }
-                var res = drawTextLinesOnPDF(line.lastLines.lines, line.lastLines.width, 0, 0, 0, 0, line.lastLines.posX, (print.top_margin + last_dual_right_end_height) * 72, 0, doc, false);
-
-                last_dual_right_end_height += res.height / 72;
+                text2Result = drawTextLinesOnPDF(line.lastLines.lines, line.lastLines.width,
+                    ((print.lines_per_page - line.notes.length) * print.font_height - last_dual_right_end_height) * 72,
+                    (print.lines_per_page * print.font_height) * 72,
+                    0, 0, line.lastLines.posX, (print.top_margin + last_dual_right_end_height) * 72, print.top_margin * 72, doc, true);
+                // last_dual_right_end_height += res.height / 72;
             } else {
                 if (!notesPage[pageIdx]) {
                     notesPage[pageIdx] = [];
@@ -1779,9 +1816,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 if (line.notes.length > 0) {
                     notesPage[pageIdx].push(line.notes);
                 }
-                var res = drawTextLinesOnPDF(line.lastLines.lines, line.lastLines.width, 0, 0, 0, 0, line.lastLines.posX, (print.top_margin + height) * 72, 0, doc, false);
+                text2Result = drawTextLinesOnPDF(line.lastLines.lines, line.lastLines.width,
+                    ((print.lines_per_page - line.notes.length) * print.font_height - height) * 72,
+                    (print.lines_per_page * print.font_height) * 72,
+                    0, 0, line.lastLines.posX, (print.top_margin + height) * 72, print.top_margin * 72, doc, true);
 
-                height += res.height / 72;
+                // height += res.height / 72;
             }
         }
         else if (line.type === "separator") {
@@ -2019,7 +2059,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                     if (line.type === "parenthetical") {
                         feed = (print.page_width / 2) + feed_diff * 2;
-                        text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 3;
+                        text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 3;
                     }
                     else if (line.type === "character") {
                         last_dual_left_end_pageIdx = pageIdx
@@ -2030,17 +2070,17 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         last_dual_right_end_pageIdx = last_dual_left_start_pageIdx;
                         last_dual_right_end_height = last_dual_left_start_height;
                         feed = (print.page_width / 2) + feed_diff * 3;
-                        text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 5;
+                        text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 5;
 
                         lastCharacter = text;
                         lastCharacterFeed = feed
                     }
                     else if (line.type === "more") {
                         feed = (print.page_width / 2) + feed_diff * 3;
-                        text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 5;
+                        text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 5;
                     } else {
                         feed = (print.page_width / 2) + feed_diff;
-                        text_properties.width = print.page_width / 2 - print.action.feed - feed_diff;
+                        text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff;
                     }
 
                     text = ifResetFormat(text, line);
@@ -2058,23 +2098,23 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 } else {
                     if (line.token && line.token.dual === "left") {
                         if (line.type === "parenthetical") {
-                            feed = print.action.feed + feed_diff;
-                            text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 3;
+                            feed = print.dialogue.feed_double + feed_diff;
+                            text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 3;
                         }
                         else if (line.type === "character") {
                             last_dual_left_start_pageIdx = pageIdx;
                             last_dual_left_start_height = height;
-                            feed = print.action.feed + feed_diff * 2;
-                            text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 5;
+                            feed = print.dialogue.feed_double + feed_diff * 2;
+                            text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 5;
 
                             lastCharacter = text;
                             lastCharacterFeed = feed;
                         } else if (line.type === "more") {
-                            feed = print.action.feed + feed_diff * 2;
-                            text_properties.width = print.page_width / 2 - print.action.feed - feed_diff * 5;
+                            feed = print.dialogue.feed_double + feed_diff * 2;
+                            text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 5;
                         } else {
-                            feed = print.action.feed
-                            text_properties.width = print.page_width / 2 - print.action.feed - feed_diff;
+                            feed = print.dialogue.feed_double
+                            text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff;
                         }
                     } else if (line.type === "character") {
                         lastCharacter = text;
@@ -2161,6 +2201,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
 
     }
+
+    //处理 右侧 对话未换页，导致 换页时 场景分割 标题未打印的情况
+    wait_right_end_print_scene_split.forEach((v, pid) => {
+        doc.switchToPage(pid - 1);
+        print_scene_split_continue(v.leftHeight > v.rightHeight ? v.leftHeight : v.rightHeight);
+        doc.switchToPage(pid);
+        print_scene_split_top(v.sceneNumber, v.count);
+    })
 
     // print notes
     var noteFontSize = print.note_font_size;

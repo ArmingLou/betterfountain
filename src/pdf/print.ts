@@ -26,7 +26,7 @@ export class PrintProfile{
     character:{feed:number;max:number;};
     parenthetical:{feed:number;max:number;};
     more:{feed:number;max:number;};
-    dialogue:{feed:number;max:number;};
+    dialogue:{feed:number;max:number;feed_double:number;};
     transition:{feed:number;max:number;};
     centered:{feed:number;max:number;style:string};
     synopsis:{feed:number;max:number;italic:boolean;color:string;padding:number;feed_with_last_section:boolean};
@@ -87,7 +87,8 @@ var A4_DEFAULT_MAX = 57,
             },
             dialogue: {
                 feed: 2.5,
-                max: 36
+                max: 36,
+                feed_double: 1.9,
             },
             transition: {
                 feed: 0.0,
@@ -165,7 +166,8 @@ var A4_DEFAULT_MAX = 57,
             },
             dialogue: {
                 feed: 2.2,
-                max: 40
+                max: 40,
+                feed_double: 1.4,
             },
             transition: {
                 feed: 0.0,
