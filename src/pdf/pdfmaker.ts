@@ -421,7 +421,7 @@ async function initDoc(opts: Options) {
     };
 
     doc.currentNote = {
-        padgeIdx: -1,
+        pageIdx: -1,
         note: [] as any[]
     }
 
@@ -513,6 +513,7 @@ async function initDoc(opts: Options) {
         var textobjects = [];
         var currentIndex = 0;
         var onlyNoteContent = catchNotes && doc.currentNote.pageIdx > -1;
+        var pushed = false;
         // var currentWidth = 0;
         for (var i = 0; i < split_for_formatting.length; i++) {
             var elem = split_for_formatting[i];
@@ -578,23 +579,59 @@ async function initDoc(opts: Options) {
                 opts.italic_global = false;
             } else if (elem === charOfStyleTag.bold_italic) {
                 // doc.format_state.italic = !doc.format_state.italic;
-                doc.format_state.bold_italic = !doc.format_state.bold_italic;
-            } else if (elem === charOfStyleTag.bold) {
-                doc.format_state.bold = !doc.format_state.bold;
-            } else if (elem === charOfStyleTag.italic) {
-                if (opts.italic_global) {
-                    opts.italic_dynamic = !opts.italic_dynamic;
+                if (catchNotes && doc.currentNote.pageIdx > -1) {
+                    if (!pushed) {
+                        doc.currentNote.note.text.push(elem);
+                        pushed = true;
+                    } else {
+                        doc.currentNote.note.text[doc.currentNote.note.text.length - 1] += elem;
+                    }
                 } else {
-                    doc.format_state.italic = !doc.format_state.italic;
+                    doc.format_state.bold_italic = !doc.format_state.bold_italic;
+                }
+            } else if (elem === charOfStyleTag.bold) {
+                if (catchNotes && doc.currentNote.pageIdx > -1) {
+                    if (!pushed) {
+                        doc.currentNote.note.text.push(elem);
+                        pushed = true;
+                    } else {
+                        doc.currentNote.note.text[doc.currentNote.note.text.length - 1] += elem;
+                    }
+                } else {
+                    doc.format_state.bold = !doc.format_state.bold;
+                }
+            } else if (elem === charOfStyleTag.italic) {
+                if (catchNotes && doc.currentNote.pageIdx > -1) {
+                    if (!pushed) {
+                        doc.currentNote.note.text.push(elem);
+                        pushed = true;
+                    } else {
+                        doc.currentNote.note.text[doc.currentNote.note.text.length - 1] += elem;
+                    }
+                } else {
+                    if (opts.italic_global) {
+                        opts.italic_dynamic = !opts.italic_dynamic;
+                    } else {
+                        doc.format_state.italic = !doc.format_state.italic;
+                    }
                 }
             } else if (elem === charOfStyleTag.underline) {
-                doc.format_state.underline = !doc.format_state.underline;
+                if (catchNotes && doc.currentNote.pageIdx > -1) {
+                    if (!pushed) {
+                        doc.currentNote.note.text.push(elem);
+                        pushed = true;
+                    } else {
+                        doc.currentNote.note.text[doc.currentNote.note.text.length - 1] += elem;
+                    }
+                } else {
+                    doc.format_state.underline = !doc.format_state.underline;
+                }
             } else if (elem === charOfStyleTag.note_end) {
                 doc.format_state.override_color = null;
                 color = options.color || 'black';
                 if (catchNotes) {
                     if (currentLineNotes.length > 0) {
-                        currentLineNotes[currentLineNotes.length - 1].text.push(...doc.currentNote.note.text);
+                        currentLineNotes[currentLineNotes.length - 1].text = doc.currentNote.note.text;
                         // if (!notesPage[doc.currentNote.pageIdx]) {
                         //  //   notesPage[doc.currentNote.pageIdx] = [];
                         // }
@@ -608,7 +645,7 @@ async function initDoc(opts: Options) {
                     // }
                     if (notesPage[doc.currentNote.pageIdx]) {
                         if (notesPage[doc.currentNote.pageIdx].length > 0) {
-                            notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1][notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1].length - 1].text.push(...doc.currentNote.note.text);
+                            notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1][notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1].length - 1].text=doc.currentNote.note.text;
                         }
                     }
                     doc.currentNote.pageIdx = -1;
@@ -629,7 +666,7 @@ async function initDoc(opts: Options) {
 
                         doc.currentNote = {
                             pageIdx: pageIdx,
-                            note: { no: no, text: [] },
+                            note: { no: no, text: [''] },
                         };
                         if (!notesPage[doc.currentNote.pageIdx]) {
                             notesPage[doc.currentNote.pageIdx] = [];
@@ -637,8 +674,9 @@ async function initDoc(opts: Options) {
                         if (currentLineNotes.length === 0) {
                             notesPage[doc.currentNote.pageIdx].push([]);// 加一个token行
                         }
-                        notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1].push({ no: no, text: [] });
-                        currentLineNotes.push({ no: no, text: [] });
+                        notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1].push({ no: no, text: [''] });
+                        currentLineNotes.push({ no: no, text: [''] });
+                        pushed = true;
                     }
                 }
 
@@ -648,7 +686,12 @@ async function initDoc(opts: Options) {
                     if (elem !== charOfStyleTag.note_begin) {
                         if (catchNotes) {
                             if (doc.currentNote.pageIdx >= 0) {
-                                doc.currentNote.note.text.push(elem);
+                                if (!pushed) {
+                                    doc.currentNote.note.text.push(elem);
+                                    pushed = true;
+                                } else {
+                                    doc.currentNote.note.text[doc.currentNote.note.text.length - 1] += elem;
+                                }
                                 // if (doc.currentNote.note.text.length === 1) {
                                 //     elem = charOfStyleTag.note_begin;//'[' + doc.currentNote.note.no + ']';
                                 // } else {
@@ -1248,6 +1291,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     let lashHeight = 0;
     let lashHeightRight = 0;
+    let subHeight = 0;
+    let subHeightRight = 0;
 
     let lastCharacter = "";
     let lastCharacterFeed = 0;
@@ -1292,6 +1337,23 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
             return true;
         }
+    }
+
+
+
+    function if_drawLine_blank(drawLine: any): boolean {
+        var blank = true;
+        for (let i = 0; i < drawLine.length; i++) {
+            for (let j = 0; j < drawLine[i].texts.length; j++) {
+                if (drawLine[i].texts[j].text.trim().length > 0) {
+                    blank = false;
+                    break;
+                }
+
+            }
+        }
+
+        return blank;
     }
 
 
@@ -1433,8 +1495,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                 notesNext = currentLineNotes.slice(notesCurr.length);
 
-                if (doc.currentNote.padgeIdx >= 0) {
-                    doc.currentNote.padgeIdx = pid + 1
+                if (doc.currentNote.pageIdx >= 0) {
+                    doc.currentNote.pageIdx = pid + 1
                 }
             }
 
@@ -1450,6 +1512,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             if (drawLine.length > 0) {
                 var res = drawTextLinesOnPDF(drawLine, text2Result.width, 0, 0, 0, 0, text2Result.posX, (print.top_margin + last_dual_right_end_height) * 72, 0, doc, false)
                 last_dual_right_end_height += res.height / 72;
+
+                if (if_drawLine_blank(drawLine)) {
+                    subHeightRight += res.height / 72; //记录页末空行高
+                } else {
+                    subHeightRight = 0;
+                }
+
             }
 
             // if (text2Result.switches + text2Result.breaks > 0) {
@@ -1535,6 +1604,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
 
                 height += res.height / 72;
+                if (if_drawLine_blank(drawLine)) {
+                    subHeight += res.height / 72;
+                } else {
+                    subHeight = 0;
+                }
             }
 
             if (brk) {
@@ -1656,9 +1730,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         if (!pageStarted) {
             var scene_split = false;
 
+            if (lines[ii].type === "page_break") {
+                // 跳过空行
+                continue;
+            }
+
             if (lines[ii].type !== "redraw") {
 
-                if (lines[ii].type === "page_break" || lines[ii].text.trim().length === 0) {
+                if (lines[ii].text.trim().length === 0) {
                     // 跳过空行
                     continue;
                 }
@@ -1667,6 +1746,15 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     // 只含有样式字符
                     // 只绘制样式，再跳过
                     doc.text2(lines[ii].text, 0, 0, 0, 0, 0, 0, 0, false);
+                    continue;
+                }
+            }
+            if (lines[ii].type === "redraw" && lines[ii].token) {
+
+                if (isBlankLineAfterStlyle(lines[ii].token.text)) {
+                    // 只含有样式字符
+                    // 直接跳过，redraw已经绘制过样式
+                    // doc.text2(lines[ii].token.text, 0, 0, 0, 0, 0, 0, 0, false);
                     continue;
                 }
             }
@@ -1710,6 +1798,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
 
             lashHeightRight = 0;
+            subHeight = 0;
 
         }
 
@@ -1759,16 +1848,18 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // 要对比之前左侧的 lashHeight ，谁更低。
             if (last_dual_right_end_pageIdx >= 0) {
                 // lashHeight = last_dual_right_end_height;
-                lashHeightRight = last_dual_right_end_height;
+                lashHeightRight = last_dual_right_end_height - subHeightRight;
                 last_dual_right_end_height = 0;
+                subHeightRight = 0;
                 last_dual_right_end_pageIdx++;
             }
             // else {
             //     lashHeight = height;
             // }
-            lashHeight = height;
+            lashHeight = height - subHeight;
             doc.addPage();
             height = 0;
+            subHeight = 0;
             pageIdx++;
 
             pageStarted = false;
@@ -2227,6 +2318,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     // print notes
     for (var pIdx in notesPage) {
+        if (+pIdx < 0) {
+            continue;
+        }
 
         var noteFontSize = print.note_font_size;
         var lineHeight = print.note_line_height;

@@ -764,10 +764,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             if (!merge) {
                                 if (lastToken.type == "character") {
                                     thistoken.type = "dialogue";
+                                    thistoken.dual = lastToken.dual;
                                 } else if (lastToken.type == "parenthetical") {
                                     thistoken.type = "parenthetical";
+                                    thistoken.dual = lastToken.dual;
                                 } else if (lastToken.type == "dialogue") {
                                     thistoken.type = "dialogue";
+                                    thistoken.dual = lastToken.dual;
                                 } else {
                                     thistoken.type = "action";
                                 }
