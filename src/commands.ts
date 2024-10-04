@@ -42,8 +42,10 @@ export async function exportPdf(uri: vscode.Uri | undefined | null, showSaveDial
   var text = Buffer.from(by).toString('utf-8');
 
   // 从uri获取文件名
-  var filename = doc.path.substring(doc.path.lastIndexOf('/') + 1);
+  var lassIdx = doc.path.lastIndexOf('/');
+  var filename = doc.path.substring(lassIdx + 1);
   filename = filename.replace(/(\.(((better)?fountain)|spmd|txt))$/, '');
+  filename = doc.path.substring(0, lassIdx + 1) + filename;
 
   var config = getFountainConfig(doc);
   telemetry.reportTelemetry("command:fountain.exportpdf");
@@ -68,6 +70,7 @@ export async function exportPdf(uri: vscode.Uri | undefined | null, showSaveDial
   filename += '.pdf'; //screenplay -> screenplay.pdf
 
   var saveuri = vscode.Uri.file(filename);
+  // var saveuri = editor.document.fileName.replace(/(\.(((better)?fountain)|spmd|txt))$/, '');
   var filepath: vscode.Uri = undefined;
   if (showSaveDialog) {
     filepath = await vscode.window.showSaveDialog(
