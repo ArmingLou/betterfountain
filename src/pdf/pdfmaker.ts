@@ -460,7 +460,7 @@ async function initDoc(opts: Options) {
         }
 
         if (options.highlight) {
-            doc.highlight(x * 72, (y * 72) + doc.currentLineHeight() / 2,
+            doc.highlight(x * 72, (y * 72),
                 measureTextWidth(cleanStlyleChars(text), 'ScriptNormal', print.font_size || 12, doc),
                 doc.currentLineHeight(), { color: options.highlightcolor });
         }
