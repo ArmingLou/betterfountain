@@ -280,4 +280,4 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
   return res;
 }
 
-module.exports = { addTextbox, breakLines, drawTextLinesOnPDF };
+module.exports = { addTextbox, breakLines, drawTextLinesOnPDF, measureTextWidth };

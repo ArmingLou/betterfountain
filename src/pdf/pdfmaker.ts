@@ -5,9 +5,9 @@ import * as print from "./print";
 import * as path from 'path';
 import * as vscode from 'vscode';
 import helpers from "../helpers";
-import { cleanStlyleChars, isBlankLineAfterStlyle, openFile, revealFile, trimCharacterExtension, wordToColor } from "../utils";
+import { cleanStlyleChars, isBlankLineAfterStlyle, openFile, revealFile, wordToColor } from "../utils";
 import * as he from 'he';
-import { addTextbox, drawTextLinesOnPDF } from 'textbox-for-pdfkit';
+import { addTextbox, drawTextLinesOnPDF, measureTextWidth } from 'textbox-for-pdfkit';
 import { regex } from "../afterwriting-parser";
 import { Base64Encode } from "base64-stream";
 import { charOfStyleTag } from "../cons";
@@ -460,7 +460,9 @@ async function initDoc(opts: Options) {
         }
 
         if (options.highlight) {
-            doc.highlight(x * 72, (y * 72) + doc.currentLineHeight() / 2, doc.widthOfString(text), doc.currentLineHeight(), { color: options.highlightcolor });
+            doc.highlight(x * 72, (y * 72) + doc.currentLineHeight() / 2,
+                measureTextWidth(cleanStlyleChars(text), 'ScriptNormal', print.font_size || 12, doc),
+                doc.currentLineHeight(), { color: options.highlightcolor });
         }
 
         if (print.note.italic) {
@@ -645,7 +647,7 @@ async function initDoc(opts: Options) {
                     // }
                     if (notesPage[doc.currentNote.pageIdx]) {
                         if (notesPage[doc.currentNote.pageIdx].length > 0) {
-                            notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1][notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1].length - 1].text=doc.currentNote.note.text;
+                            notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1][notesPage[doc.currentNote.pageIdx][notesPage[doc.currentNote.pageIdx].length - 1].length - 1].text = doc.currentNote.note.text;
                         }
                     }
                     doc.currentNote.pageIdx = -1;
@@ -1961,9 +1963,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             function get_text_properties(lline = line, expcfg = exportcfg, old_text_properties = general_text_properties) {
                 var new_text_properties = Object.assign({}, old_text_properties)
                 if (!!expcfg && lline.type === 'character') {
-                    var character = trimCharacterExtension(lline.text)
+                    // var character = trimCharacterExtension(lline.text)
+                    var character = lline.token.character
                     // refer to Liner in ./liner.ts
-                    character = character.replace(/([0-9]* - )/, "");
+                    // character = character.replace(/([0-9]* - )/, "");
+
                     if (!!expcfg.highlighted_characters && expcfg.highlighted_characters.includes(character)) {
                         new_text_properties.highlight = true;
                         new_text_properties.highlightcolor = wordToColor(character);

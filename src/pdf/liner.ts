@@ -10,16 +10,15 @@ export class Liner {
         this.printTakeNumbers = printTakeNumbers;
     }
 
-    
+
     split_token3 = (token: any): any => {
         var tmpText;
 
         if (token.type === "character" && this.printTakeNumbers) {
             tmpText = token.takeNumber + " - " + token.text;
         } else {
-            tmpText = token.text;
+            tmpText = token.text ? token.text : "";
         }
-
         var bl = tmpText.split('\n');
         var res = [];
         var st = token.start;
