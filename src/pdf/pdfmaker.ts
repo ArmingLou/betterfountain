@@ -32,6 +32,7 @@ export class Options {
     found_font_bold: boolean;
     found_font_bold_italic: boolean;
     metadata: any;
+    for_preview: boolean;
 }
 
 export class StyleStash {
@@ -135,7 +136,7 @@ async function initDoc(opts: Options) {
         bufferPages: true
     };
     if (opts.metadata) {
-        if (opts.metadata.userPassword) {
+        if (!opts.for_preview && opts.metadata.userPassword) {
             options.userPassword = opts.metadata.userPassword;
         }
         if (opts.metadata.ownerPassword) {
@@ -2321,6 +2322,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
 
     }
+    var lh = height;
+    if(last_dual_right_end_pageIdx === pageIdx && last_dual_right_end_height > height){
+        lh = last_dual_right_end_height
+    }
+    pagesHeight[pageIdx] = lh;//最后一页的高度
 
     //处理 右侧 对话未换页，导致 换页时 场景分割 标题未打印的情况
     wait_right_end_print_scene_split.forEach((v, pid) => {
@@ -2471,6 +2477,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
         }
     }
+    return pagesHeight
 }
 
 export var get_pdf = async function (opts: Options, progress: vscode.Progress<{ message?: string; increment?: number; }>) {
@@ -2501,12 +2508,18 @@ export type PdfAsBase64 = {
 export var get_pdf_stats = async function (opts: Options): Promise<pdfstats> {
     var doc = await initDoc(opts);
     let stats: pdfstats = { pagecount: 1, pagecountReal: 1, linemap: new Map<number, lineStruct>() };
-    stats.pagecount = opts.parsed.lines.length / opts.print.lines_per_page;
+    // stats.pagecount = opts.parsed.lines.length / opts.print.lines_per_page;
     doc.on('pageAdded', () => {
         stats.pagecountReal++;
     });
 
-    await generate(doc, opts, stats.linemap);
+    var ph = await generate(doc, opts, stats.linemap);
+    var lines = 0;
+    for (var pIdx in ph) {
+        var h = ph[pIdx];
+        lines += Math.round(h / opts.print.font_height);
+    }
+    stats.pagecount = lines / opts.print.lines_per_page;
     return stats;
 }
 
@@ -2533,11 +2546,17 @@ const toBase64 = (doc: any): Promise<string> => {
 export var get_pdf_base64 = async function (opts: Options): Promise<PdfAsBase64> {
     var doc = await initDoc(opts);
     let stats: pdfstats = { pagecount: 1, pagecountReal: 1, linemap: new Map<number, lineStruct>() };
-    stats.pagecount = opts.parsed.lines.length / opts.print.lines_per_page;
+    // stats.pagecount = opts.parsed.lines.length / opts.print.lines_per_page;
     doc.on('pageAdded', () => {
         stats.pagecountReal++;
     });
-    await generate(doc, opts, stats.linemap);
+    var ph = await generate(doc, opts, stats.linemap);
+    var lines = 0;
+    for (var pIdx in ph) {
+        var h = ph[pIdx];
+        lines += Math.round(h / opts.print.font_height);
+    }
+    stats.pagecount = lines / opts.print.lines_per_page;
     doc.end();
     return {
         data: await toBase64(doc),

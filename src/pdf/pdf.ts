@@ -164,12 +164,17 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
         found_font_italic: false,
         found_font_bold: false,
         found_font_bold_italic: false,
+        for_preview: false
     }
 
-    if (outputpath == "$STATS$")
+    if (outputpath == "$STATS$"){
         return pdfmaker.get_pdf_stats(pdf_options);
-    else if (outputpath == "$PREVIEW$")
+    }
+    else if (outputpath == "$PREVIEW$"){
+        pdf_options.for_preview = true;
         return pdfmaker.get_pdf_base64(pdf_options)
-    else
+    }
+    else{
         pdfmaker.get_pdf(pdf_options, progress);
+    }
 }
