@@ -157,6 +157,56 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 					completes.push(TitlePageKey({ name: "Font Bold", detail: "The bold font used in the screenplay", triggerIntellisense: true, documentation: `Generally a monospace courier-type font. BetterFountain's default is [Courier Prime](https://quoteunquoteapps.com/courierprime/), with added support for cyrillic.`, sort: "0K2", position: titlePageDisplay['font_bold'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("font_bold_italic") == -1)
 					completes.push(TitlePageKey({ name: "Font Bold Italic", detail: "The bold_italic font used in the screenplay", triggerIntellisense: true, documentation: `Generally a monospace courier-type font. BetterFountain's default is [Courier Prime](https://quoteunquoteapps.com/courierprime/), with added support for cyrillic.`, sort: "0K3", position: titlePageDisplay['font_bold_italic'].position }));
+				if (parsedDocument.properties.titleKeys.indexOf("metadata") == -1)
+					completes.push(TitlePageKey({ name: "Metadata", detail: "Metadata json string", triggerIntellisense: true, documentation: `
+{
+    "userPassword":"",
+    "ownerPassword":"",
+    "permissions":{
+        "printing":false,
+        "modifying":false,
+        "copying":false,
+        "annotating":false,
+        "fillingForms":false,
+        "contentAccessibility":false,
+        "documentAssembly":false
+    }
+}
+
+[userPassword] - the user password (string value)
+
+To enable encryption, provide a user password when creating the PDFDocument in options object. The PDF file will be encrypted when a user password is provided, and users will be prompted to enter the password to decrypt the file when opening it.
+
+
+[ownerPassword] - the owner password (string value)
+
+[permissions] - the object specifying PDF file permissions
+
+To set access privileges for the PDF file, you need to provide an owner password and permission settings in the option object when creating PDFDocument. By default, all operations are disallowed. You need to explicitly allow certain operations.
+
+
+Following settings are allowed in permissions object:
+
+[printing] - whether printing is allowed. Specify "lowResolution" to allow degraded printing, or "highResolution" to allow printing with high resolution
+
+[modifying] - whether modifying the file is allowed. Specify true to allow modifying document content
+
+[copying] - whether copying text or graphics is allowed. Specify true to allow copying
+
+[annotating] - whether annotating, form filling is allowed. Specify true to allow annotating and form filling
+
+[fillingForms] - whether form filling and signing is allowed. Specify true to allow filling in form fields and signing
+
+[contentAccessibility] - whether copying text for accessibility is allowed. Specify true to allow copying for accessibility
+
+[documentAssembly] - whether assembling document is allowed. Specify true to allow document assembly
+
+
+You can specify either [userPassword], [ownerPassword] or both passwords. Behavior differs according to passwords you provides:
+
+When only [userPassword] is provided, users with user password are able to decrypt the file and have full access to the document.
+When only [ownerPassword] is provided, users are able to decrypt and open the document without providing any password, but the access is limited to those operations explicitly permitted. Users with owner password have full access to the document.
+When both passwords are provided, users with user password are able to decrypt the file but only have limited access to the file according to permission settings. Users with owner password have full access to the document.`, sort: "0K4", position: titlePageDisplay['metadata'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("revision") == -1)
 					completes.push(TitlePageKey({
 						name: "Revision", detail: "The name of the current and past revisions", documentation: `New revisions are generally printed on different-colored paper, and named accordingly. The WGA order for revisions is:
@@ -184,8 +234,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 				completes.push(TitlePageKey({ name: "CC", detail: "Center Center", documentation: "Additional content in the center of the title page", sort: "0P", position: titlePageDisplay['cc'].position }));
 				completes.push(TitlePageKey({ name: "BL", detail: "Bottom Left", documentation: "Additional content in the bottom left of the title page", sort: "0Q", position: titlePageDisplay['bl'].position }));
 				completes.push(TitlePageKey({ name: "BR", detail: "Bottom Right", documentation: "Additional content in the bottom right of the title page", sort: "0R", position: titlePageDisplay['br'].position }));
-				completes.push(TitlePageKey({ name: 'Header', detail: "Header used throughout the document", documentation: "This will be printed in the top left of every single page, excluding the title page. Can also be set globally by the 'Page Header' setting", sort: "S", position: 'header' }))
-				completes.push(TitlePageKey({ name: 'Footer', detail: "Header used throughout the document", documentation: "This will be printed in the bottom left of every single page, excluding the title page. Can also be set globally by the 'Page Footer' setting", sort: "T", position: 'footer' }))
+				completes.push(TitlePageKey({ name: 'Header', detail: "Header used throughout the document", documentation: "This will be printed in the top left of every single page, excluding the title page. Can also be set globally by the 'Page Header' setting", sort: "S", position: 'header' }));
+				completes.push(TitlePageKey({ name: 'Footer', detail: "Header used throughout the document", documentation: "This will be printed in the bottom left of every single page, excluding the title page. Can also be set globally by the 'Page Footer' setting", sort: "T", position: 'footer' }));
 			}
 			else {
 				var currentkey = currentline.trim().toLowerCase();
@@ -218,6 +268,21 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 					fontnames.forEach((fontname: string) => {
 						completes.push({ label: fontname, insertText: fontname + "\n", kind: vscode.CompletionItemKind.Text });
 					})
+				}
+				else if (currentkey == "metadata:") {
+					completes.push({ label: `{
+    "userPassword":"",
+    "ownerPassword":"",
+    "permissions":{
+        "printing":false,
+        "modifying":false,
+        "copying":false,
+        "annotating":false,
+        "fillingForms":false,
+        "contentAccessibility":false,
+        "documentAssembly":false
+    }
+}`, sortText: "0A", kind: vscode.CompletionItemKind.Text });
 				}
 			}
 		}

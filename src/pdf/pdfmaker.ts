@@ -31,6 +31,7 @@ export class Options {
     found_font_italic: boolean;
     found_font_bold: boolean;
     found_font_bold_italic: boolean;
+    metadata: any;
 }
 
 export class StyleStash {
@@ -122,7 +123,7 @@ var create_simplestream = function (filepath: string) {
 async function initDoc(opts: Options) {
     var print = opts.print;
     //var fonts = opts.config.fonts || null;
-    var options = {
+    var options: any = {
         compress: false,
         size: print.paper_size.indexOf("a4") >= 0 ? 'A4' : 'LETTER',
         margins: {
@@ -133,6 +134,17 @@ async function initDoc(opts: Options) {
         },
         bufferPages: true
     };
+    if (opts.metadata) {
+        if (opts.metadata.userPassword) {
+            options.userPassword = opts.metadata.userPassword;
+        }
+        if (opts.metadata.ownerPassword) {
+            options.ownerPassword = opts.metadata.ownerPassword;
+        }
+        if (opts.metadata.permissions) {
+            options.permissions = opts.metadata.permissions;
+        }
+    }
     var doc = new PDFDocument(options);
 
     /* if (opts.config.fonts) {

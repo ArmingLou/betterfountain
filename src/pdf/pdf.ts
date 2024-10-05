@@ -17,6 +17,7 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
     var font_bold = "";
     var font_italic = "";
     var font_bold_italic = "";
+    var metadata = undefined;
     if (parsedDocument.title_page) {
         for (let index = 0; index < parsedDocument.title_page['hidden'].length; index++) {
             if (parsedDocument.title_page['hidden'][index].type == "watermark")
@@ -33,6 +34,16 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
                 font_bold = parsedDocument.title_page['hidden'][index].text;
             if (parsedDocument.title_page['hidden'][index].type == "font_bold_italic")
                 font_bold_italic = parsedDocument.title_page['hidden'][index].text;
+            if (parsedDocument.title_page['hidden'][index].type == "metadata") {
+                var metadataString = parsedDocument.title_page['hidden'][index].text;
+                if (metadataString) {
+                    try {
+                        metadata = JSON.parse(metadataString);
+                    } catch (e) {
+                        metadata = undefined;
+                    }
+                }
+            }
         }
     }
     var current_index = 0, previous_type: string = null;
@@ -120,6 +131,7 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
         font_italic: font_italic,
         font_bold: font_bold,
         font_bold_italic: font_bold_italic,
+        metadata: metadata,
         stash_style_left_clumn: {
             bold_italic: false,
             bold: false,

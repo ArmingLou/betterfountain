@@ -34,7 +34,7 @@ Array.prototype.pushSorted = function (el, compareFn) {
 
 //Unicode uppercase letters:
 export const regex: { [index: string]: RegExp } = {
-    title_page: /^[ \t]*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact( info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:.*/i,
+    title_page: /^[ \t]*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact( info)?|revision|copyright|font|font italic|font bold|font bold italic|metadata|tl|tc|tr|cc|br|bl|header|footer)\:.*/i,
 
     section: /^[ \t]*(#+)(?:\s*)(.*)/,
     synopsis: /^[ \t]*(?:\=)(.*)/,
@@ -91,6 +91,7 @@ export const titlePageDisplay: { [index: string]: titleKeywordFormat } = {
     font_bold_italic: { position: 'hidden', index: -1 },
     header: { position: 'hidden', index: -1 },
     footer: { position: 'hidden', index: -1 },
+    metadata: { position: 'hidden', index: -1 },
 
     notes: { position: 'bl', index: 0 },
     copyright: { position: 'bl', index: 1 },
@@ -805,13 +806,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 var index = text_valid.indexOf(":");
                 thistoken.type = text_valid.substr(0, index).toLowerCase().replace(" ", "_");
 
-                var fontMt = text_valid.match(/^\s*(font|font italic|font bold|font bold italic)\:(.*)/i)
+                var fontMt = text_valid.match(/^\s*(font|font italic|font bold|font bold italic|metadata)\:(.*)/i)
                 if (fontMt) {
                     font_title = true;
                     thistoken.text = fontMt[2].trim();
                 } else {
                     font_title = false;
-                    var mt = text_display.match(/^(.*?↻)??\s*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact(?: info)?|revision|copyright|font|font italic|font bold|font bold italic|tl|tc|tr|cc|br|bl|header|footer)\:(.*)/i)
+                    var mt = text_display.match(/^(.*?↻)??\s*(title|credit|author[s]?|source|notes|draft date|date|watermark|contact(?: info)?|revision|copyright|tl|tc|tr|cc|br|bl|header|footer)\:(.*)/i)
                     thistoken.text = mt[3].trim();
                     processTokenTextStyleChar(thistoken);
                     thistoken.text = charOfStyleTag.style_global_clean + thistoken.text; //重置样式，每个字段开始
