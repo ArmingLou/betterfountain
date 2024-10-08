@@ -2382,8 +2382,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         doc.switchToPage(pIdx);
         var yPosBottom = print.page_height - print.page_number_top_margin - lineHeight * 0.5;
         var yPos = yPosBottom;
-        var drawLeftEver = false;
+        // var drawLeftEver = false;
         var drawRightLatestPosy = 0;
+        var drawLatestPosy = 0;
 
         for (var i = notes.length - 1; i >= 0; i--) {
             // token 行
@@ -2426,7 +2427,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         x = feed_note_right;
                         rightLines--;
                     } else {
-                        drawLeftEver = true;
+                        // drawLeftEver = true;
+                        drawLatestPosy = yPos;
                     }
                     doc.format_text(text, x, yPos, {
                         color: '#868686',
@@ -2455,8 +2457,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
         }
         if (notes.length > 0) {
-            if (drawLeftEver) {
-                doc.format_text(cfg.text_note || 'NOTE:', 0, yPos, {
+            if (drawLatestPosy) {
+                doc.format_text(cfg.text_note || 'NOTE:', 0, drawLatestPosy, {
                     color: '#000000',
                     line_break: false,
                     width: feed_note_no - 0.5 * lineHeight,
@@ -2464,6 +2466,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     fontSize: print.font_size,
                     lineHeight: print.font_height
                 });
+                // 统计高度，加上注解高度
+                pagesHeight[pIdx] += yPosBottom - drawLatestPosy;
             }
             if (drawRightLatestPosy) {
                 doc.format_text(cfg.text_note || 'NOTE:', feed_note_no_right, drawRightLatestPosy - lineHeight, {
