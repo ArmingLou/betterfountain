@@ -442,7 +442,7 @@ const getCharacterCountWithoutWhitespace = (script: string): number => {
     return ((script || '').match(/\S+?/g) || []).length
 }
 const getLineCount = (script: string): number => {
-    return ((script || '').match(/\n/g) || []).length
+    return ((script || '').match(/\n/g) || []).length + 1
 }
 const getLineCountWithoutWhitespace = (script: string): number => {
     return ((script || '').match(/^.*\S.*$/gm) || []).length
