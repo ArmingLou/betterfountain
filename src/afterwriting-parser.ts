@@ -549,7 +549,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         //     token.text = textWithoutNotes;
         //     if (token.text.trim().length == 0) token.ignore = true;
         // }
-        result.lengthDialogue += token.time;
+        if (result.properties.scenes.length > 0) {
+            // 第一个场景之前的时间不累计
+            result.lengthDialogue += token.time;
+        }
         if (lastScenStructureToken) {
             lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
         }
@@ -579,7 +582,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         //     token.text = token.text.replace(regex.note_inline, "");
         //     if (token.text.trim().length == 0) token.ignore = true;
         // }
-        result.lengthAction += token.time;
+        if (result.properties.scenes.length > 0) {
+            // 第一个场景之前的时间不累计
+            result.lengthAction += token.time;
+        }
         if (lastScenStructureToken) {
             lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
         }
@@ -857,7 +863,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         //     // 去除前面的空行
                         //     last_title_page_token.text += + thistoken.text.trim();
                         // } else {
-                            last_title_page_token.text += (!isBlankLineAfterStlyle(last_title_page_token.text) ? "\n" : "") + thistoken.text.trim();
+                        last_title_page_token.text += (!isBlankLineAfterStlyle(last_title_page_token.text) ? "\n" : "") + thistoken.text.trim();
                         // }
                     }
                 }
