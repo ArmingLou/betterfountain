@@ -36,7 +36,7 @@ export class FountainSymbolProvider implements vscode.DocumentSymbolProvider {
 				// var sceneLength = parsedDocuments.get(document.uri.toString()).properties.scenes[scenecounter].actionLength + parsedDocuments.get(document.uri.toString()).properties.scenes[scenecounter].dialogueLength;
 				// details = secondsToMinutesString(sceneLength);
 				details = secondsToMinutesString(token.durationSec);
-				returnvalue.length = token.durationSec;
+				returnvalue.length = token.durationSec? token.durationSec : 0;
 				// scenecounter++;
 			}
 			var symbolname = " ";

@@ -59,21 +59,21 @@ function buildTree(): OutlineTreeItem {
 	if (doc) {
 		const structure = doc.properties.structure;
 		// e note 统一放最外层
-		if(!root.children){
+		if (!root.children) {
 			root.children = []
 		}
 		root.children.push(...structure.map(token => makeTreeItem(token, root, notes)).filter(x => x));
-		if(root.children && root.children.length > 0) {
+		if (root.children && root.children.length > 0) {
 			root.children = root.children.sort((a, b) => a.lineNumber - b.lineNumber);
 		}
-		if(notes.children && notes.children.length > 0) {
+		if (notes.children && notes.children.length > 0) {
 			notes.children = notes.children.sort((a, b) => a.lineNumber - b.lineNumber);
 		}
-		if(!root.children){
+		if (!root.children) {
 			root.children = []
 		}
 		root.children.push(notes);
-		
+
 	}
 	return root;
 }
@@ -87,7 +87,7 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem, n
 		if (config.uiPersistence.outline_visibleNotes) {
 			// item = new NoteTreeItem({ note: token.text, line: token.id.substring(1) }, parent);
 			item = new NoteTreeItem({ note: token.text, line: token.id.substring(1) }, notesRoot);
-			if(!notesRoot.children){
+			if (!notesRoot.children) {
 				notesRoot.children = []
 			}
 			notesRoot.children.push(item);
@@ -112,13 +112,13 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem, n
 
 	if (token.children) {
 		if (passthrough) {
-			if(!parent.children){
+			if (!parent.children) {
 				parent.children = []
 			}
 			parent.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, parent, notesRoot)));
 		}
 		else {
-			if(!item.children){
+			if (!item.children) {
 				item.children = []
 			}
 			item.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, item, notesRoot)));
@@ -146,20 +146,20 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem, n
 			// 	}
 			// 	parent.children.push(...token.notes.map(note => new NoteTreeItem(note, parent)));
 			// }
-			if(!notesRoot.children){
+			if (!notesRoot.children) {
 				notesRoot.children = []
 			}
 			notesRoot.children.push(...token.notes.map(note => new NoteTreeItem(note, notesRoot)));
 		}
 		if (token.synopses && config.uiPersistence.outline_visibleSynopses) {
 			if (token.section && config.uiPersistence.outline_visibleSections) {
-				if(!item.children){
+				if (!item.children) {
 					item.children = [];
 				}
 				item.children.push(...token.synopses.map(syn => new SynopsisTreeItem(syn, item)));
 			}
 			else {
-				if(!parent.children){
+				if (!parent.children) {
 					parent.children = []
 				}
 				parent.children.push(...token.synopses.map(syn => new SynopsisTreeItem(syn, parent)));
@@ -168,23 +168,23 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem, n
 
 	}
 
-	if (item.children &&item.children.length > 0){
+	if (item.children && item.children.length > 0) {
 		item.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
 	}
 
 
 	if (passthrough) {
-		if(parent.children && parent.children.length > 0){
+		if (parent.children && parent.children.length > 0) {
 			parent.children = parent.children.sort((a, b) => a.lineNumber - b.lineNumber);
-		} else if(parent.children){
+		} else if (parent.children) {
 			parent.children = undefined;
 		}
 		return undefined;
 	}
 	else {
-		if(item.children &&item.children.length > 0){
+		if (item.children && item.children.length > 0) {
 			item.children = item.children.sort((a, b) => a.lineNumber - b.lineNumber);
-		} else if(item.children){
+		} else if (item.children) {
 			item.children = undefined;
 		}
 		return item;
@@ -234,26 +234,44 @@ class SectionTreeItem extends OutlineTreeItem {
 		if (token.synopses && token.synopses.length > 0) {
 			this.tooltip = token.synopses.map(s => s.synopsis).join('\n');
 		}
+		token.durationSec = this.getDuration(token);
+		this.description = '[' + secondsToMinutesString(token.durationSec) + ']';
+	}
+
+	getDuration(token: afterparser.StructToken): number {
+		var duration = 0;
+		if (token.section) {
+			if (token.children && token.children.length > 0) {
+				token.children.forEach((child: afterparser.StructToken) => {
+					if (child.section) {
+						duration += this.getDuration(child);
+					} else {
+						duration += child.durationSec ? child.durationSec : 0;
+					}
+				})
+			}
+		}
+		return duration;
 	}
 }
 
 class SceneTreeItem extends OutlineTreeItem {
 	constructor(token: afterparser.StructToken, parent: OutlineTreeItem) {
-		super(token.text , token.id, parent)
+		super(token.text, token.id, parent)
 
 		this.iconPath = __filename + '/../../../assets/device-camera-video.svg';
 		if (token.synopses && token.synopses.length > 0) {
 			this.tooltip = token.synopses.map(s => s.synopsis).join('\n');
 		}
-		this.description =  '[' + secondsToMinutesString(token.durationSec) + ']';
+		this.description = '[' + secondsToMinutesString(token.durationSec) + ']';
 	}
 }
 class DialogueTreeItem extends OutlineTreeItem {
 	constructor(token: afterparser.StructToken, parent: OutlineTreeItem) {
-		super(token.text , token.id, parent)
+		super(token.text, token.id, parent)
 
 		this.iconPath = __filename + '/../../../assets/comment.svg';
-		this.description =  '[' + secondsToMinutesString(token.durationSec) + ']';
+		this.description = '[' + secondsToMinutesString(token.durationSec) + ']';
 	}
 }
 
