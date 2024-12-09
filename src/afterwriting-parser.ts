@@ -1337,6 +1337,12 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         case 'title': titlehtml.push(`<h1 class="haseditorline titlepagetoken" id="sourceline_${current_token.line}">${current_token.html}</h1>`); break;
                         case 'header': header = current_token; break;
                         case 'footer': footer = current_token; break;
+                        case 'font': break;
+                        case 'font_italic': break;
+                        case 'font_bold_italic': break;
+                        case 'font_bold': break;
+                        case 'watermark': break;
+                        case 'metadata': break;
                         default: titlehtml.push(`<p class="${current_token.type} haseditorline titlepagetoken" id="sourceline_${current_token.line}">${current_token.html}</p>`); break;
                     }
                     current_index++;
