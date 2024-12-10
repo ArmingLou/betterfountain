@@ -1166,12 +1166,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         if (currentDepth == targetDepth) {
             return obj;
         }
-        if (obj.children.length > 0) {
-            //get the last child
-        }
-        else {
+        if (obj.children.length <= 0 || (obj.children[obj.children.length - 1].children.length <=0 && !lastPdfOutlineWasSection)) {
             obj.addItem("-");//补一层空缺的级别
-        }
+            lastPdfOutlineWasSection = true;
+        } 
         currentDepth++;
         return getOutlineChild(obj.children[obj.children.length - 1], targetDepth, currentDepth);
     }
@@ -1737,6 +1735,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         return brk;
 
     }
+    
+    var lastPdfOutlineWasSection = true;
 
     for (var ii = 0; ii < lines.length; ii++) {
         // lines.forEach(function (line: any) {
@@ -2099,6 +2099,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         var oc = getOutlineChild(outline, sectiontoken.level - 1, 0);
                         if (oc != undefined){
                             oc.addItem(clearFormatting(sectiontext));
+                            lastPdfOutlineWasSection = true;
                         }
                     }
                     if (!hasInvisibleSection) {
@@ -2122,6 +2123,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 if (line.type === "scene_heading") {
                     if (cfg.create_bookmarks) {
                         getOutlineChild(outline, outlineDepth, 0).addItem(text);
+                        lastPdfOutlineWasSection = false;
                     }
                     currentScene = text;
                     if (cfg.embolden_scene_headers) {
