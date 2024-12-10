@@ -1168,12 +1168,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
         if (obj.children.length > 0) {
             //get the last child
-            currentDepth++;
-            return getOutlineChild(obj.children[obj.children.length - 1], targetDepth, currentDepth);
         }
         else {
-            return obj;
+            obj.addItem("-");//补一层空缺的级别
         }
+        currentDepth++;
+        return getOutlineChild(obj.children[obj.children.length - 1], targetDepth, currentDepth);
     }
 
     function print_page_number() {
@@ -2097,8 +2097,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     if (cfg.create_bookmarks) {
                         if (hasInvisibleSection && !cfg.invisible_section_bookmarks) return;
                         var oc = getOutlineChild(outline, sectiontoken.level - 1, 0);
-                        if (oc != undefined)
-                            oc.addItem(sectiontext);
+                        if (oc != undefined){
+                            oc.addItem(clearFormatting(sectiontext));
+                        }
                     }
                     if (!hasInvisibleSection) {
                         text = sectiontext;
