@@ -2460,6 +2460,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
         }
         if (notes.length > 0) {
+            var innerwidth_half = (print.page_width - print.left_margin - print.right_margin) / 3
             if (drawLatestPosy) {
                 doc.format_text(cfg.text_note || 'NOTE:', 0, drawLatestPosy, {
                     color: '#000000',
@@ -2469,6 +2470,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     fontSize: print.font_size,
                     lineHeight: print.font_height
                 });
+                doc.moveTo(print.action.feed * 72, (drawLatestPosy - print.font_height) * 72)
+                    .lineTo((print.action.feed + innerwidth_half) * 72, (drawLatestPosy - print.font_height) * 72)
+                    .stroke();
                 // 统计高度，加上注解高度
                 pagesHeight[pIdx] += yPosBottom - drawLatestPosy;
             }
@@ -2481,6 +2485,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     fontSize: print.font_size,
                     lineHeight: print.font_height
                 });
+                doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - lineHeight  - print.font_height) * 72)
+                    .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - lineHeight - print.font_height) * 72)
+                    .stroke();
             }
         }
     }
