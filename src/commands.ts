@@ -5,9 +5,90 @@ import { getFountainConfig, ExportConfig, changeFountainUIPersistence, uiPersist
 import * as vscode from 'vscode';
 import * as afterparser from "./afterwriting-parser";
 import { GeneratePdf } from "./pdf/pdf";
+import { GenerateDocx } from "./docx/docx";
 import { getActiveFountainDocument, getEditor, openFile, shiftScenes } from "./utils";
 import * as telemetry from "./telemetry";
 import { pdfPanels } from "./providers/PdfPreview";
+import { docxPanels } from "./providers/DocxPreview";
+
+export async function exportDocx(uri: vscode.Uri | undefined | null, showSaveDialog: boolean = true, openFileOnSave: boolean = false, highlightCharacters = false) {
+  var canceled = false;
+  if (canceled) return;
+  let doc;
+  if (uri) {
+    if (uri.scheme == 'file' && (uri.path.endsWith('.fountain') || uri.path.endsWith('.spmd'))) {
+      doc = uri
+    } else if (uri.scheme == 'webview-panel') {
+      // 从 pdf 预览 webviewPannel 导出
+      for (let i = 0; i < docxPanels.length; i++) {
+        if (docxPanels[i].panel.active) {
+          doc = vscode.Uri.parse(docxPanels[i].uri);
+          break
+        }
+      }
+    }
+  }
+  if (!doc) {
+    doc = getActiveFountainDocument()
+  }
+
+  if (!doc) {
+    vscode.window.showErrorMessage("Not a fountain document !");
+    return
+  }
+
+  // var editor = getEditor(doc);
+  // get text form vscode.uri
+  var by = await vscode.workspace.fs.readFile(doc);
+  // 转成string
+  var text = Buffer.from(by).toString('utf-8');
+
+  // 从uri获取文件名
+  var lassIdx = doc.path.lastIndexOf('/');
+  var filename = doc.path.substring(lassIdx + 1);
+  filename = filename.replace(/(\.(((better)?fountain)|spmd|txt))$/, '');
+  filename = doc.path.substring(0, lassIdx + 1) + filename;
+
+  var config = getFountainConfig(doc);
+  telemetry.reportTelemetry("command:fountain.exportdocx");
+
+  var parsed = await afterparser.parse(text, config, false);
+
+  var exportconfig: ExportConfig = { highlighted_characters: [] };
+  // var filename = editor.document.fileName.replace(/(\.(((better)?fountain)|spmd|txt))$/, ''); //screenplay.fountain -> screenplay
+  if (highlightCharacters) {
+    var highlighted_characters = await vscode.window.showQuickPick(Array.from(parsed.properties.characters.keys()), { canPickMany: true });
+    exportconfig.highlighted_characters = highlighted_characters;
+
+    if (highlighted_characters.length > 0) {
+      var filenameCharacters = [...highlighted_characters]; //clone array
+      if (filenameCharacters.length > 3) {
+        filenameCharacters.length = 3;
+        filenameCharacters.push('+' + (highlighted_characters.length - 3)); //add "+n" if there's over 3 highlighted characters
+      }
+      filename += '(' + filenameCharacters.map(v => v.replace(' ', '')).join(',') + ')'; //remove spaces from names and join
+    }
+  }
+  filename += '.docx'; //screenplay -> screenplay.pdf
+
+  var saveuri = vscode.Uri.file(filename);
+  // var saveuri = editor.document.fileName.replace(/(\.(((better)?fountain)|spmd|txt))$/, '');
+  var filepath: vscode.Uri = undefined;
+  if (showSaveDialog) {
+    filepath = await vscode.window.showSaveDialog(
+      {
+        filters: { "Docx File": ["docx"] },
+        defaultUri: saveuri
+      });
+  } else {
+    filepath = saveuri;
+  }
+  if (filepath == undefined) return;
+  vscode.window.withProgress({ title: "Exporting Docx...", location: vscode.ProgressLocation.Notification }, async (progress) => {
+    GenerateDocx(filepath.fsPath, config, exportconfig, parsed, progress);
+  });
+  if (openFileOnSave) { openFile(filepath.fsPath); }
+}
 
 export async function exportPdf(uri: vscode.Uri | undefined | null, showSaveDialog: boolean = true, openFileOnSave: boolean = false, highlightCharacters = false) {
   var canceled = false;
