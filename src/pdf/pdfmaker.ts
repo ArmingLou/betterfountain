@@ -1166,10 +1166,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         if (currentDepth == targetDepth) {
             return obj;
         }
-        if (obj.children.length <= 0 || (obj.children[obj.children.length - 1].children.length <=0 && !lastPdfOutlineWasSection)) {
+        if (obj.children.length <= 0 || (obj.children[obj.children.length - 1].children.length <= 0 && !lastPdfOutlineWasSection)) {
             obj.addItem("-");//补一层空缺的级别
             lastPdfOutlineWasSection = true;
-        } 
+        }
         currentDepth++;
         return getOutlineChild(obj.children[obj.children.length - 1], targetDepth, currentDepth);
     }
@@ -1735,7 +1735,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         return brk;
 
     }
-    
+
     var lastPdfOutlineWasSection = true;
 
     for (var ii = 0; ii < lines.length; ii++) {
@@ -1947,7 +1947,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // 页面中间出现的空行，非页面开头的空行
             if (line.text) {
                 // 绘制样式. 可能是连续块最后一行后的空行样式字符，清理样式。
-                text2Result = doc.text2(line.text, 0, print.top_margin + height, print.top_margin, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, 0, 0, true, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
+                text2Result = doc.text2(line.text, 0, print.top_margin + height, print.top_margin, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, 0, 0, true,null, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
             }
 
             // y++;
@@ -2097,7 +2097,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     if (cfg.create_bookmarks) {
                         if (hasInvisibleSection && !cfg.invisible_section_bookmarks) return;
                         var oc = getOutlineChild(outline, sectiontoken.level - 1, 0);
-                        if (oc != undefined){
+                        if (oc != undefined) {
                             oc.addItem(clearFormatting(sectiontext));
                             lastPdfOutlineWasSection = true;
                         }
@@ -2122,7 +2122,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                 if (line.type === "scene_heading") {
                     if (cfg.create_bookmarks) {
-                        getOutlineChild(outline, outlineDepth, 0).addItem(text);
+                        getOutlineChild(outline, outlineDepth, 0).addItem(clearFormatting(text));
                         lastPdfOutlineWasSection = false;
                     }
                     currentScene = text;
@@ -2326,7 +2326,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     }
     var lh = height;
-    if(last_dual_right_end_pageIdx === pageIdx && last_dual_right_end_height > height){
+    if (last_dual_right_end_pageIdx === pageIdx && last_dual_right_end_height > height) {
         lh = last_dual_right_end_height
     }
     pagesHeight[pageIdx] = lh;//最后一页的高度
@@ -2510,8 +2510,8 @@ export type lineStruct = {
 }
 
 export type pdfstats = {
-    pagecount: number,
-    pagecountReal: number,
+    pagecount: number, //去除换页等空行后的，统计的页数
+    pagecountReal: number, //打印的页数
     linemap: Map<number, lineStruct> //the structure of each line
 }
 export type PdfAsBase64 = {
@@ -2524,7 +2524,7 @@ export var get_pdf_stats = async function (opts: Options): Promise<pdfstats> {
     let stats: pdfstats = { pagecount: 1, pagecountReal: 1, linemap: new Map<number, lineStruct>() };
     // stats.pagecount = opts.parsed.lines.length / opts.print.lines_per_page;
     doc.on('pageAdded', () => {
-        stats.pagecountReal++;
+        stats.pagecountReal++; //打印的页数
     });
 
     var ph = await generate(doc, opts, stats.linemap);
@@ -2533,7 +2533,7 @@ export var get_pdf_stats = async function (opts: Options): Promise<pdfstats> {
         var h = ph[pIdx];
         lines += Math.round(h / opts.print.font_height);
     }
-    stats.pagecount = lines / opts.print.lines_per_page;
+    stats.pagecount = lines / opts.print.lines_per_page; //去除换页等空行后的，统计的页数
     return stats;
 }
 

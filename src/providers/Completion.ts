@@ -170,8 +170,13 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
         "fillingForms":false,
         "contentAccessibility":false,
         "documentAssembly":false
-    }
+    },
+	"chinaFormat": 0,
+	"embedFonts": false
 }
+
+[chinaFormat] - print in china format. diagonal is aligned to the left. 0: no china format; 1: china format use △; 2: china format no △ . (available in docx only)
+[embedFonts] - If embed fonts. (available in docx only)
 
 [userPassword] - the user password (string value)
 
@@ -281,7 +286,9 @@ When both passwords are provided, users with user password are able to decrypt t
         "fillingForms":false,
         "contentAccessibility":false,
         "documentAssembly":false
-    }
+    },
+	"chinaFormat": 0,
+	"embedFonts": false
 }`, sortText: "0A", kind: vscode.CompletionItemKind.Text });
 				}
 			}

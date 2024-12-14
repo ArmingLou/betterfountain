@@ -98,17 +98,17 @@ export var GenerateDocx = async function (outputpath: string, config: FountainCo
     if (watermark != undefined) {
         config.print_watermark = watermark;
     } else {
-        config.print_watermark = vscode.workspace.getConfiguration("fountain.docx").get("watermark");
+        config.print_watermark = vscode.workspace.getConfiguration("fountain.pdf").get("watermark");
     }
     if (header != undefined) {
         config.print_header = header;
     } else {
-        config.print_header = vscode.workspace.getConfiguration("fountain.docx").get("pageHeader");
+        config.print_header = vscode.workspace.getConfiguration("fountain.pdf").get("pageHeader");
     }
     if (footer != undefined) {
         config.print_footer = footer;
     } else {
-        config.print_footer = vscode.workspace.getConfiguration("fountain.docx").get("pageFooter");
+        config.print_footer = vscode.workspace.getConfiguration("fountain.pdf").get("pageFooter");
     }
 
 

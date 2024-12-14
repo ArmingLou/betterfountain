@@ -7,7 +7,7 @@ import { assetsPath, getAssetsUri, mapToObject, resolveAsUri } from "../utils";
 import * as afterparser from "../afterwriting-parser";
 import { GenerateDocx } from "../docx/docx";
 import { DocxAsBase64 } from "../docx/docxmaker";
-import { createStatisticsPanel } from "./Statistics";
+// import { createStatisticsPanel } from "./Statistics";
 
 interface docxpreviewPanel {
   uri: string;
@@ -143,7 +143,7 @@ async function loadWebView(docuri: vscode.Uri, docxpanel: vscode.WebviewPanel) {
       refreshDocxPanel(docxpanel, editor.document, getFountainConfig(docuri));
     }
     if (message.command = "openstats") {
-      createStatisticsPanel();
+      // createStatisticsPanel();
     }
   });
   docxpanel.onDidDispose(() => {
