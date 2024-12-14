@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "6.0.7",
+	"version": "6.2.0",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -40,6 +40,8 @@
 		"onLanguage:fountain",
 		"onCommand:fountain.livepreview",
 		"onCommand:fountain.pdfpreview",
+		"onCommand:fountain.docxpreview",
+		"onCommand:fountain.exportdocx",
 		"onCommand:fountain.exportpdf",
 		"onCommand:fountain:exporthtml",
 		"onCommand:fountain.exportpdfdebug",
@@ -116,6 +118,11 @@
 					"when": "editorLangId == fountain"
 				},
 				{
+					"command": "fountain.docxpreview",
+					"group": "navigation",
+					"when": "editorLangId == fountain"
+				},
+				{
 					"command": "fountain.statistics",
 					"group": "navigation",
 					"when": "editorLangId == fountain"
@@ -124,6 +131,11 @@
 					"command": "fountain.exportpdf",
 					"group": "navigation",
 					"when": "editorLangId == fountain || activeWebviewPanelId == 'fountain-pdfpreview'"
+				},
+				{
+					"command": "fountain.exportdocx",
+					"group": "navigation",
+					"when": "editorLangId == fountain || activeWebviewPanelId == 'fountain-docxpreview'"
 				}
 			],
 			"commandPalette": [
@@ -308,7 +320,6 @@
 						"default": "NOTE:",
 						"markdownDescription": "Text to print if `#fountain.pdf.printNotes#` and `#fountain.pdf.notePositionBottom#` are enabled are enabled - `NOTE:` in English.(底部集中显示标注内容时，标注标题显示什么)"
 					},
-					
 					"fountain.pdf.pageHeader": {
 						"type": "string",
 						"default": "",
@@ -408,6 +419,11 @@
 				"icon": "$(file-pdf)"
 			},
 			{
+				"command": "fountain.docxpreview",
+				"title": "Show screenplay Docx Preview (not real-time)",
+				"icon": "$(file-code)"
+			},
+			{
 				"command": "fountain.livepreviewstatic",
 				"title": "Show screenplay live preview (For the current document only)",
 				"category": "Fountain"
@@ -417,6 +433,12 @@
 				"title": "Export screenplay PDF",
 				"category": "Fountain",
 				"icon": "$(link-external)"
+			},
+			{
+				"command": "fountain.exportdocx",
+				"title": "Export screenplay Docx",
+				"category": "Fountain",
+				"icon": "$(file-symlink-file)"
 			},
 			{
 				"command": "fountain.exporthtml",
@@ -533,7 +555,7 @@
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compilewebviews": "copyfiles -u 2 webviews/src/*.html webviews/src/*.css webviews/out && webpack --config ./webviews/stats.webpack.config.js",
-		"compile": "tsc -p ./ && npm run compilewebviews && copyfiles -u 2 webviews/out/* out/webviews && copyfiles -u 1 src/courierprime/*.ttf out && copyfiles -u 1 src/noisetexture.png out && copyfiles -u 2 \"webviews/src/pdfjs/**\" out/webviews",
+		"compile": "tsc -p ./ && npm run compilewebviews && copyfiles -u 2 webviews/out/* out/webviews && copyfiles -u 1 src/courierprime/*.ttf out && copyfiles -u 1 src/noisetexture.png out && copyfiles -u 2 \"webviews/src/pdfjs/**\" out/webviews  && copyfiles -u 2 \"node_modules/docx-preview/dist/**\" out/webviews/docx-preview",
 		"watch": "npm run compile",
 		"test": "node node_modules/jest/bin/jest.js",
 		"open-in-browser": "vscode-test-web --extensionDevelopmentPath=. ."
@@ -570,6 +592,8 @@
 		"base64-stream": "^1.0.0",
 		"blob": "0.1.0",
 		"diff": "^5.0.0",
+		"docx": "^9.1.0",
+		"docx-preview": "^0.3.3",
 		"font-finder": "^1.1.0",
 		"he": "^1.2.0",
 		"pdfkit": "^0.15.0",

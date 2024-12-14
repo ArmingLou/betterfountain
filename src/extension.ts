@@ -18,6 +18,7 @@ import { performance } from "perf_hooks";
 import { exportHtml } from "./providers/StaticHtml";
 import { FountainCheatSheetWebviewViewProvider } from "./providers/Cheatsheet";
 import { createPdfPreviewPanel, FountainPdfPanelserializer, getPdfPreviewPanels, refreshPdfPanel, updateDocumentVersionPdfPreview } from "./providers/PdfPreview";
+import { createDocxPreviewPanel, FountainDocxPanelserializer, getDocxPreviewPanels, refreshDocxPanel, updateDocumentVersionDocxPreview } from "./providers/DocxPreview";
 import * as commands from "./commands";
 import { FountainLocationTreeDataProvider } from "./providers/Locations";
 
@@ -76,9 +77,11 @@ export function activate(context: ExtensionContext) {
     telemetry.reportTelemetry("command:fountain.livepreviewstatic");
   }));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.pdfpreview', createPdfPreviewPanel));
+  context.subscriptions.push(vscode.commands.registerCommand('fountain.docxpreview', createDocxPreviewPanel)); // TODO Arming (2024-12-10) : 
   context.subscriptions.push(vscode.commands.registerCommand('fountain.statistics', createStatisticsPanel));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.jumpto', commands.jumpTo));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdf', commands.exportPdf));
+  context.subscriptions.push(vscode.commands.registerCommand('fountain.exportdocx', commands.exportDocx)); // TODO Arming (2024-12-10) : 
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfdebug', async () => commands.exportPdf(null,false, true)));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfcustom', async () => commands.exportPdf(null,true, false, true)));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exporthtml', exportHtml));
@@ -125,6 +128,7 @@ export function activate(context: ExtensionContext) {
 
   vscode.window.registerWebviewPanelSerializer('fountain-preview', new FountainPreviewSerializer());
   vscode.window.registerWebviewPanelSerializer('fountain-pdfpreview', new FountainPdfPanelserializer());
+  vscode.window.registerWebviewPanelSerializer('fountain-docxpreview', new FountainDocxPanelserializer());
   vscode.window.registerWebviewPanelSerializer('fountain-statistics', new FountainStatsPanelSerializer());
 
   function registerCheatsheetWebView() {
@@ -201,6 +205,7 @@ vscode.workspace.onDidChangeTextDocument(change => {
   if (change.document.languageId == "fountain") {
     parseDocument(change.document);
     updateDocumentVersionPdfPreview(change.document.uri, change.document.version);
+    updateDocumentVersionDocxPreview(change.document.uri, change.document.version);
     updateDocumentVersionStats(change.document.uri, change.document.version);
   }
 });
@@ -352,6 +357,11 @@ vscode.workspace.onDidSaveTextDocument(e => {
     let pdfPanels = getPdfPreviewPanels(e.uri);
     for (const pp of pdfPanels) {
       refreshPdfPanel(pp.panel, e, config);
+    }
+    
+    let docxPanels = getDocxPreviewPanels(e.uri);
+    for (const pp of docxPanels) {
+      refreshDocxPanel(pp.panel, e, config);
     }
   }
 });

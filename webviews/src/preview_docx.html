@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>DOCX.js viewer</title>
+  
+   <!--dependencies-->
+   <script crossorigin src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
+   <!--library-->
+   <!-- <script src="dist/docx-preview.js"></script> -->
+   $HEADLINKS$
+  
+</head>
+<style>
+  body {
+    padding: 0;
+  }
+</style>
+
+
+
+<body >
+  
+  <div class="statusbar" class="loading" style="border: 1px solid #ccc;cursor: pointer;">
+    <div id="versionIndicator">
+      <span class="codicon codicon-sync"></span>
+      <span class="btntitle">Loading</span>
+      <span class="details">Please wait...</span>
+    </div>
+    <div id="pageCounter"></div>
+  </div>
+  <div id="printContainer"></div>
+
+  
+  <script>
+    loading = false;
+    function versionIndicator() {
+      console.log("Active version is " + state.activeversion);
+      console.log("Latest version is " + state.latestversion);
+      console.log("loading: " + loading);
+      //version indicator stuff
+      // document.querySelector(".statusbar").classList.remove("loading");
+      // document.querySelector(".statusbar").classList.remove("stale");
+      if (loading) {
+        // document.querySelector(".statusbar").classList.add("loading");
+        document.querySelector("#versionIndicator .btntitle").textContent = "Loading";
+        document.querySelector("#versionIndicator .details").textContent = "Please wait...";
+        document.querySelector("#pageCounter").textContent = "";
+      }
+      else if (state.latestversion == state.activeversion) {
+        document.querySelector("#versionIndicator .btntitle").textContent = "Refresh";
+        document.querySelector("#versionIndicator .details").textContent = "Up to date";
+        document.querySelector("#pageCounter").textContent = state.pagecount;
+      }
+      else {
+        // document.querySelector(".statusbar").classList.add("stale");
+        document.querySelector("#versionIndicator .btntitle").textContent = "Refresh";
+        document.querySelector("#versionIndicator .details").textContent = "The screenplay has been edited";
+        document.querySelector("#pageCounter").textContent = "";
+      }
+    }
+    document.getElementById("versionIndicator").addEventListener('click', () => {
+      console.log("versionIndicator click -> refresh");
+      loading = true;
+      versionIndicator();
+      vscode.postMessage({ command: 'refresh', uri: state.docuri });
+    });
+
+    document.getElementById("pageCounter").addEventListener('click', () => {
+      console.log("pageCounter click -> openstats");
+      // vscode.postMessage({ command: 'openstats', uri: state.docuri });
+    });
+
+    function cursorTools(name) {
+      if (name === 'hand') {
+        return 1
+      }
+      return 0
+    }
+    function scrollMode(name) {
+      switch (name) {
+        case 'vertical':
+          return 0
+        case 'horizontal':
+          return 1
+        case 'wrapped':
+          return 2
+        default:
+          return -1
+      }
+    }
+    function spreadMode(name) {
+      switch (name) {
+        case 'none':
+          return 0
+        case 'odd':
+          return 1
+        case 'even':
+          return 2
+        default:
+          return -1
+      }
+    }
+    
+    async function loadDocx() {
+      var docxData = state.docxAsBase64;
+      //base64ToUint8Array(state.docxAsBase64);
+
+      docx.renderAsync(base64ToUint8Array(docxData), document.getElementById("printContainer"))
+          .then(x => console.log("docx: finished"));
+
+    }
+
+
+    const vscode = acquireVsCodeApi();
+    var state = {
+      docxAsBase64: "",
+      linemap: new Map(),
+      pagecount: 0,
+      latestversion: undefined,
+      activeversion: undefined,
+      docuri: "",
+      selectedCategory: "overview"
+    }
+
+    const previousState = vscode.getState();
+    if (previousState != undefined) {
+      state = previousState;
+      state.linemap = objectToMap(state.linemap_obj);
+      updateDocx();
+      versionIndicator();
+    }
+    function objectToMap(jsonObject) {
+      let map = new Map()
+      for (var value in jsonObject) {
+        map.set(value, jsonObject[value]);
+      }
+      return map;
+    }
+
+    function base64ToUint8Array(base64) {
+      var raw = atob(base64);
+      var uint8Array = new Uint8Array(raw.length);
+      for (var i = 0; i < raw.length; i++) {
+        uint8Array[i] = raw.charCodeAt(i);
+      }
+      return uint8Array;
+    }
+    function updateDocx() {
+      console.log("Update DOCX was called");
+      loadDocx();
+    }
+    function getEights(input) {
+      let output = "";
+      switch (input) {
+        case 0: return "";
+        case 1: output += "\u00B9"; break;
+        case 2: output += "\u00B2"; break;
+        case 3: output += "\u00B3"; break;
+        case 4: output += "\u2074"; break;
+        case 5: output += "\u2075"; break;
+        case 6: output += "\u2076"; break;
+        case 7: output += "\u2077"; break;
+        case 8: output += "\u2078"; break;
+      }
+      return output + "\u2044\u2088";
+    }
+
+    window.addEventListener('message', event => {
+      console.log("Got message");
+      let updateState = false;
+      if (event.data.command == 'updateversion') {
+        state.latestversion = event.data.version;
+        state.docuri = event.data.uri;
+        console.log("URI is " + event.data.uri + " (updateversion)");
+        loading = event.data.loading;
+        versionIndicator();
+        updateState = true;
+      }
+      if (event.data.command == 'updatedocx') {
+        state.docxAsBase64 = event.data.content;
+        state.linemap_obj = JSON.parse(event.data.linemap);
+        state.linemap = objectToMap(state.linemap_obj);
+
+        let wholePage = Math.floor(event.data.pagecount);
+        let fractionalPage = getEights(Math.round((event.data.pagecount - wholePage) * 8));
+        if (fractionalPage == "\u2078\u2044\u2088") //page eigth is 8/8
+        {
+          fractionalPage = "";
+          wholePage++;
+        }
+        if (wholePage == "0" && fractionalPage != "") {
+          wholePage = "";
+        }
+        state.pagecount = wholePage + fractionalPage + " Pages";
+
+        state.activeversion = event.data.version;
+        loading = false;
+        updateState = true;
+        versionIndicator();
+        updateDocx();
+      } else if (event.data.command == 'setstate') {
+        if (event.data.uri !== undefined) {
+          state.docuri = event.data.uri;
+          console.log("URI is " + event.data.uri + " (setstate)");
+          updateState = true;
+        }
+      } else if (event.data.command == 'updatecaret') {
+        let lineInfo = state.linemap.get(event.data.content.toString());
+        if (lineInfo && lineInfo.page !== undefined) {
+          console.log(lineInfo);
+          // DOCXViewerApplication.page = lineInfo.page + 1;
+        }
+        else if (state.linemap && event.data.content < parseInt(state.linemap.entries().next().value)) {
+          //It's the title page
+          // DOCXViewerApplication.page = 1;
+        }
+        //update caret position
+      } else if (event.data.command == 'updateselection') {
+        //update selection
+      } else if (event.data.command == 'updateUiPersistence') {
+        //state.uipersistence[event.data.content.key] = event.data.content.value;
+        updateState = true;
+      }
+      if (updateState)
+        vscode.setState(state);
+    });
+
+  </script>
+</body>
+
+</html>

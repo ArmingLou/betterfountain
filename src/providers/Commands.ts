@@ -8,6 +8,8 @@ export class FountainCommandTreeDataProvider implements vscode.TreeDataProvider<
 
 	getChildren(): vscode.ProviderResult<vscode.TreeItem[]> {
 		const elements: vscode.TreeItem[] = [];
+		const treeExportDocx = new vscode.TreeItem("Export Docx");
+		treeExportDocx.iconPath = new vscode.ThemeIcon("file-symlink-file");
 		const treeExportPdf = new vscode.TreeItem("Export PDF");
 		treeExportPdf.iconPath = new vscode.ThemeIcon("link-external");
 		//const treeExportPdfDebug = new vscode.TreeItem("Export PDF with default name");
@@ -23,6 +25,9 @@ export class FountainCommandTreeDataProvider implements vscode.TreeDataProvider<
 		const treePdfPreview = new vscode.TreeItem("Show PDF preview");
 		treePdfPreview.iconPath = new vscode.ThemeIcon("file-pdf");
 		treePdfPreview.tooltip = "An exact preview of the rendered PDF (not real-time)";
+		const treeDocxPreview = new vscode.TreeItem("Show Docx preview");
+		treeDocxPreview.iconPath = new vscode.ThemeIcon("file-code");
+		treeDocxPreview.tooltip = "An exact preview of the rendered Docx (not real-time)";
 		const numberScenesOverwrite = new vscode.TreeItem("Number scenes - overwrite");
 		numberScenesOverwrite.tooltip = 'Replaces existing scene numbers.';
 		numberScenesOverwrite.iconPath = new vscode.ThemeIcon("list-ordered");
@@ -31,6 +36,10 @@ export class FountainCommandTreeDataProvider implements vscode.TreeDataProvider<
 		numberScenesUpdate.tooltip = 'Retains existing numbers as much as possible. Fills gaps and re-numbers moved scenes.';
 		const statistics = new vscode.TreeItem("Calculate screenplay statistics");
 		statistics.iconPath = new vscode.ThemeIcon("graph");
+		treeExportDocx.command = {
+			command: 'fountain.exportdocx',
+			title: ''
+		};
 		treeExportPdf.command = {
 			command: 'fountain.exportpdf',
 			title: ''
@@ -55,6 +64,10 @@ export class FountainCommandTreeDataProvider implements vscode.TreeDataProvider<
 			command: 'fountain.livepreviewstatic',
 			title: ''
 		};
+		treeDocxPreview.command = {
+			command:'fountain.docxpreview',
+			title:''
+		};
 		treePdfPreview.command = {
 			command:'fountain.pdfpreview',
 			title:''
@@ -71,12 +84,14 @@ export class FountainCommandTreeDataProvider implements vscode.TreeDataProvider<
 			command: 'fountain.statistics',
 			title: ''
 		};
+		elements.push(treeExportDocx);
 		elements.push(treeExportPdf);
 	//	elements.push(treeExportPdfDebug);
 		elements.push(treeExportPdfCustom);
 		elements.push(treeExportHtml);
 		elements.push(treeLivePreview);
 		elements.push(treePdfPreview);
+		elements.push(treeDocxPreview);
 		elements.push(statistics);
 		elements.push(numberScenesOverwrite);
 		elements.push(numberScenesUpdate);
