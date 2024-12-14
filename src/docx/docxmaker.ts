@@ -1687,7 +1687,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 if (line.type === "scene_heading") {
                     if (cfg.create_bookmarks) {
                         // doOutline = outlineDepth + 1;
-                        doOutline = 8;
+                        if (cfg.print_sections) {
+                            doOutline = 8; //固定最低级
+                        } else {
+                            doOutline = 0; //固定最高级
+                        }
                     }
                     currentScene = text;
 
