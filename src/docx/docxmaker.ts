@@ -883,6 +883,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     doc.options.title = title_token ? clearFormatting(inline(title_token.text)) : '';
 
     // 页面尺寸配置，需要设置到每个 section对象的properties属性去
+    var bmar = print.page_height - (print.lines_per_page * print.font_height) - print.top_margin 
     var sesctionProps = {
         page: {
             size: {
@@ -892,7 +893,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             margin: {
                 top: Docx.convertInchesToTwip(print.top_margin),
                 right: Docx.convertInchesToTwip(print.right_margin),
-                bottom: Docx.convertInchesToTwip(print.top_margin),
+                bottom: Docx.convertInchesToTwip(bmar),
                 left: Docx.convertInchesToTwip(print.left_margin),
             },
             pageNumbers: {
@@ -975,7 +976,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 },
                 paragraph: {
                     spacing: {
-                        line: Docx.convertInchesToTwip(print.font_height), //docx bug? must *2
+                        line: Docx.convertInchesToTwip(print.font_height)-3, //docx bug? must -3
                         lineRule: Docx.LineRuleType.EXACT,
                     },
                 },
@@ -1996,7 +1997,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     var sectionIndent = Docx.convertInchesToTwip(feed - print.left_margin);
 
                     sectionMain.children.push(new Docx.Paragraph({
-                        // style: "section",
+                        style: "section",
                         indent: {
                             left: sectionIndent,
                             right: sectionIndent,
@@ -2016,7 +2017,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     var sectionIndent = Docx.convertInchesToTwip(feed - print.left_margin);
 
                     sectionMain.children.push(new Docx.Paragraph({
-                        // style: "action",
+                        style: "action",
                         indent: {
                             left: sectionIndent,
                             right: sectionIndent,
