@@ -175,7 +175,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 	"embedFonts": false
 }
 
-[chinaFormat] - print in china format. diagonal is aligned to the left. 0: no china format; 1: china format use △; 2: china format no △ . (available in docx only)
+[chinaFormat] - print in china format (dialogue is aligned to the left). 0: don't print in china format; 1: print in china format with △; 2: china format without △ .
+
 [embedFonts] - If embed fonts. (available in docx only)
 
 [userPassword] - the user password (string value)

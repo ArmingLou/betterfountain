@@ -148,6 +148,13 @@ async function initDoc(opts: Options) {
     }
     var doc = new PDFDocument(options);
 
+    doc.chinaFormat = 0;
+    if (opts.metadata) {
+        if (opts.metadata.chinaFormat) {
+            doc.chinaFormat = opts.metadata.chinaFormat;
+        }
+    }
+
     /* if (opts.config.fonts) {
          doc.registerFont('ScriptNormal', fonts.normal.src, fonts.normal.family);
          doc.registerFont('ScriptBold', fonts.bold.src, fonts.bold.family);
@@ -447,7 +454,16 @@ async function initDoc(opts: Options) {
 
         var catchNotes = false;
         if (currentLineNotes && notesPage) {
-            catchNotes = true;
+            catchNotes = true; // 页面底部notes打印模式
+            if (doc.currentNote.pageIdx >= 0) {
+                // 如果正在处理notes，并且收集到底部，本行为notes开始内容
+                if (doc.chinaFormat === 1 && text.startsWith('△')) {
+                    text = text.substring(1);
+                    doc.cacheTriangle = true;
+                }
+            } else {
+                doc.cacheTriangle = false;
+            }
         }
 
         function note_lines(pageIdx: number) {
@@ -715,6 +731,10 @@ async function initDoc(opts: Options) {
                                 // }
                             } else {
                                 onlyNoteContent = false;
+                                if (doc.cacheTriangle) {
+                                    elem = '△' + elem;
+                                    doc.cacheTriangle = false;
+                                }
                             }
                         }
                     } else {
@@ -904,6 +924,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         lines = parsed.lines,
         exportcfg = opts.exportconfig;
     var pageIdx = 0;
+    var chinaFormat = doc.chinaFormat;
 
     var bottom_notes = cfg.note_position_bottom
 
@@ -1291,6 +1312,38 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     let last_dual_left_end_height = 0;
     let last_dual_right_end_pageIdx = -1; //是否在绘制右侧对话，以及在哪一页绘制
     let last_dual_right_end_height = 0;
+
+    var cacheText = "";
+    var cacheDual = "";
+    function finish_china_dial_first(idx: number, before: boolean, separator: boolean = false) {
+        if (cacheText) {
+
+            lines.splice(before ? idx : idx + 1, 0, {
+                type: "dialogue",
+                token: {
+                    type: "dialogue",
+                    dual: cacheDual
+                },
+                text: cacheText,
+                start: 0,
+                end: 0,
+                // scene_split: false, 
+            });
+            if (before && separator) {
+                lines.splice(idx + 1, 0, {
+                    type: "separator",
+                    token: "",
+                    text: " ",
+                    start: 0,
+                    end: 0,
+                    // scene_split: false, 
+                });
+            }
+            cacheText = "";
+            return true
+        }
+        return false
+    }
 
     let text2Result = {
         height: 0,
@@ -1817,6 +1870,18 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
         }
 
+
+        if (lines[ii].type === "character" || lines[ii].type === "parenthetical" || lines[ii].type === "dialogue") {
+        } else {
+            // 对话块结束，额外处理 (国内剧本对话)
+            if (cacheText) {
+                var sp = lines[ii].type === "separator" || lines[ii].type === "page_break"
+                finish_china_dial_first(ii, true, !sp);
+                ii = ii - 1;
+                continue;
+            }
+        }
+
         if_dual_right_end(ii);
 
         // if (wait_right_end_print_scene_split > 0) {
@@ -1947,7 +2012,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // 页面中间出现的空行，非页面开头的空行
             if (line.text) {
                 // 绘制样式. 可能是连续块最后一行后的空行样式字符，清理样式。
-                text2Result = doc.text2(line.text, 0, print.top_margin + height, print.top_margin, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, 0, 0, true,null, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
+                text2Result = doc.text2(line.text, 0, print.top_margin + height, print.top_margin, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, 0, 0, true, null, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
             }
 
             // y++;
@@ -2058,8 +2123,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             } else if (line.type === "transition") {
                 var feed: number = print.action.feed;
                 text_properties.width = print.page_width - feed - feed;
-                text_properties.align = 'right';
-                text = ifResetFormat(text, line);
+                text_properties.align = chinaFormat ? 'left' : 'right';
+                text = ifResetFormat(chinaFormat ? '(' + text + ')' : text, line);
                 text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, 0, 0, true, text_properties, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
                 // if (text2Result.breaks > 0) {
                 //     height = text2Result.height;
@@ -2181,7 +2246,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 var feed_diff = 0.2;
                 if (line.token && line.token.dual === "right") {
 
-                    if (line.type === "parenthetical") {
+                    if (line.type === "parenthetical" && cacheText === "") {
                         feed = (print.page_width / 2) + feed_diff * 2;
                         text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 3;
                     }
@@ -2208,20 +2273,49 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     }
 
                     text = ifResetFormat(text, line);
-                    text2Result = doc.text2(text, feed, print.top_margin + last_dual_right_end_height, print.top_margin,
-                        print.lines_per_page * print.font_height - last_dual_right_end_height,
-                        print.lines_per_page * print.font_height,
-                        last_dual_right_end_pageIdx, last_dual_left_end_pageIdx, true,
-                        text_properties, bottom_notes ? currentLineNotes : null, notesPage, last_dual_right_end_pageIdx);
-                    // if (text2Result.breaks + text2Result.switches > 0) {
-                    //     last_dual_right_end_pageIdx += text2Result.breaks + text2Result.switches;
-                    //     last_dual_right_end_height = text2Result.height;
-                    // } else {
-                    //     last_dual_right_end_height += text2Result.height;
-                    // }
+
+                    var draw = true;
+                    if (line.type === "character") {
+                        if (chinaFormat) {
+                            if (cacheText) {
+                                finish_china_dial_first(ii, true, true);
+                                ii = ii - 1;
+                                continue;
+                            }
+                            text = text + ': ';
+                            cacheText = text;
+                            cacheDual = "right";
+                            draw = false;
+                        }
+                    }
+                    else if (line.type === "dialogue") {
+                        if (chinaFormat) {
+                            if (cacheText) {
+                                cacheText = cacheText + text;
+                                draw = false;
+                                finish_china_dial_first(ii, false);
+                            }
+                        }
+                    }
+                    else if (line.type === "parenthetical") {
+                        if (chinaFormat) {
+                            if (cacheText) {
+                                cacheText = cacheText + text;
+                                draw = false;
+                            }
+                        }
+                    }
+
+                    if (draw) {
+                        text2Result = doc.text2(text, feed, print.top_margin + last_dual_right_end_height, print.top_margin,
+                            print.lines_per_page * print.font_height - last_dual_right_end_height,
+                            print.lines_per_page * print.font_height,
+                            last_dual_right_end_pageIdx, last_dual_left_end_pageIdx, true,
+                            text_properties, bottom_notes ? currentLineNotes : null, notesPage, last_dual_right_end_pageIdx);
+                    }
                 } else {
                     if (line.token && line.token.dual === "left") {
-                        if (line.type === "parenthetical") {
+                        if (line.type === "parenthetical" && cacheText === "") {
                             feed = print.dialogue.feed_double + feed_diff;
                             text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 3;
                         }
@@ -2245,18 +2339,70 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         lastCharacterFeed = feed
                     }
                     text = ifResetFormat(text, line);
-                    text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin,
-                        print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, 0, 0, true, text_properties, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
-                    // if (text2Result.breaks > 0) {
-                    //     height = text2Result.height;
-                    // } else {
-                    //     height += text2Result.height;
-                    // }
-                }
 
-                // if (line.linediff) {
-                //     y += line.linediff;
-                // }
+                    // 除去 对话右侧的 绘制：
+
+                    var draw = true;
+                    if (line.type === "character") {
+                        if (chinaFormat) {
+                            if (cacheText) {
+                                finish_china_dial_first(ii, true, true);
+                                ii = ii - 1;
+                                continue;
+                            }
+                            text = text + ': ';
+                            cacheText = text;
+                            cacheDual = line.token.dual;
+                            draw = false;
+                        }
+                    }
+                    else if (line.type === "dialogue") {
+                        if (chinaFormat) {
+                            if (cacheText) {
+                                cacheText = cacheText + text;
+                                draw = false;
+                                finish_china_dial_first(ii, false);
+                            } else {
+                                if (line.token && line.token.dual !== "left" && line.token.dual !== "right") {
+                                    feed = print.action.feed;
+                                    text_properties.width = print.page_width - feed - feed;
+                                    text_properties.align = 'left';
+                                }
+                            }
+                        }
+                    }
+                    else if (line.type === "parenthetical") {
+                        if (chinaFormat) {
+                            if (cacheText) {
+                                cacheText = cacheText + text;
+                                draw = false;
+                            } else {
+                                if (line.token && line.token.dual !== "left" && line.token.dual !== "right") {
+                                    feed = print.action.feed;
+                                    text_properties.width = print.page_width - feed - feed;
+                                    text_properties.align = 'left';
+                                }
+                            }
+                        }
+                    }
+                    else if (line.type === "scene_heading") {
+                    }
+                    else if (line.type === "section") {
+                    }
+                    else if (line.type === "synopsis") {
+                    }
+                    else {
+                        // action / lyric
+                        if (chinaFormat === 1) {
+                            text = '△' + ' ' + text;
+                        }
+                    }
+                    //======
+                    if (draw) {
+                        text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin,
+                            print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, 0, 0, true, text_properties, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
+                    }
+                }
 
             }
             // y++;
@@ -2485,7 +2631,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     fontSize: print.font_size,
                     lineHeight: print.font_height
                 });
-                doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - lineHeight  - print.font_height) * 72)
+                doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - lineHeight - print.font_height) * 72)
                     .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - lineHeight - print.font_height) * 72)
                     .stroke();
             }

@@ -356,7 +356,7 @@ async function initDoc(opts: Options) {
 
         var catchNotes = false;
         if (currentLineNotes && notesPage) {
-            catchNotes = true;
+            catchNotes = true; // 页面底部notes打印模式
             if (doc.currentNote.pageIdx >= 0) {
                 // 如果正在处理notes，并且收集到底部，本行为notes开始内容
                 if (doc.chinaFormat === 1 && text.startsWith('△')) {
