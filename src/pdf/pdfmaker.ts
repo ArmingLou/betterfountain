@@ -2141,6 +2141,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 var hasInvisibleSection = (line.type === "scene_heading" && line.token.invisibleSections != undefined)
                 function processSection(sectiontoken: any) {
                     let sectiontext = sectiontoken.text;
+                    let sectiontextOl = sectiontoken.textNoNotes;
                     current_section_level = sectiontoken.level;
                     currentSections.length = sectiontoken.level - 1;
 
@@ -2154,8 +2155,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             current_section_number = section_number(sectiontoken.level);
                             current_section_token = sectiontoken;
                             sectiontext = current_section_number + '. ' + sectiontext;
+                            sectiontextOl = current_section_number + '. ' + sectiontextOl;
                         } else {
                             sectiontext = Array(current_section_number.length + 3).join(' ') + sectiontext;
+                            sectiontextOl = Array(current_section_number.length + 3).join(' ') + sectiontextOl;
                         }
 
                     }
@@ -2163,7 +2166,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         if (hasInvisibleSection && !cfg.invisible_section_bookmarks) return;
                         var oc = getOutlineChild(outline, sectiontoken.level - 1, 0);
                         if (oc != undefined) {
-                            oc.addItem(clearFormatting(sectiontext));
+                            oc.addItem(clearFormatting(sectiontextOl));
                             lastPdfOutlineWasSection = true;
                         }
                     }
@@ -2187,7 +2190,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                 if (line.type === "scene_heading") {
                     if (cfg.create_bookmarks) {
-                        getOutlineChild(outline, outlineDepth, 0).addItem(clearFormatting(text));
+                        getOutlineChild(outline, outlineDepth, 0).addItem(clearFormatting(line.token.textNoNotes));
                         lastPdfOutlineWasSection = false;
                     }
                     currentScene = text;

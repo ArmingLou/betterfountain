@@ -973,6 +973,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     font: doc.fontNames.get('normal'),
                     size: fontSize,
                 },
+                paragraph: {
+                    spacing: {
+                        line: Docx.convertInchesToTwip(print.font_height), //docx bug? must *2
+                        lineRule: Docx.LineRuleType.EXACT,
+                    },
+                },
             },
         },
         paragraphStyles: [

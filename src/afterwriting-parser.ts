@@ -922,6 +922,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     }
                     text_display = text_display.toUpperCase().replace(/\s+/g, ' ');//合并空格，转成大写
                     thistoken.text = text_display;
+                    thistoken.textNoNotes = text_valid;
 
                     let cobj: StructToken = new StructToken();
                     cobj.text = text_valid;
@@ -1178,6 +1179,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     thistoken.text = matchdisplay[1].trim() + matchdisplay[3].trim();
                     thistoken.level = match[1].length;
                     thistoken.type = "section";
+                    thistoken.textNoNotes = match[2];
                     let cobj: StructToken = new StructToken();
                     cobj.text = match[2];
                     current_depth = thistoken.level;
