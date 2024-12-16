@@ -2246,12 +2246,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 //     }
                 // }
 
-                var feed_diff = 0.2;
+                var feed_diff = 3 * print.font_width; // 相对 action.feed 再缩进的距离
                 if (line.token && line.token.dual === "right") {
 
                     if (line.type === "parenthetical" && cacheText === "") {
-                        feed = (print.page_width / 2) + feed_diff * 2;
-                        text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 3;
+                        feed = (print.page_width / 2) + (feed_diff * 1.5);
+                        text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 3.5);
                     }
                     else if (line.type === "character") {
                         last_dual_left_end_pageIdx = pageIdx
@@ -2261,18 +2261,18 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         }
                         last_dual_right_end_pageIdx = last_dual_left_start_pageIdx;
                         last_dual_right_end_height = last_dual_left_start_height;
-                        feed = (print.page_width / 2) + feed_diff * 3;
-                        text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 5;
+                        feed = (print.page_width / 2) + (feed_diff * 2.5);
+                        text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 5.5);
 
                         lastCharacter = text;
                         lastCharacterFeed = feed
                     }
                     else if (line.type === "more") {
-                        feed = (print.page_width / 2) + feed_diff * 3;
-                        text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 5;
+                        feed = (print.page_width / 2) + (feed_diff * 2.5);
+                        text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 5.5);
                     } else {
-                        feed = (print.page_width / 2) + feed_diff;
-                        text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff;
+                        feed = (print.page_width / 2) + (0.5 * feed_diff);
+                        text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 1.5);
                     }
 
                     text = ifResetFormat(text, line);
@@ -2319,23 +2319,23 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 } else {
                     if (line.token && line.token.dual === "left") {
                         if (line.type === "parenthetical" && cacheText === "") {
-                            feed = print.dialogue.feed_double + feed_diff;
-                            text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 3;
+                            feed = print.action.feed + (feed_diff * 2);
+                            text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 3.5);
                         }
                         else if (line.type === "character") {
                             last_dual_left_start_pageIdx = pageIdx;
                             last_dual_left_start_height = height;
-                            feed = print.dialogue.feed_double + feed_diff * 2;
-                            text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 5;
+                            feed = print.action.feed + (feed_diff * 3);
+                            text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 5.5);
 
                             lastCharacter = text;
                             lastCharacterFeed = feed;
                         } else if (line.type === "more") {
-                            feed = print.dialogue.feed_double + feed_diff * 2;
-                            text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff * 5;
+                            feed = print.action.feed + (feed_diff * 3);
+                            text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 5.5);
                         } else {
-                            feed = print.dialogue.feed_double
-                            text_properties.width = print.page_width / 2 - print.dialogue.feed_double - feed_diff;
+                            feed = print.action.feed + feed_diff;
+                            text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 1.5);
                         }
                     } else if (line.type === "character") {
                         lastCharacter = text;

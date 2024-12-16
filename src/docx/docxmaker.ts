@@ -966,6 +966,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             style: "none"
         }
     };
+    
+    var spacing = {
+        line: Docx.convertInchesToTwip(print.font_height)-3, //docx bug? must -3
+        lineRule: Docx.LineRuleType.EXACT,
+    }
 
     doc.options.styles = {
         default: {
@@ -975,10 +980,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     size: fontSize,
                 },
                 paragraph: {
-                    spacing: {
-                        line: Docx.convertInchesToTwip(print.font_height)-3, //docx bug? must -3
-                        lineRule: Docx.LineRuleType.EXACT,
-                    },
+                    spacing: spacing,
                 },
             },
         },
@@ -991,12 +993,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 run: {
                     color: print.section.color
                 },
-                // paragraph: {
-                //     indent: {
-                //         left: sectionIndent,
-                //         right: sectionIndent,
-                //     },
-                // },
+                paragraph: {
+                    // indent: {
+                    //     left: sectionIndent,
+                    //     right: sectionIndent,
+                    // },
+                    spacing: spacing,
+                },
             },
             {
                 id: "scene",
@@ -1015,6 +1018,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         left: sceneIndent,
                         right: sceneIndent,
                     },
+                    spacing: spacing,
                 },
             },
             {
@@ -1030,6 +1034,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         left: actionIndent,
                         right: actionIndent,
                     },
+                    spacing: spacing,
                 },
             },
             {
@@ -1046,6 +1051,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         left: chartorIndent,
                         right: chartorIndent,
                     },
+                    spacing: spacing,
                 },
             },
             {
@@ -1061,6 +1067,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         left: parentheticalIndent,
                         right: parentheticalIndent,
                     },
+                    spacing: spacing,
                 },
             },
             {
@@ -1076,6 +1083,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         left: dialIndent,
                         right: dialIndent,
                     },
+                    spacing: spacing,
                 },
             },
             {
@@ -1918,10 +1926,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         } else {
                             lastDialTableLeft.push(
                                 new Docx.Paragraph({
-                                    style: "parenthetical",
+                                    style: "dial",
                                     indent: {
-                                        left: parentheticalIndent_out,
-                                        right: parentheticalIndent_in,
+                                        left: dialIndent_out,
+                                        right: dialIndent_in,
                                     },
                                     children: runs,
                                 })
