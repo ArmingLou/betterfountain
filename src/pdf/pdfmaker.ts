@@ -542,6 +542,7 @@ async function initDoc(opts: Options) {
         }
 
         var width = options.width ? options.width : print.page_width;
+        var width = width + 0.01; //修复误差，防止少一个字符换行
         // var font_width = print.font_width;
         var textobjects = [];
         var currentIndex = 0;
