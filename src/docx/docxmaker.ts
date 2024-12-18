@@ -1100,8 +1100,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 },
                 paragraph: {
                     indent: {
-                        left: 0,
-                        right: 0,
+                        left: actionIndent,
+                        right: actionIndent,
                     },
                 },
             },

@@ -484,9 +484,9 @@ async function initDoc(opts: Options) {
                     }
                 }
             }
-            // if(l>0){
-            //     l +=1;
-            // }
+            if (l > 0) {
+                l += 1;
+            }
             return l;
         }
 
@@ -1277,12 +1277,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
         }
-        // if (l > 0) {
-        //     return print.lines_per_page - l - 1;
-        // } else {
-        //     return print.lines_per_page;
-        // }
-        return print.lines_per_page - l;
+        if (l > 0) {
+            return print.lines_per_page - l - 1;
+        } else {
+            return print.lines_per_page;
+        }
+        // return print.lines_per_page - l;
     }
 
 
@@ -1324,6 +1324,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 type: "dialogue",
                 token: {
                     type: "dialogue",
+                    text: cacheText,
                     dual: cacheDual
                 },
                 text: cacheText,
@@ -1662,12 +1663,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                     if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'left') {
                         shift_scene_number = (scene_text_length + 4) * print.font_width;
-                        doc.text2(scene_number, feed - shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
+                        doc.text2(scene_number, print.action.feed - shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
                     }
 
                     if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'right') {
-                        shift_scene_number = (print.scene_heading.max + 1) * print.font_width;
-                        doc.text2(scene_number, feed + shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
+                        // shift_scene_number = (print.scene_heading.max + 1) * print.font_width;
+                        // doc.text2(scene_number, feed + shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
+                        shift_scene_number = (scene_text_length + 4) * print.font_width;
+                        doc.text2(scene_number, print.page_width - print.action.feed + shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
                     }
                 }
 
@@ -2534,7 +2537,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
 
         doc.switchToPage(pIdx);
-        var yPosBottom = print.page_height - print.page_number_top_margin - lineHeight * 0.5;
+        // var yPosBottom = print.page_height - print.page_number_top_margin - lineHeight * 0.5;
+        var yPosBottom = print.page_height - print.bottom_margin + line_height * 2;
         var yPos = yPosBottom;
         // var drawLeftEver = false;
         var drawRightLatestPosy = 0;
@@ -2628,16 +2632,18 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 pagesHeight[pIdx] += yPosBottom - drawLatestPosy;
             }
             if (drawRightLatestPosy) {
-                doc.format_text(cfg.text_note || 'NOTE:', feed_note_no_right, drawRightLatestPosy - lineHeight, {
-                    color: '#000000',
-                    line_break: false,
-                    width: width_note,
-                    align: 'left',
-                    fontSize: print.font_size,
-                    lineHeight: line_height
-                });
-                doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - lineHeight - line_height) * 72)
-                    .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - lineHeight - line_height) * 72)
+                // doc.format_text(cfg.text_note || 'NOTE:', feed_note_no_right, drawRightLatestPosy - lineHeight, {
+                //     color: '#000000',
+                //     line_break: false,
+                //     width: width_note,
+                //     align: 'left',
+                //     fontSize: print.font_size,
+                //     lineHeight: line_height
+                // });
+                // doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - lineHeight - line_height) * 72)
+                // .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - lineHeight - line_height) * 72)
+                doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - line_height) * 72)
+                    .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - line_height) * 72)
                     .stroke();
             }
         }

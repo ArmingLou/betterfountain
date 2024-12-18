@@ -211,6 +211,14 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
            }
     }
     
+    pdf_options.print.action.feed = pdf_options.print.left_margin
+    pdf_options.print.scene_heading.feed = pdf_options.print.action.feed
+    pdf_options.print.dialogue.feed = pdf_options.print.action.feed + 1
+    var diff = Math.round(pdf_options.print.dialogue.feed*10/5)/10
+    pdf_options.print.parenthetical.feed = pdf_options.print.dialogue.feed  + diff
+    pdf_options.print.character.feed = pdf_options.print.parenthetical.feed  + diff
+    pdf_options.print.more.feed = pdf_options.print.character.feed 
+    
     pdf_options.line_height = (pdf_options.print.page_height - pdf_options.print.top_margin - pdf_options.print.bottom_margin)/pdf_options.print.lines_per_page;
     pdf_options.line_height = Math.round(pdf_options.line_height * 100) / 100;
     
