@@ -122,6 +122,7 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
     });
 
     var pdf_options: pdfmaker.Options = {
+        line_height: 0,
         filepath: outputpath,
         parsed: parsedDocument,
         print: print.print_profiles[config.print_profile || "a4"],
@@ -166,7 +167,55 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
         found_font_bold_italic: false,
         for_preview: false
     }
-
+    
+    pdf_options.print = JSON.parse(JSON.stringify(pdf_options.print));
+    if(metadata && metadata.print){
+           if(metadata.print.lines_per_page){
+               pdf_options.print.lines_per_page = metadata.print.lines_per_page;
+           }
+           if(metadata.print.top_margin){
+               pdf_options.print.top_margin = metadata.print.top_margin;
+           }
+           if(metadata.print.bottom_margin){
+               pdf_options.print.bottom_margin = metadata.print.bottom_margin;
+           }
+           if(metadata.print.left_margin){
+               pdf_options.print.left_margin = metadata.print.left_margin;
+           }
+           if(metadata.print.right_margin){
+               pdf_options.print.right_margin = metadata.print.right_margin;
+           }
+           if(metadata.print.page_height){
+               pdf_options.print.page_height = metadata.print.page_height;
+           }
+           if(metadata.print.page_width){
+               pdf_options.print.page_width = metadata.print.page_width;
+           }
+           if(metadata.print.page_number_top_margin){
+               pdf_options.print.page_number_top_margin = metadata.print.page_number_top_margin;       
+           }
+           if(metadata.print.paper_size){
+               pdf_options.print.paper_size = metadata.print.paper_size;
+           }
+           if(metadata.print.font_size){
+               pdf_options.print.font_size = metadata.print.font_size;
+           }
+           if(metadata.print.note_font_size){
+               pdf_options.print.note_font_size = metadata.print.note_font_size;
+           }
+           if(metadata.print.font_width){
+               pdf_options.print.font_width = metadata.print.font_width;
+           }
+           if(metadata.print.note_line_height){
+               pdf_options.print.note_line_height = metadata.print.note_line_height;
+           }
+    }
+    
+    pdf_options.line_height = (pdf_options.print.page_height - pdf_options.print.top_margin - pdf_options.print.bottom_margin)/pdf_options.print.lines_per_page;
+    pdf_options.line_height = Math.round(pdf_options.line_height * 100) / 100;
+    
+    pdf_options.print.bottom_margin = Math.round((pdf_options.print.page_height - pdf_options.print.top_margin - (pdf_options.print.lines_per_page * pdf_options.line_height)) * 100) / 100;
+    
     if (outputpath == "$STATS$"){
         return pdfmaker.get_pdf_stats(pdf_options);
     }

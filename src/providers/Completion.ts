@@ -172,7 +172,22 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
         "documentAssembly":false
     },
 	"chinaFormat": 0,
-	"embedFonts": false
+	"embedFonts": false,
+	"print": {
+		"paper_size": "a4",
+		"font_size": 12,
+		"note_font_size": 9,
+		"lines_per_page": 41,
+		"top_margin": 1.19,
+		"bottom_margin": 1,
+		"page_width": 8.27,
+		"page_height": 11.69,
+		"left_margin": 0.5,
+		"right_margin": 0.5,
+		"font_width": 0.1,
+		"note_line_height": 0.17,
+		"page_number_top_margin": 0.4
+	}
 }
 
 [chinaFormat] - print in china format (dialogue is aligned to the left). 0: don't print in china format; 1: print in china format with △; 2: china format without △ .

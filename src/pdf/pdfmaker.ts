@@ -14,6 +14,7 @@ import { charOfStyleTag } from "../cons";
 
 // import * as blobUtil from "blob-util";
 export class Options {
+    line_height: number;
     filepath: string;
     config: fountainconfig.FountainConfig;
     parsed: any;
@@ -123,6 +124,7 @@ var create_simplestream = function (filepath: string) {
 
 async function initDoc(opts: Options) {
     var print = opts.print;
+    var line_height = opts.line_height;
     //var fonts = opts.config.fonts || null;
     var options: any = {
         compress: false,
@@ -830,12 +832,12 @@ async function initDoc(opts: Options) {
 
         var firstBreakHeight = firstBreakHeight * 72;
         if (catchNotes) {
-            firstBreakHeight = firstBreakHeight - (note_lines(pageIdx) * print.font_height * 72);
+            firstBreakHeight = firstBreakHeight - (note_lines(pageIdx) * line_height * 72);
         }
 
         return addTextbox(textobjects, doc, x * 72, y * 72, width * 72, posTop * 72, firstBreakHeight, breakHeight * 72, switchPageFrom, switchPageTo, onlyGetLines,
             { // 组件bug,text显示宽度比实际配置的width值要大
-                lineHeight: options.lineHeight || print.font_height * 72,
+                lineHeight: options.lineHeight || line_height * 72,
                 lineBreak: false,
                 align: options.align,
                 baseline: 'bottom',
@@ -925,7 +927,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         exportcfg = opts.exportconfig;
     var pageIdx = 0;
     var chinaFormat = doc.chinaFormat;
-
+    var line_height = opts.line_height;
     var bottom_notes = cfg.note_position_bottom
 
     var pagesHeight: { [key: number]: number } = {};
@@ -951,7 +953,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     //var title_y = print.title_page.top_start;
 
     /*var title_page_next_line = function() {
-        title_y += print.line_spacing * print.font_height;
+        title_y += print.line_spacing * line_height;
     };
 
     /*var title_page_main = function(parsed?:any, type?:string, options?:any) {
@@ -979,13 +981,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         ) {
 
             const innerwidth = print.page_width - print.left_margin - print.right_margin;
-            const innerheight = print.page_height - print.top_margin;
+            const innerheight = print.page_height - print.bottom_margin;
             const innerwidth_third = innerwidth / 3;
             const innerwidth_half = innerwidth / 2;
             const joinChar = '\n\n';
             //top left
             var tltext = parsed.title_page['tl'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
-            var tltext_height = doc.heightOfString(tltext, { width: innerwidth_third * 72, align: 'left' });
+            // var tltext_height = doc.heightOfString(tltext, { width: innerwidth_third * 72, align: 'left' });
 
             doc.text2(tltext, print.left_margin, print.top_margin, print.top_margin, 0, 0, 0, 0, false, {
                 width: innerwidth_third,
@@ -995,7 +997,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             //top center
             var tctext = parsed.title_page['tc'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
-            var tctext_height = doc.heightOfString(tctext, { width: innerwidth_third * 72, align: 'center' });
+            // var tctext_height = doc.heightOfString(tctext, { width: innerwidth_third * 72, align: 'center' });
             doc.text2(tctext, print.left_margin + innerwidth_third, print.top_margin, print.top_margin, 0, 0, 0, 0, false, {
                 width: innerwidth_third,
                 align: 'center',
@@ -1004,7 +1006,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             //top right
             var trtext = parsed.title_page['tr'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
-            var trtext_height = doc.heightOfString(trtext, { width: innerwidth_third * 72, align: 'right' });
+            // var trtext_height = doc.heightOfString(trtext, { width: innerwidth_third * 72, align: 'right' });
             doc.text2(trtext, print.left_margin + innerwidth_third + innerwidth_third, print.top_margin, print.top_margin, 0, 0, 0, 0, false, {
                 width: innerwidth_third,
                 align: 'right',
@@ -1030,12 +1032,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             });
 
             //center center
-            var topheight = Math.max(tltext_height, tctext_height, trtext_height, 0);
-            var bottomheight = Math.max(bltext_height, brtext_height, 0);
+            // var topheight = Math.max(tltext_height, tctext_height, trtext_height, 0);
+            // var bottomheight = Math.max(bltext_height, brtext_height, 0);
 
             var cctext = parsed.title_page['cc'].sort(helpers.sort_index).map((x: any) => x.text).join(joinChar);
             var cctext_height = doc.heightOfString(cctext, { width: innerwidth * 72, align: 'center' });
-            var centerStart = (((innerheight * 72) - topheight - bottomheight) / 2) - (cctext_height / 2);
+            var centerStart = (print.page_height * 72 / 2) - (cctext_height / 2);
             doc.text2(cctext, print.left_margin, centerStart / 72, print.top_margin, 0, 0, 0, 0, false, {
                 width: innerwidth,
                 align: 'center',
@@ -1105,7 +1107,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         after_section = false; // helpful to determine synopsis indentation
 
     var print_header_and_footer = function () {
-        var dif = print.font_height * 0.5
+        var dif = line_height * 0.5
         if (cfg.print_header) {
             doc.format_text(cfg.print_header, 1.5, print.page_number_top_margin, {
                 color: '#777777'
@@ -1209,8 +1211,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         if (cfg.scene_continuation_bottom) {
             var scene_continued_text = '(' + (cfg.text_scene_continued || 'CONTINUED') + ')';
             // var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued_text) * print.font_width;
-            // doc.simple_text(scene_continued_text, feed * 72, (print.top_margin + print.font_height * (y + 2)) * 72);
-            doc.format_text(scene_continued_text, 0, (print.top_margin + h + print.font_height), { align: 'right', width: print.page_width - print.right_margin });
+            // doc.simple_text(scene_continued_text, feed * 72, (print.top_margin + line_height * (y + 2)) * 72);
+            doc.format_text(scene_continued_text, 0, (print.top_margin + h + line_height), { align: 'right', width: print.page_width - print.right_margin });
 
         }
     }
@@ -1224,7 +1226,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         return 0;
     }
     function print_scene_split_top(sceneNumber: string, count: number) {
-        var number_y = print.font_height * 0.5 + print.page_number_top_margin;
+        var number_y = line_height * 0.5 + print.page_number_top_margin;
 
         if (cfg.scene_continuation_top) {
             // scene_continuations[sceneNumber] = scene_continuations[sceneNumber] || 0;
@@ -1252,7 +1254,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     function print_dialogue_split_top() {
         var CONTD = cfg.text_contd || "(CONT'D)";
-        doc.format_text(lastCharacter + ' ' + CONTD, lastCharacterFeed, (print.top_margin - print.font_height));
+        doc.format_text(lastCharacter + ' ' + CONTD, lastCharacterFeed, (print.top_margin - line_height));
     }
 
 
@@ -1604,11 +1606,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             // }
 
-            // if (last_dual_right_end_height >= left_lines(last_dual_right_end_pageIdx) * print.font_height) {
+            // if (last_dual_right_end_height >= left_lines(last_dual_right_end_pageIdx) * line_height) {
             //     brk = true;
             // }
             if (!brk) {
-                if (last_dual_right_end_height >= (left_lines(last_dual_right_end_pageIdx) - 1) * print.font_height) {
+                if (last_dual_right_end_height >= (left_lines(last_dual_right_end_pageIdx) - 1) * line_height) {
                     // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
                     if (nextLine && nextLine.type === "character") {
@@ -1618,7 +1620,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
             // if (!brk) {
             //     if ((line.type === "dialogue" || line.type === "parenthetical")) {
-            //         if (last_dual_right_end_height > (print.lines_per_page - 2) * print.font_height) {
+            //         if (last_dual_right_end_height > (print.lines_per_page - 2) * line_height) {
             //             // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
             //             // var nextLine = lines[idx + 1];
             //             // if (nextLine.type === "dialogue" || nextLine.type === "parenthetical") {
@@ -1716,13 +1718,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             //     }
             // }
 
-            // if (height >= print.lines_per_page * print.font_height) {
+            // if (height >= print.lines_per_page * line_height) {
             //     brk = true;
             //     brkNew = true;
             // }
             // TODO Arming (2024-09-28) : 提前分页的情况
             if (!brk) {
-                if (height >= (left_lines(pageIdx) - 4) * print.font_height) {
+                if (height >= (left_lines(pageIdx) - 4) * line_height) {
                     // 每页最后 4 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
                     if (nextLine && (nextLine.type === "scene_heading" || nextLine.type === "section")) {
@@ -1732,7 +1734,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
             if (!brk) {
-                if (height >= (left_lines(pageIdx) - 1) * print.font_height) {
+                if (height >= (left_lines(pageIdx) - 1) * line_height) {
                     // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
                     if (nextLine && nextLine.type === "character") {
@@ -1743,7 +1745,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
             // if (!brk) {
             //     if ((line.type === "dialogue" || line.type === "parenthetical")) {
-            //         if (height > (print.lines_per_page - 2) * print.font_height) {
+            //         if (height > (print.lines_per_page - 2) * line_height) {
             //             // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
             //             // var nextLine = lines[idx + 1];
             //             // if (nextLine.type === "dialogue" || nextLine.type === "parenthetical") {
@@ -1989,8 +1991,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     notesPage[last_dual_right_end_pageIdx].push(line.notes);
                 }
                 text2Result = drawTextLinesOnPDF(line.lastLines.lines, line.lastLines.width,
-                    ((print.lines_per_page - line.notes.length) * print.font_height - last_dual_right_end_height) * 72,
-                    (print.lines_per_page * print.font_height) * 72,
+                    ((print.lines_per_page - line.notes.length) * line_height - last_dual_right_end_height) * 72,
+                    (print.lines_per_page * line_height) * 72,
                     0, 0, line.lastLines.posX, (print.top_margin + last_dual_right_end_height) * 72, print.top_margin * 72, doc, true);
                 // last_dual_right_end_height += res.height / 72;
             } else {
@@ -2001,8 +2003,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     notesPage[pageIdx].push(line.notes);
                 }
                 text2Result = drawTextLinesOnPDF(line.lastLines.lines, line.lastLines.width,
-                    ((print.lines_per_page - line.notes.length) * print.font_height - height) * 72,
-                    (print.lines_per_page * print.font_height) * 72,
+                    ((print.lines_per_page - line.notes.length) * line_height - height) * 72,
+                    (print.lines_per_page * line_height) * 72,
                     0, 0, line.lastLines.posX, (print.top_margin + height) * 72, print.top_margin * 72, doc, true);
 
                 // height += res.height / 72;
@@ -2012,11 +2014,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // 页面中间出现的空行，非页面开头的空行
             if (line.text) {
                 // 绘制样式. 可能是连续块最后一行后的空行样式字符，清理样式。
-                text2Result = doc.text2(line.text, 0, print.top_margin + height, print.top_margin, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, 0, 0, true, null, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
+                text2Result = doc.text2(line.text, 0, print.top_margin + height, print.top_margin, print.lines_per_page * line_height - height, print.lines_per_page * line_height, 0, 0, true, null, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
             }
 
             // y++;
-            // height += print.font_height;
+            // height += line_height;
 
             if (lineStructs) {
                 if (line.token.line && !lineStructs.has(line.token.line)) {
@@ -2113,8 +2115,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             if (line.type === 'centered') {
                 text = ifResetFormat(text, line);
-                // text2Result = center(text, print.top_margin + height, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, print.top_margin, 0, 0, true);
-                text2Result = doc.text2(text, 0, print.top_margin + height, print.top_margin, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, 0, 0, true, { align: 'center' }, bottom_notes ? currentLineNotes : null, notesPage, pageIdx)
+                // text2Result = center(text, print.top_margin + height, print.lines_per_page * line_height - height, print.lines_per_page * line_height, print.top_margin, 0, 0, true);
+                text2Result = doc.text2(text, 0, print.top_margin + height, print.top_margin, print.lines_per_page * line_height - height, print.lines_per_page * line_height, 0, 0, true, { align: 'center' }, bottom_notes ? currentLineNotes : null, notesPage, pageIdx)
                 // if (text2Result.breaks > 0) {
                 //     height = text2Result.height;
                 // } else {
@@ -2125,7 +2127,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 text_properties.width = print.page_width - feed - feed;
                 text_properties.align = chinaFormat ? 'left' : 'right';
                 text = ifResetFormat(chinaFormat ? '(' + text + ')' : text, line);
-                text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, 0, 0, true, text_properties, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
+                text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin, print.lines_per_page * line_height - height, print.lines_per_page * line_height, 0, 0, true, text_properties, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
                 // if (text2Result.breaks > 0) {
                 //     height = text2Result.height;
                 // } else {
@@ -2311,8 +2313,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                     if (draw) {
                         text2Result = doc.text2(text, feed, print.top_margin + last_dual_right_end_height, print.top_margin,
-                            print.lines_per_page * print.font_height - last_dual_right_end_height,
-                            print.lines_per_page * print.font_height,
+                            print.lines_per_page * line_height - last_dual_right_end_height,
+                            print.lines_per_page * line_height,
                             last_dual_right_end_pageIdx, last_dual_left_end_pageIdx, true,
                             text_properties, bottom_notes ? currentLineNotes : null, notesPage, last_dual_right_end_pageIdx);
                     }
@@ -2403,7 +2405,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     //======
                     if (draw) {
                         text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin,
-                            print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, 0, 0, true, text_properties, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
+                            print.lines_per_page * line_height - height, print.lines_per_page * line_height, 0, 0, true, text_properties, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
                     }
                 }
 
@@ -2427,12 +2429,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             // if (text2Result.switches > 0) {
             //     doc.switchToPage(last_dual_left_start_pageIdx);
-            //     print_dialogue_split_more(print.lines_per_page * print.font_height);
+            //     print_dialogue_split_more(print.lines_per_page * line_height);
             //     for (let j = 0; j < text2Result.switches; j++) {
             //         doc.switchToPage(last_dual_left_start_pageIdx + j + 1);
             //         print_dialogue_split_top();
             //         if (j < text2Result.switches - 1) {
-            //             print_dialogue_split_more(print.lines_per_page * print.font_height);
+            //             print_dialogue_split_more(print.lines_per_page * line_height);
             //         }
             //     }
             // }
@@ -2440,9 +2442,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // if (text2Result.breaks > 0) {
             //     // 自动换页，处理
             //     doc.switchToPage(pageIdx);
-            //     print_scene_split_continue(print.lines_per_page * print.font_height);
+            //     print_scene_split_continue(print.lines_per_page * line_height);
             //     if (line.type === "dialogue" || line.type === "parenthetical") {
-            //         print_dialogue_split_more(print.lines_per_page * print.font_height);
+            //         print_dialogue_split_more(print.lines_per_page * line_height);
             //     }
 
             //     for (let j = 0; j < text2Result.breaks; j++) {
@@ -2461,9 +2463,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             //         }
 
             //         if (j < text2Result.breaks - 1) {
-            //             print_scene_split_continue(print.lines_per_page * print.font_height);
+            //             print_scene_split_continue(print.lines_per_page * line_height);
             //             if (line.type === "dialogue" || line.type === "parenthetical") {
-            //                 print_dialogue_split_more(print.lines_per_page * print.font_height);
+            //                 print_dialogue_split_more(print.lines_per_page * line_height);
             //             }
             //         }
             //     }
@@ -2502,7 +2504,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var feed_note = feed_note_no + (1.5 * lineHeight);
         var width_note = print.page_width - feed_note_no - feed_note_no - (1.5 * lineHeight);
         // 预计高度，修正打印尺寸
-        var expH = left_lines(pIdx) * print.font_height
+        var expH = left_lines(pIdx) * line_height
 
         var useDoubleColumn = false;
         var feed_note_no_right = 0;
@@ -2519,8 +2521,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 feed_note_no_right = (print.page_width) / 2 + 0.2
                 feed_note_right = feed_note_no_right + (1.5 * lineHeight);
 
-                var diffLines = Math.round((pagesHeight[pIdx] - expH) / print.font_height);
-                var l_lines = print.lines_per_page - Math.round(pagesHeight[pIdx] / print.font_height);
+                var diffLines = Math.round((pagesHeight[pIdx] - expH) / line_height);
+                var l_lines = print.lines_per_page - Math.round(pagesHeight[pIdx] / line_height);
 
                 if (l_lines <= diffLines + 1) {
                     rightLines = diffLines
@@ -2617,10 +2619,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     width: feed_note_no - 0.5 * lineHeight,
                     align: 'right',
                     fontSize: print.font_size,
-                    lineHeight: print.font_height
+                    lineHeight: line_height
                 });
-                doc.moveTo(print.action.feed * 72, (drawLatestPosy - print.font_height) * 72)
-                    .lineTo((print.action.feed + innerwidth_half) * 72, (drawLatestPosy - print.font_height) * 72)
+                doc.moveTo(print.action.feed * 72, (drawLatestPosy - line_height) * 72)
+                    .lineTo((print.action.feed + innerwidth_half) * 72, (drawLatestPosy - line_height) * 72)
                     .stroke();
                 // 统计高度，加上注解高度
                 pagesHeight[pIdx] += yPosBottom - drawLatestPosy;
@@ -2632,10 +2634,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     width: width_note,
                     align: 'left',
                     fontSize: print.font_size,
-                    lineHeight: print.font_height
+                    lineHeight: line_height
                 });
-                doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - lineHeight - print.font_height) * 72)
-                    .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - lineHeight - print.font_height) * 72)
+                doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - lineHeight - line_height) * 72)
+                    .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - lineHeight - line_height) * 72)
                     .stroke();
             }
         }
@@ -2680,7 +2682,7 @@ export var get_pdf_stats = async function (opts: Options): Promise<pdfstats> {
     var lines = 0;
     for (var pIdx in ph) {
         var h = ph[pIdx];
-        lines += Math.round(h / opts.print.font_height);
+        lines += Math.round(h / opts.line_height);
     }
     stats.pagecount = lines / opts.print.lines_per_page; //去除换页等空行后的，统计的页数
     return stats;
@@ -2717,7 +2719,7 @@ export var get_pdf_base64 = async function (opts: Options): Promise<PdfAsBase64>
     var lines = 0;
     for (var pIdx in ph) {
         var h = ph[pIdx];
-        lines += Math.round(h / opts.print.font_height);
+        lines += Math.round(h / opts.line_height);
     }
     stats.pagecount = lines / opts.print.lines_per_page;
     doc.end();

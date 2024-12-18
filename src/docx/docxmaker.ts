@@ -16,6 +16,7 @@ import * as Docx from "docx";
 
 // import * as blobUtil from "blob-util";
 export class Options {
+    line_height: number;
     filepath: string;
     config: fountainconfig.FountainConfig;
     parsed: any;
@@ -760,12 +761,12 @@ async function initDoc(opts: Options) {
 
         // var firstBreakHeight = firstBreakHeight * 72;
         // if (catchNotes) {
-        //     firstBreakHeight = firstBreakHeight - (note_lines(pageIdx) * print.font_height * 72);
+        //     firstBreakHeight = firstBreakHeight - (note_lines(pageIdx) * line_height * 72);
         // }
 
         // return addTextbox(textobjects, doc, x * 72, y * 72, width * 72, posTop * 72, firstBreakHeight, breakHeight * 72, switchPageFrom, switchPageTo, onlyGetLines,
         //     { // 组件bug,text显示宽度比实际配置的width值要大
-        //         lineHeight: options.lineHeight || print.font_height * 72,
+        //         lineHeight: options.lineHeight || line_height * 72,
         //         lineBreak: false,
         //         align: options.align,
         //         baseline: 'bottom',
@@ -860,6 +861,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         exportcfg = opts.exportconfig,
         chinaFormat = 0; //是否国内剧本格式; 0,国际剧本格式；1，国内剧本，带△ ；2，国内剧本，不带 △ 。 （区别于好莱坞剧本格式）
     // var pageIdx = 0;
+    var line_height = opts.line_height;
 
     if (opts.metadata) {
         if (opts.metadata.chinaFormat) {
@@ -883,7 +885,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     doc.options.title = title_token ? clearFormatting(inline(title_token.text)) : '';
 
     // 页面尺寸配置，需要设置到每个 section对象的properties属性去
-    var bmar = print.page_height - (print.lines_per_page * print.font_height) - print.top_margin 
+    // var bmar = print.page_height - (print.lines_per_page * line_height) - print.top_margin 
     var sesctionProps = {
         page: {
             size: {
@@ -893,8 +895,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             margin: {
                 top: Docx.convertInchesToTwip(print.top_margin),
                 right: Docx.convertInchesToTwip(print.right_margin),
-                bottom: Docx.convertInchesToTwip(bmar),
+                bottom: Docx.convertInchesToTwip(print.bottom_margin),
                 left: Docx.convertInchesToTwip(print.left_margin),
+                header: Docx.convertInchesToTwip(print.page_number_top_margin),
+                footer: Docx.convertInchesToTwip(print.page_number_top_margin - line_height),
             },
             pageNumbers: {
                 start: 1
@@ -966,9 +970,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             style: "none"
         }
     };
-    
+
     var spacing = {
-        line: Docx.convertInchesToTwip(print.font_height)-3, //docx bug? must -3
+        line: Docx.convertInchesToTwip(line_height), //docx bug? must -3
         lineRule: Docx.LineRuleType.EXACT,
     }
 
@@ -1179,6 +1183,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 properties: sesctionProps,
                 children: [
                     new Docx.Paragraph({
+                        spacing: spacing,
                         frame: {
                             type: "alignment",
                             width: innerWidth / 3,
@@ -1195,6 +1200,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         children: doc.text2(tltext),
                     }),
                     new Docx.Paragraph({
+                        spacing: spacing,
                         frame: {
                             type: "alignment",
                             width: innerWidth / 3,
@@ -1212,6 +1218,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         children: doc.text2(tctext),
                     }),
                     new Docx.Paragraph({
+                        spacing: spacing,
                         frame: {
                             type: "alignment",
                             width: innerWidth / 3,
@@ -1229,6 +1236,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         children: doc.text2(trtext),
                     }),
                     new Docx.Paragraph({
+                        spacing: spacing,
                         frame: {
                             type: "alignment",
                             width: innerWidth,
@@ -1246,6 +1254,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         children: doc.text2(cctext),
                     }),
                     new Docx.Paragraph({
+                        spacing: spacing,
                         frame: {
                             type: "alignment",
                             width: innerWidth / 2,
@@ -1262,6 +1271,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         children: doc.text2(bltext),
                     }),
                     new Docx.Paragraph({
+                        spacing: spacing,
                         frame: {
                             type: "alignment",
                             width: innerWidth / 2,
@@ -1375,8 +1385,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     ],
                 })
             )
-            
-            if(lastDialTableRight.length == 0){
+
+            if (lastDialTableRight.length == 0) {
                 // 只有左侧有对话，表格后补一个空行
                 sectionMain.children.push(new Docx.Paragraph(""));
             }
@@ -1536,7 +1546,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
 
             // y++;
-            // height += print.font_height;
+            // height += line_height;
 
             if (lineStructs) {
                 if (line.token.line && !lineStructs.has(line.token.line)) {
@@ -1633,7 +1643,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             if (line.type === 'centered') {
                 text = ifResetFormat(text, line);
-                // text2Result = center(text, print.top_margin + height, print.lines_per_page * print.font_height - height, print.lines_per_page * print.font_height, print.top_margin, 0, 0, true);
+                // text2Result = center(text, print.top_margin + height, print.lines_per_page * line_height - height, print.lines_per_page * line_height, print.top_margin, 0, 0, true);
 
                 sectionMain.children.push(new Docx.Paragraph({
                     style: "action",
@@ -2160,7 +2170,7 @@ export var get_docx_stats = async function (opts: Options): Promise<docxstats> {
     var lines = ph.length;
     // for (var pIdx in ph) {
     //     var h = ph[pIdx];
-    //     lines += Math.round(h / opts.print.font_height);
+    //     lines += Math.round(h / opts.line_height);
     // }
     stats.pagecount = lines * 0;
     return stats;
@@ -2178,7 +2188,7 @@ export var get_docx_base64 = async function (opts: Options): Promise<DocxAsBase6
     var lines = 0;
     // for (var pIdx in ph) {
     //     var h = ph[pIdx];
-    //     lines += Math.round(h / opts.print.font_height);
+    //     lines += Math.round(h / opts.line_height);
     // }
     lines = ph.length
     stats.pagecount = lines * 0;

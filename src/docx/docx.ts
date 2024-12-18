@@ -122,6 +122,7 @@ export var GenerateDocx = async function (outputpath: string, config: FountainCo
     });
 
     var docx_options: docxmaker.Options = {
+        line_height: 0,
         filepath: outputpath,
         parsed: parsedDocument,
         print: print.print_profiles[config.print_profile || "a4"],
@@ -167,14 +168,65 @@ export var GenerateDocx = async function (outputpath: string, config: FountainCo
         for_preview: false
     }
 
-    if (outputpath == "$STATS$"){
+    //深拷贝
+    docx_options.print = JSON.parse(JSON.stringify(docx_options.print));
+    if (metadata && metadata.print) {
+        if (metadata.print.lines_per_page) {
+            docx_options.print.lines_per_page = metadata.print.lines_per_page;
+        }
+        if (metadata.print.top_margin) {
+            docx_options.print.top_margin = metadata.print.top_margin;
+        }
+        if (metadata.print.bottom_margin) {
+            docx_options.print.bottom_margin = metadata.print.bottom_margin;
+        }
+        if (metadata.print.left_margin) {
+            docx_options.print.left_margin = metadata.print.left_margin;
+        }
+        if (metadata.print.right_margin) {
+            docx_options.print.right_margin = metadata.print.right_margin;
+        }
+        if (metadata.print.page_height) {
+            docx_options.print.page_height = metadata.print.page_height;
+        }
+        if (metadata.print.page_width) {
+            docx_options.print.page_width = metadata.print.page_width;
+        }
+        if (metadata.print.page_number_top_margin) {
+            docx_options.print.page_number_top_margin = metadata.print.page_number_top_margin;
+        }
+        if (metadata.print.paper_size) {
+            docx_options.print.paper_size = metadata.print.paper_size;
+        }
+        if (metadata.print.font_size) {
+            docx_options.print.font_size = metadata.print.font_size;
+        }
+        if (metadata.print.note_font_size) {
+            docx_options.print.note_font_size = metadata.print.note_font_size;
+        }
+        if (metadata.print.font_width) {
+            docx_options.print.font_width = metadata.print.font_width;
+        }
+        if (metadata.print.note_line_height) {
+            docx_options.print.note_line_height = metadata.print.note_line_height;
+        }
+    }
+
+    docx_options.line_height = (docx_options.print.page_height - docx_options.print.top_margin - docx_options.print.bottom_margin) / docx_options.print.lines_per_page;
+    docx_options.line_height = Math.round(docx_options.line_height * 100) / 100;
+
+    docx_options.print.bottom_margin = Math.round((docx_options.print.page_height - docx_options.print.top_margin - (docx_options.print.lines_per_page * docx_options.line_height)) * 100) / 100;
+
+    // docx_options.print.bottom_margin = docx_options.print.bottom_margin - docx_options.line_height * 0.5; //docx 多半行
+
+    if (outputpath == "$STATS$") {
         return docxmaker.get_docx_stats(docx_options);
     }
-    else if (outputpath == "$PREVIEW$"){
+    else if (outputpath == "$PREVIEW$") {
         docx_options.for_preview = true;
         return docxmaker.get_docx_base64(docx_options)
     }
-    else{
+    else {
         docxmaker.get_docx(docx_options, progress);
     }
 }
