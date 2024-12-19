@@ -1417,9 +1417,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                     }
 
-                } else if (last_dual_right_end_height > last_dual_left_end_height) {
-                    height = last_dual_right_end_height;
-                }
+                } else{
+                    
+                    if (last_dual_right_end_height > last_dual_left_end_height) {
+                        height = last_dual_right_end_height;
+                    }
+                    
+                    lashHeightRight = last_dual_right_end_height; // 增加此句。此后正常换页时，打印场景continue，打印到右侧。
+                } 
 
                 last_dual_right_end_pageIdx = -1;
             }
@@ -1913,6 +1918,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
 
         if_dual_right_end(ii);
+        
+        if (lines[ii].type === "separator" || lines[ii].type === "page_break"){
+        } else {
+            lashHeightRight = 0;
+        }
 
         // if (wait_right_end_print_scene_split > 0) {
         //     if (lines[ii].type === "page_break" || lines[ii].type === "page_switch" || (lines[ii].token && lines[ii].token.dual === "right") ||
@@ -2551,12 +2561,16 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
         if (expH + 0.0001 < pagesHeight[pIdx]) {
             // if (expH < pagesHeight[pIdx]) {
-            if (notes.length > 1 || pagesHeight[pIdx] >= print.page_height - print.bottom_margin - print.top_margin) {
+            if (notes.length > 1 || pagesHeight[pIdx] >= print.page_height - print.bottom_margin - print.top_margin ) {
                 useDoubleColumn = true;
                 width_note = (width_note - (1.5 * lineHeight)) / 2 - 0.2;
                 feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2
                 feed_note_right = feed_note_no_right + (1.5 * lineHeight);
 
+                if(notes.length > 1) {
+                    expH += line_height
+                }
+                
                 var diffLines = Math.round((pagesHeight[pIdx] - expH) / line_height);
                 var l_lines = print.lines_per_page - Math.round(pagesHeight[pIdx] / line_height);
 
