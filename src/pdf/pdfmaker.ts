@@ -2563,22 +2563,30 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // if (expH < pagesHeight[pIdx]) {
             if (notes.length > 1 || pagesHeight[pIdx] >= print.page_height - print.bottom_margin - print.top_margin ) {
                 useDoubleColumn = true;
-                width_note = (width_note - (1.5 * lineHeight)) / 2 - 0.2;
-                feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2
-                feed_note_right = feed_note_no_right + (1.5 * lineHeight);
-
+                
                 if(notes.length > 1) {
                     expH += line_height
+                    if (expH + 0.0001 >= pagesHeight[pIdx]) {
+                        useDoubleColumn = false
+                    }
                 }
                 
-                var diffLines = Math.round((pagesHeight[pIdx] - expH) / line_height);
-                var l_lines = print.lines_per_page - Math.round(pagesHeight[pIdx] / line_height);
-
-                if (l_lines <= diffLines + 1) {
-                    rightLines = diffLines
-                } else {
-                    rightLines = diffLines + Math.floor((l_lines - diffLines) / 2);
+                if(useDoubleColumn){
+                    
+                    width_note = (width_note - (1.5 * lineHeight)) / 2 - 0.2;
+                    feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2
+                    feed_note_right = feed_note_no_right + (1.5 * lineHeight);
+                    
+                    var diffLines = Math.round((pagesHeight[pIdx] - expH) / line_height);
+                    var l_lines = print.lines_per_page - Math.round(pagesHeight[pIdx] / line_height);
+    
+                    if (l_lines <= diffLines + 1) {
+                        rightLines = diffLines
+                    } else {
+                        rightLines = diffLines + Math.floor((l_lines - diffLines) / 2);
+                    }
                 }
+                
             }
         }
 
