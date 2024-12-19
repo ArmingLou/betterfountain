@@ -1126,47 +1126,61 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     };
 
 
+    var angle: number = undefined;
+    var diagonal: number = undefined;
+    var mv_x: number = undefined;
+    var mv_y: number = undefined;
+    var font_size_wt: number = undefined;
+    var watermark: string = undefined;
+
     var print_watermark = function () {
         if (cfg.print_watermark) {
             var options = {
                 origin: [0, 0]
-            },
-                font_size,
-                angle = Math.atan(print.page_height / print.page_width) * 180 / Math.PI,
-                diagonal,
-                watermark;
+            };
+            if (angle === undefined) {
+                var w = print.page_width - print.left_margin - print.right_margin;
+                var h = print.page_height - print.top_margin - print.bottom_margin;
+                angle = Math.atan(h / w) * 180 / Math.PI
 
-            // underline and rotate pdfkit bug (?) workaround
-            watermark = cfg.print_watermark.replace(/_/g, '');
-            // unformat
-            // len = watermark.replace(/\*/g, '').length;
+                // underline and rotate pdfkit bug (?) workaround
+                watermark = cfg.print_watermark.replace(/_/g, '');
+                // unformat
+                // len = watermark.replace(/\*/g, '').length;
 
-            diagonal = Math.sqrt(Math.pow(print.page_width, 2) + Math.pow(print.page_height, 2));
-            diagonal -= 4;
+                diagonal = Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2));
+                var mv = Math.sqrt(Math.pow(print.left_margin, 2) + Math.pow(print.top_margin, 2))
+                var angle_mv = Math.atan(print.top_margin / print.left_margin) * 180 / Math.PI
+                var ang2 = angle_mv - angle;
+                mv_x = mv * Math.cos(ang2 * Math.PI / 180);
+                mv_y = mv * Math.sin(ang2 * Math.PI / 180);
+                // diagonal -= 4;
 
-            var spl = watermark.trim().split('\n');
-            var lls = (spl.length) / 2;
+                var spl = watermark.trim().split('\n');
+                var lls = (spl.length) / 2;
 
-            var len = 1;
-            for (var i = 0; i < spl.length; i++) {
-                var l = clearFormatting(spl[i]).trim().length;
-                if (l > len) {
-                    len = l;
+                var len = 1;
+                for (var i = 0; i < spl.length; i++) {
+                    var l = clearFormatting(spl[i]).trim().length;
+                    if (l > len) {
+                        len = l;
+                    }
                 }
-            }
-            font_size = diagonal * 72 / len;
-            if (font_size < print.font_size) {
-                font_size = print.font_size
+                font_size_wt = diagonal * 72 / len;
+                if (font_size_wt < print.font_size) {
+                    font_size_wt = print.font_size
+                }
+                mv_y = mv_y - ((font_size_wt * lls) / 72);
             }
             // font_size = 40;
             doc.rotate(angle, options);
-            doc.format_text(watermark, 2, -(font_size * lls) / 72, {
+            doc.format_text(watermark, mv_x, mv_y, {
                 color: '#eeeeee',
                 line_break: false,
                 width: diagonal,
                 align: 'center',
-                fontSize: font_size,
-                lineHeight: font_size
+                fontSize: font_size_wt,
+                lineHeight: font_size_wt
             });
             doc.rotate(-angle, options);
         }
@@ -1845,6 +1859,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             } else if (lines[ii].token && lines[ii].token.dual === "left" && lines[ii].token.type !== "character") {
                 scene_split = false;
                 wait_right_end_print_scene_split.set(pageIdx, { sceneNumber: scene_number, count: count_scene_split_top(), leftHeight: lashHeight, rightHeight: 0 });
+            } else if (lines[ii].token && lines[ii].token.dual === "right" && lines[ii].token.type === "character") {
+                scene_split = false;
+                wait_right_end_print_scene_split.set(pageIdx, { sceneNumber: scene_number, count: count_scene_split_top(), leftHeight: lashHeight, rightHeight: 0 });
             } else {
                 scene_split = true;
             }
@@ -1871,7 +1888,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             if (scene_split && lashHeight) { // 左侧对话换页时，不会在此打印。 右侧触发的换页会。其他非对话中的换页也会在此。
                 doc.switchToPage(pageIdx - 1);
                 var h = lashHeight > lashHeightRight ? lashHeight : lashHeightRight;
-                var hPri = lashHeightRight > 0 ? lashHeightRight :lashHeight ;
+                var hPri = lashHeightRight > 0 ? lashHeightRight : lashHeight;
                 print_scene_split_continue(hPri);
                 pagesHeight[pageIdx - 1] = h;
                 doc.switchToPage(pageIdx);
@@ -2502,7 +2519,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     wait_right_end_print_scene_split.forEach((v, pid) => {
         doc.switchToPage(pid - 1);
         var h = v.leftHeight > v.rightHeight ? v.leftHeight : v.rightHeight;
-        var hPri = v.rightHeight > 0 ?  v.rightHeight : v.leftHeight;
+        var hPri = v.rightHeight > 0 ? v.rightHeight : v.leftHeight;
         print_scene_split_continue(hPri);
         pagesHeight[pid - 1] = h;
         doc.switchToPage(pid);
@@ -2519,7 +2536,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var lineHeight = print.note_line_height;
         var feed_note_no = print.action.feed;
         var feed_note = feed_note_no + (1.5 * lineHeight);
-        var width_note = actionWidth- (1.5 * lineHeight);
+        var width_note = actionWidth - (1.5 * lineHeight);
         // 预计高度，修正打印尺寸
         var expH = left_lines(pIdx) * line_height
         expH = Math.round(expH * 10000) / 10000;
@@ -2536,7 +2553,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // if (expH < pagesHeight[pIdx]) {
             if (notes.length > 1 || pagesHeight[pIdx] >= print.page_height - print.bottom_margin - print.top_margin) {
                 useDoubleColumn = true;
-                width_note = (width_note- (1.5 * lineHeight)) / 2 - 0.2;
+                width_note = (width_note - (1.5 * lineHeight)) / 2 - 0.2;
                 feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2
                 feed_note_right = feed_note_no_right + (1.5 * lineHeight);
 
