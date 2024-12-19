@@ -1675,7 +1675,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         // shift_scene_number = (print.scene_heading.max + 1) * print.font_width;
                         // doc.text2(scene_number, feed + shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
                         shift_scene_number = (scene_text_length + 4) * print.font_width;
-                        doc.text2(scene_number, print.page_width - print.action.feed + shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
+                        doc.text2(scene_number, print.action.feed + actionWidth + shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
                     }
                 }
 
@@ -1871,7 +1871,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             if (scene_split && lashHeight) { // 左侧对话换页时，不会在此打印。 右侧触发的换页会。其他非对话中的换页也会在此。
                 doc.switchToPage(pageIdx - 1);
                 var h = lashHeight > lashHeightRight ? lashHeight : lashHeightRight;
-                print_scene_split_continue(h);
+                var hPri = lashHeightRight > 0 ? lashHeightRight :lashHeight ;
+                print_scene_split_continue(hPri);
                 pagesHeight[pageIdx - 1] = h;
                 doc.switchToPage(pageIdx);
                 print_scene_split_top(scene_number, count_scene_split_top());
@@ -2501,7 +2502,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     wait_right_end_print_scene_split.forEach((v, pid) => {
         doc.switchToPage(pid - 1);
         var h = v.leftHeight > v.rightHeight ? v.leftHeight : v.rightHeight;
-        print_scene_split_continue(h);
+        var hPri = v.rightHeight > 0 ?  v.rightHeight : v.leftHeight;
+        print_scene_split_continue(hPri);
         pagesHeight[pid - 1] = h;
         doc.switchToPage(pid);
         print_scene_split_top(v.sceneNumber, v.count);
@@ -2532,7 +2534,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
         if (expH + 0.0001 < pagesHeight[pIdx]) {
             // if (expH < pagesHeight[pIdx]) {
-            if (notes.length > 1) {
+            if (notes.length > 1 || pagesHeight[pIdx] >= print.page_height - print.bottom_margin - print.top_margin) {
                 useDoubleColumn = true;
                 width_note = (width_note- (1.5 * lineHeight)) / 2 - 0.2;
                 feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2

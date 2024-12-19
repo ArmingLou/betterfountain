@@ -2012,7 +2012,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 else if (line.type === "section") {
                     var feed: number = (print[line.type] || {}).feed || print.action.feed;
                     feed += current_section_level * print.section.level_indent;
-                    var sectionIndent = Docx.convertInchesToTwip(feed - print.left_margin);
+                    var sectionIndent = Docx.convertInchesToTwip(feed - print.action.feed);
 
                     sectionMain.children.push(new Docx.Paragraph({
                         style: "section",
@@ -2032,7 +2032,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         feed = print.action.feed;
                     }
                     feed += print.synopsis.padding || 0;
-                    var sectionIndent = Docx.convertInchesToTwip(feed - print.left_margin);
+                    var sectionIndent = Docx.convertInchesToTwip(feed - print.action.feed);
 
                     sectionMain.children.push(new Docx.Paragraph({
                         style: "action",

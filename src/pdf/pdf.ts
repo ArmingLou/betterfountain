@@ -167,71 +167,75 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
         found_font_bold_italic: false,
         for_preview: false
     }
-    
+
     pdf_options.print = JSON.parse(JSON.stringify(pdf_options.print));
-    if(metadata && metadata.print){
-           if(metadata.print.lines_per_page){
-               pdf_options.print.lines_per_page = metadata.print.lines_per_page;
-           }
-           if(metadata.print.top_margin){
-               pdf_options.print.top_margin = metadata.print.top_margin;
-           }
-           if(metadata.print.bottom_margin){
-               pdf_options.print.bottom_margin = metadata.print.bottom_margin;
-           }
-           if(metadata.print.left_margin){
-               pdf_options.print.left_margin = metadata.print.left_margin;
-           }
-           if(metadata.print.right_margin){
-               pdf_options.print.right_margin = metadata.print.right_margin;
-           }
-           if(metadata.print.page_height){
-               pdf_options.print.page_height = metadata.print.page_height;
-           }
-           if(metadata.print.page_width){
-               pdf_options.print.page_width = metadata.print.page_width;
-           }
-           if(metadata.print.page_number_top_margin){
-               pdf_options.print.page_number_top_margin = metadata.print.page_number_top_margin;       
-           }
-           if(metadata.print.paper_size){
-               pdf_options.print.paper_size = metadata.print.paper_size;
-           }
-           if(metadata.print.font_size){
-               pdf_options.print.font_size = metadata.print.font_size;
-           }
-           if(metadata.print.note_font_size){
-               pdf_options.print.note_font_size = metadata.print.note_font_size;
-           }
-           if(metadata.print.font_width){
-               pdf_options.print.font_width = metadata.print.font_width;
-           }
-           if(metadata.print.note_line_height){
-               pdf_options.print.note_line_height = metadata.print.note_line_height;
-           }
+    if (metadata && metadata.print) {
+        if (metadata.print.lines_per_page) {
+            pdf_options.print.lines_per_page = metadata.print.lines_per_page;
+        }
+        if (metadata.print.top_margin) {
+            pdf_options.print.top_margin = metadata.print.top_margin;
+        }
+        if (metadata.print.bottom_margin) {
+            pdf_options.print.bottom_margin = metadata.print.bottom_margin;
+        }
+        if (metadata.print.left_margin) {
+            pdf_options.print.left_margin = metadata.print.left_margin;
+        }
+        if (metadata.print.right_margin) {
+            pdf_options.print.right_margin = metadata.print.right_margin;
+        }
+        if (metadata.print.page_height) {
+            pdf_options.print.page_height = metadata.print.page_height;
+        }
+        if (metadata.print.page_width) {
+            pdf_options.print.page_width = metadata.print.page_width;
+        }
+        if (metadata.print.page_number_top_margin) {
+            pdf_options.print.page_number_top_margin = metadata.print.page_number_top_margin;
+        }
+        if (metadata.print.paper_size) {
+            pdf_options.print.paper_size = metadata.print.paper_size;
+        }
+        if (metadata.print.font_size) {
+            pdf_options.print.font_size = metadata.print.font_size;
+        }
+        if (metadata.print.note_font_size) {
+            pdf_options.print.note_font_size = metadata.print.note_font_size;
+        }
+        if (metadata.print.font_width) {
+            pdf_options.print.font_width = metadata.print.font_width;
+        }
+        if (metadata.print.note_line_height) {
+            pdf_options.print.note_line_height = metadata.print.note_line_height;
+        }
     }
-    
+
     pdf_options.print.action.feed = pdf_options.print.left_margin
     pdf_options.print.scene_heading.feed = pdf_options.print.action.feed
-    pdf_options.print.dialogue.feed = pdf_options.print.action.feed + 1
-    var diff = Math.round(pdf_options.print.dialogue.feed*10/5)/10
-    pdf_options.print.parenthetical.feed = pdf_options.print.dialogue.feed  + diff
-    pdf_options.print.character.feed = pdf_options.print.parenthetical.feed  + diff
-    pdf_options.print.more.feed = pdf_options.print.character.feed 
+    var iw = pdf_options.print.page_width - pdf_options.print.left_margin - pdf_options.print.right_margin;
+    var id = pdf_options.print.action.feed - pdf_options.print.left_margin;
+    var aw = iw - id - id;
+    pdf_options.print.character.feed = (aw / 2) + pdf_options.print.action.feed - pdf_options.print.font_width * 4;
+    pdf_options.print.dialogue.feed = (pdf_options.print.character.feed - pdf_options.print.action.feed) / 2 + pdf_options.print.action.feed;
+    pdf_options.print.parenthetical.feed = (pdf_options.print.character.feed - pdf_options.print.dialogue.feed) / 2 + pdf_options.print.dialogue.feed;
+    pdf_options.print.more.feed = pdf_options.print.character.feed
+    pdf_options.print.section.feed = pdf_options.print.action.feed - 1 >= 0.2 ? pdf_options.print.action.feed - 1 : 0.2
+    pdf_options.print.synopsis.feed = pdf_options.print.section.feed
     
-    pdf_options.line_height = (pdf_options.print.page_height - pdf_options.print.top_margin - pdf_options.print.bottom_margin)/pdf_options.print.lines_per_page;
+    pdf_options.line_height = (pdf_options.print.page_height - pdf_options.print.top_margin - pdf_options.print.bottom_margin) / pdf_options.print.lines_per_page;
     pdf_options.line_height = Math.round(pdf_options.line_height * 100) / 100;
-    
+
     pdf_options.print.bottom_margin = Math.round((pdf_options.print.page_height - pdf_options.print.top_margin - (pdf_options.print.lines_per_page * pdf_options.line_height)) * 100) / 100;
-    
-    if (outputpath == "$STATS$"){
+
+    if (outputpath == "$STATS$") {
         return pdfmaker.get_pdf_stats(pdf_options);
     }
-    else if (outputpath == "$PREVIEW$"){
+    else if (outputpath == "$PREVIEW$") {
         pdf_options.for_preview = true;
         return pdfmaker.get_pdf_base64(pdf_options)
     }
-    else{
+    else {
         pdfmaker.get_pdf(pdf_options, progress);
     }
 }
