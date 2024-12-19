@@ -28,6 +28,7 @@ const defaultStyle = {
 
 function addTextbox(text, doc, posX, posY, width, posTop, firstBreakHeight, breakHeight, switchPageFrom, switchPageTo, onlyGetLines, style = {}) {
   // width = width - 36;
+  width = Math.round(width);
   if (text.length <= 0) {
     text = [""];
   }
@@ -195,6 +196,7 @@ function measureTextFragmentsExclude(textArray, font, fontSize, doc, exclude) {
 // exclude 指定需要排除长度的样式特殊字符
 function breakLines(text, width, font, fontSize, doc, exclude) {
   // width = width - 36;
+  width = Math.round(width);
   var res = [];
   const lineBreakedText = text.split("\n")
 

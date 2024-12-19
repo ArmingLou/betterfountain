@@ -126,7 +126,7 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
       for (let i = 0; i < textFragment.text.length; i++) {
         txt += textFragment.text[i];
         w = measureTextWidth(txt, font, fontSize, doc);
-        if (w >= spaceLeft) {
+        if (w > spaceLeft) {
           if (txt_l) {
             lineWidth += w_l;
             lineText = lineText + txt_l;

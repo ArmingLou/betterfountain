@@ -542,7 +542,7 @@ async function initDoc(opts: Options) {
         }
 
         var width = options.width ? options.width : print.page_width;
-        var width = width + 0.01; //修复误差，防止少一个字符换行
+        // var width = width + 0.01; //修复误差，防止少一个字符换行
         // var font_width = print.font_width;
         var textobjects = [];
         var currentIndex = 0;
@@ -1676,8 +1676,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
 
                 height += res.height / 72;
+                height = Math.round(height * 10000) / 10000;
                 if (if_drawLine_blank(drawLine)) {
                     subHeight += res.height / 72;
+                    subHeight = Math.round(subHeight * 10000) / 10000;
                 } else {
                     subHeight = 0;
                 }
@@ -2120,7 +2122,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             if (line.type === 'centered') {
                 text = ifResetFormat(text, line);
                 // text2Result = center(text, print.top_margin + height, print.lines_per_page * line_height - height, print.lines_per_page * line_height, print.top_margin, 0, 0, true);
-                text2Result = doc.text2(text, 0, print.top_margin + height, print.top_margin, print.lines_per_page * line_height - height, print.lines_per_page * line_height, 0, 0, true, { align: 'center' }, bottom_notes ? currentLineNotes : null, notesPage, pageIdx)
+                text2Result = doc.text2(text, print.action.feed, print.top_margin + height, print.top_margin, print.lines_per_page * line_height - height, print.lines_per_page * line_height, 0, 0, true, { align: 'center',width: print.page_width - print.action.feed - print.action.feed}, bottom_notes ? currentLineNotes : null, notesPage, pageIdx)
                 // if (text2Result.breaks > 0) {
                 //     height = text2Result.height;
                 // } else {
@@ -2509,6 +2511,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var width_note = print.page_width - feed_note_no - feed_note_no - (1.5 * lineHeight);
         // 预计高度，修正打印尺寸
         var expH = left_lines(pIdx) * line_height
+        expH = Math.round(expH * 10000) / 10000;
 
         var useDoubleColumn = false;
         var feed_note_no_right = 0;
@@ -2519,6 +2522,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var rightLines = 0;
 
         if (expH + 0.0001 < pagesHeight[pIdx]) {
+        // if (expH < pagesHeight[pIdx]) {
             if (notes.length > 1) {
                 useDoubleColumn = true;
                 width_note = width_note / 2 - 0.2;
@@ -2616,7 +2620,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
         }
         if (notes.length > 0) {
-            var innerwidth_half = (print.page_width - print.left_margin - print.right_margin) / 3
+            var innerwidth_half = (print.page_width - print.action.feed - print.action.feed) / 3
             if (drawLatestPosy) {
                 doc.format_text(cfg.text_note || 'NOTE:', 0, drawLatestPosy, {
                     color: '#000000',
