@@ -931,6 +931,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     var line_height = opts.line_height;
     var bottom_notes = cfg.note_position_bottom
 
+    const innerwidth = print.page_width - print.left_margin - print.right_margin;
+    const actionIndent = print.action.feed - print.left_margin;
+    const actionWidth = innerwidth - actionIndent - actionIndent;
+
+
     var pagesHeight: { [key: number]: number } = {};
 
     var title_token = get_title_page_token(parsed, 'title');
@@ -981,7 +986,6 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             parsed.title_page['bl'].length > 0 || parsed.title_page['cc'].length > 0 || parsed.title_page['br'].length > 0
         ) {
 
-            const innerwidth = print.page_width - print.left_margin - print.right_margin;
             const innerheight = print.page_height - print.bottom_margin;
             const innerwidth_third = innerwidth / 3;
             const innerwidth_half = innerwidth / 2;
@@ -2122,7 +2126,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             if (line.type === 'centered') {
                 text = ifResetFormat(text, line);
                 // text2Result = center(text, print.top_margin + height, print.lines_per_page * line_height - height, print.lines_per_page * line_height, print.top_margin, 0, 0, true);
-                text2Result = doc.text2(text, print.action.feed, print.top_margin + height, print.top_margin, print.lines_per_page * line_height - height, print.lines_per_page * line_height, 0, 0, true, { align: 'center',width: print.page_width - print.action.feed - print.action.feed}, bottom_notes ? currentLineNotes : null, notesPage, pageIdx)
+                text2Result = doc.text2(text, print.action.feed, print.top_margin + height, print.top_margin, print.lines_per_page * line_height - height, print.lines_per_page * line_height, 0, 0, true, { align: 'center', width: actionWidth }, bottom_notes ? currentLineNotes : null, notesPage, pageIdx)
                 // if (text2Result.breaks > 0) {
                 //     height = text2Result.height;
                 // } else {
@@ -2130,7 +2134,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // }
             } else if (line.type === "transition") {
                 var feed: number = print.action.feed;
-                text_properties.width = print.page_width - feed - feed;
+                text_properties.width = actionWidth;
                 text_properties.align = chinaFormat ? 'left' : 'right';
                 text = ifResetFormat(chinaFormat ? '(' + text + ')' : text, line);
                 text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin, print.lines_per_page * line_height - height, print.lines_per_page * line_height, 0, 0, true, text_properties, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
@@ -2141,7 +2145,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // }
             } else {
                 var feed: number = (print[line.type] || {}).feed || print.action.feed;
-                text_properties.width = print.page_width - feed - feed; //对称feed
+                var indent = feed - print.left_margin
+                text_properties.width = innerwidth - indent - indent;
                 // if (line.type === "transition") {
                 //     feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(line.text) * print.font_width;
                 // }
@@ -2156,7 +2161,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     currentSections.push(he.encode(sectiontext));
                     if (!hasInvisibleSection) {
                         feed += current_section_level * print.section.level_indent;
-                        text_properties.width = print.page_width - feed - feed; //对称feed
+                        indent = feed - print.left_margin
+                        text_properties.width = innerwidth - indent - indent;
+                        // text_properties.width = print.page_width - feed - feed; //对称feed
                     }
                     if (cfg.number_sections) {
                         if (sectiontoken !== current_section_token) {
@@ -2222,7 +2229,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         feed = print.action.feed;
                     }
                     feed += print.synopsis.padding || 0;
-                    text_properties.width = print.page_width - feed - feed;
+                    indent = feed - print.left_margin
+                    text_properties.width = innerwidth - indent - indent;
+                    // text_properties.width = print.page_width - feed - feed;
                 }
 
 
@@ -2258,8 +2267,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 if (line.token && line.token.dual === "right") {
 
                     if (line.type === "parenthetical" && cacheText === "") {
-                        feed = (print.page_width / 2) + (feed_diff * 1.5);
-                        text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 3.5);
+                        feed = print.left_margin + (innerwidth / 2) + (feed_diff * 1.5);
+                        text_properties.width = innerwidth / 2 - (feed_diff * 3.5);
                     }
                     else if (line.type === "character") {
                         last_dual_left_end_pageIdx = pageIdx
@@ -2269,18 +2278,18 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         }
                         last_dual_right_end_pageIdx = last_dual_left_start_pageIdx;
                         last_dual_right_end_height = last_dual_left_start_height;
-                        feed = (print.page_width / 2) + (feed_diff * 2.5);
-                        text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 5.5);
+                        feed = print.left_margin + (innerwidth / 2) + (feed_diff * 2.5);
+                        text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
 
                         lastCharacter = text;
                         lastCharacterFeed = feed
                     }
                     else if (line.type === "more") {
-                        feed = (print.page_width / 2) + (feed_diff * 2.5);
-                        text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 5.5);
+                        feed = print.left_margin + (innerwidth / 2) + (feed_diff * 2.5);
+                        text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
                     } else {
-                        feed = (print.page_width / 2) + (0.5 * feed_diff);
-                        text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 1.5);
+                        feed = print.left_margin + (innerwidth / 2) + (0.5 * feed_diff);
+                        text_properties.width = innerwidth / 2 - (feed_diff * 1.5);
                     }
 
                     text = ifResetFormat(text, line);
@@ -2328,22 +2337,22 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     if (line.token && line.token.dual === "left") {
                         if (line.type === "parenthetical" && cacheText === "") {
                             feed = print.action.feed + (feed_diff * 2);
-                            text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 3.5);
+                            text_properties.width = innerwidth / 2 - (feed_diff * 3.5);
                         }
                         else if (line.type === "character") {
                             last_dual_left_start_pageIdx = pageIdx;
                             last_dual_left_start_height = height;
                             feed = print.action.feed + (feed_diff * 3);
-                            text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 5.5);
+                            text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
 
                             lastCharacter = text;
                             lastCharacterFeed = feed;
                         } else if (line.type === "more") {
                             feed = print.action.feed + (feed_diff * 3);
-                            text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 5.5);
+                            text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
                         } else {
                             feed = print.action.feed + feed_diff;
-                            text_properties.width = print.page_width / 2 - print.action.feed - (feed_diff * 1.5);
+                            text_properties.width = innerwidth / 2 - (feed_diff * 1.5);
                         }
                     } else if (line.type === "character") {
                         lastCharacter = text;
@@ -2376,7 +2385,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             } else {
                                 if (line.token && line.token.dual !== "left" && line.token.dual !== "right") {
                                     feed = print.action.feed;
-                                    text_properties.width = print.page_width - feed - feed;
+                                    text_properties.width = actionWidth;
                                     text_properties.align = 'left';
                                 }
                             }
@@ -2390,7 +2399,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             } else {
                                 if (line.token && line.token.dual !== "left" && line.token.dual !== "right") {
                                     feed = print.action.feed;
-                                    text_properties.width = print.page_width - feed - feed;
+                                    text_properties.width = actionWidth;
                                     text_properties.align = 'left';
                                 }
                             }
@@ -2508,7 +2517,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var lineHeight = print.note_line_height;
         var feed_note_no = print.action.feed;
         var feed_note = feed_note_no + (1.5 * lineHeight);
-        var width_note = print.page_width - feed_note_no - feed_note_no - (1.5 * lineHeight);
+        var width_note = actionWidth- (1.5 * lineHeight);
         // 预计高度，修正打印尺寸
         var expH = left_lines(pIdx) * line_height
         expH = Math.round(expH * 10000) / 10000;
@@ -2522,11 +2531,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var rightLines = 0;
 
         if (expH + 0.0001 < pagesHeight[pIdx]) {
-        // if (expH < pagesHeight[pIdx]) {
+            // if (expH < pagesHeight[pIdx]) {
             if (notes.length > 1) {
                 useDoubleColumn = true;
-                width_note = width_note / 2 - 0.2;
-                feed_note_no_right = (print.page_width) / 2 + 0.2
+                width_note = (width_note- (1.5 * lineHeight)) / 2 - 0.2;
+                feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2
                 feed_note_right = feed_note_no_right + (1.5 * lineHeight);
 
                 var diffLines = Math.round((pagesHeight[pIdx] - expH) / line_height);
