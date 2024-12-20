@@ -1297,7 +1297,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
         }
         if (l > 0) {
-            return print.lines_per_page - l - 1;
+            return print.lines_per_page - l - 1; // -1 ，预留多一行间隔
         } else {
             return print.lines_per_page;
         }
@@ -1417,14 +1417,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                     }
 
-                } else{
-                    
+                } else {
+
                     if (last_dual_right_end_height > last_dual_left_end_height) {
                         height = last_dual_right_end_height;
                     }
-                    
+
                     lashHeightRight = last_dual_right_end_height; // 增加此句。此后正常换页时，打印场景continue，打印到右侧。
-                } 
+                }
 
                 last_dual_right_end_pageIdx = -1;
             }
@@ -1918,8 +1918,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
 
         if_dual_right_end(ii);
-        
-        if (lines[ii].type === "separator" || lines[ii].type === "page_break"){
+
+        if (lines[ii].type === "separator" || lines[ii].type === "page_break") {
         } else {
             lashHeightRight = 0;
         }
@@ -2548,8 +2548,6 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var feed_note = feed_note_no + (1.5 * lineHeight);
         var width_note = actionWidth - (1.5 * lineHeight);
         // 预计高度，修正打印尺寸
-        var expH = left_lines(pIdx) * line_height
-        expH = Math.round(expH * 10000) / 10000;
 
         var useDoubleColumn = false;
         var feed_note_no_right = 0;
@@ -2559,35 +2557,28 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
         var rightLines = 0;
 
-        if (expH + 0.0001 < pagesHeight[pIdx]) {
+        var leftLines = left_lines(pIdx)
+        if (notes.length > 0) {
+            leftLines += 1 //正文预留了多一行间隔，注解预期行数补一行
+        }
+        var expH = leftLines * line_height //预期高度，按照本页的注解条数（不预留多一行间隔）
+
+        if (expH + 0.0001 < pagesHeight[pIdx]) { //实际高度比预期高度大，原因是
             // if (expH < pagesHeight[pIdx]) {
-            if (notes.length > 1 || pagesHeight[pIdx] >= print.page_height - print.bottom_margin - print.top_margin ) {
-                useDoubleColumn = true;
-                
-                if(notes.length > 1) {
-                    expH += line_height
-                    if (expH + 0.0001 >= pagesHeight[pIdx]) {
-                        useDoubleColumn = false
-                    }
-                }
-                
-                if(useDoubleColumn){
-                    
-                    width_note = (width_note - (1.5 * lineHeight)) / 2 - 0.2;
-                    feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2
-                    feed_note_right = feed_note_no_right + (1.5 * lineHeight);
-                    
-                    var diffLines = Math.round((pagesHeight[pIdx] - expH) / line_height);
-                    var l_lines = print.lines_per_page - Math.round(pagesHeight[pIdx] / line_height);
-    
-                    if (l_lines <= diffLines + 1) {
-                        rightLines = diffLines
-                    } else {
-                        rightLines = diffLines + Math.floor((l_lines - diffLines) / 2);
-                    }
-                }
-                
+            useDoubleColumn = true;
+            width_note = (width_note - (1.5 * lineHeight)) / 2 - 0.2;
+            feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2
+            feed_note_right = feed_note_no_right + (1.5 * lineHeight);
+
+            var diffLines = Math.round((pagesHeight[pIdx] - expH) / line_height);
+            var l_lines = print.lines_per_page - Math.round(pagesHeight[pIdx] / line_height);
+
+            if (l_lines <= diffLines + 1) {
+                rightLines = diffLines
+            } else {
+                rightLines = diffLines + Math.floor((l_lines - diffLines) / 2);
             }
+
         }
 
 
