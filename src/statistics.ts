@@ -131,7 +131,7 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
             while (i++ && i < parsed.tokens.length) {
                 if (parsed.tokens[i].type === "dialogue") {
                     // speech += parsed.tokens[i].text + " " 
-                    speech += parsed.tokens[i].textNoNotes + " " 
+                    speech += parsed.tokens[i].textNoNotes + " "
                 }
                 else if (parsed.tokens[i].type === "character") {
                     break;
@@ -372,11 +372,11 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
             sceneTime = locationtime(afterdash(deconstructedSlug?.[2]));
         } else {
             // 直接 点“.” 开头的场景
-            if (scene.text.trimLeft().startsWith("(内景)")) {
+            if (scene.text.trimLeft().startsWith("(内景)") || scene.text.trimLeft().startsWith("（内景）")) {
                 sceneType = "int";
-            } else if (scene.text.trimLeft().startsWith("(外景)")) {
+            } else if (scene.text.trimLeft().startsWith("(外景)") || scene.text.trimLeft().startsWith("（外景）")) {
                 sceneType = "ext";
-            } else if (scene.text.trimLeft().startsWith("(内外景)")) {
+            } else if (scene.text.trimLeft().startsWith("(内外景)") || scene.text.trimLeft().startsWith("（内外景）")) {
                 sceneType = "mixed";
             } else {
                 sceneType = "other";

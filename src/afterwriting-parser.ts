@@ -39,7 +39,7 @@ export const regex: { [index: string]: RegExp } = {
     section: /^[ \t]*(#+)(?:\s*)(.*)/,
     synopsis: /^[ \t]*(?:\=)(.*)/,
 
-    scene_heading: /^[ \t]*([.](?=[\w\(\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[. ])([^#]*)(#\s*[^\s].*#)?\s*$/iu,
+    scene_heading: /^[ \t]*([.](?=[\w\(（\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[. ])([^#]*)(#\s*[^\s].*#)?\s*$/iu,
     scene_number: /#(.+)#/,
 
     // transition: /^[ \t]*((?:FADE (?:TO BLACK|OUT)|CUT TO BLACK)\.|.+ TO\:|^TO\:$)|^(?:> *)(.+)/,
@@ -48,9 +48,9 @@ export const regex: { [index: string]: RegExp } = {
     dialogue: /^[ \t]*([*_]+[^\p{Ll}\p{Lo}\p{So}\r\n]*)(\^?)?(?:\n(?!\n+))([\s\S]+)/u,
 
     character: blockRegex.block_dialogue_begin,
-    parenthetical: /^[ \t]*(\(.+\))\s*$/,
-    parenthetical_start: /^[ \t]*\([^\)]*$/,
-    parenthetical_end: /^.*\)\s*$/,
+    parenthetical: /^[ \t]*(\(.+\)|（.+）)\s*$/,
+    parenthetical_start: /^[ \t]*(?:\(|（)[^\)）]*$/,
+    parenthetical_end: /^.*(?:\)|）)\s*$/,
 
     action: /^(.+)/g,
     centered: /(?<=^[ \t]*>\s*)(.+)(?=\s*<\s*$)/g,

@@ -170,7 +170,7 @@ function registerTyping() {
             const position = editor.selection.active;
             var linetext = editor.document.getText(new vscode.Range(new vscode.Position(position.line, 0), new vscode.Position(position.line, 256)));
             if (position.character == linetext.length - 1) {
-              if (linetext.match(/^\s*\(.*\)$/g) || linetext.match(/^\s*((([A-Z0-9 ]+|@.*)(\([A-z0-9 '\-.()]+\))+|)$)/)) {
+              if (linetext.match(/^\s*\(.*\)$/g) || linetext.match(/^\s*（.*）$/g) || linetext.match(/^\s*((([A-Z0-9 ]+|@.*)(\([A-z0-9 '\-.()]+\))+|)$)/)) {
                 var newpos = new vscode.Position(position.line, linetext.length);
                 editor.selection = new vscode.Selection(newpos, newpos);
               }

@@ -65,7 +65,7 @@ export function slugify(text: string): string {
 /**
  * Trims character extensions, for example the parantheses part in `JOE (on the radio)`
  */
-export const trimCharacterExtension = (character: string): string => character.replace(/[ \t]*(\(.*\))[ \t]*([ \t]*\^)?$/, "");
+export const trimCharacterExtension = (character: string): string => character.replace(/[ \t]*(\(.*\)|（.*）)[ \t]*([ \t]*\^)?$/, "");
 
 export const parseLocationInformation = (scene_heading: RegExpMatchArray) => {
 	//input group 1 is int/ext, group 2 is location and time, group 3 is scene number
@@ -74,17 +74,17 @@ export const parseLocationInformation = (scene_heading: RegExpMatchArray) => {
 		var i = scene_heading[1].indexOf('I') != -1;
 		var e = scene_heading[1].indexOf('EX') != -1 || scene_heading[1].indexOf('E.') != -1;
 		var n = splitLocationFromTime ? splitLocationFromTime[1].trim() : scene_heading[2].trim();
-		if (n.startsWith('(内景)')) {
+		if (n.startsWith('(内景)') || n.startsWith('（内景）')) {
 			n = n.substring(4).trim();
 			if (!i) {
 				i = true;
 			}
-		} else if (n.startsWith('(外景)')) {
+		} else if (n.startsWith('(外景)') || n.startsWith('（外景）')) {
 			n = n.substring(4).trim();
 			if (!e) {
 				e = true;
 			}
-		} else if (n.startsWith('(内外景)')) {
+		} else if (n.startsWith('(内外景)') || n.startsWith('（内外景）')) {
 			n = n.substring(5).trim();
 			if (!e) {
 				e = true;
@@ -566,7 +566,7 @@ function hashString(str: string) {
 	var ls = []
 	for (let i = 0; i < str.length; i++) {
 		const codePoint = str.codePointAt(i);
-		
+
 		var mod = codePoint % 256
 		var hashTemp = (hash << 5) - hash + mod;
 		hashTemp |= 0; // convert to 32-bit integer
