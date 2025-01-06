@@ -212,13 +212,13 @@ export var GenerateDocx = async function (outputpath: string, config: FountainCo
         }
     }
     
-    docx_options.print.action.feed = docx_options.print.left_margin
+    docx_options.print.action.feed = docx_options.print.left_margin //action feed 固定为文档的 left_margin
     docx_options.print.scene_heading.feed = docx_options.print.action.feed
     var iw = docx_options.print.page_width - docx_options.print.left_margin - docx_options.print.right_margin;
     var id = docx_options.print.action.feed - docx_options.print.left_margin;
     var aw = iw - id - id;
-    docx_options.print.character.feed = (aw / 2) + docx_options.print.action.feed - docx_options.print.font_width * 4;
-    docx_options.print.dialogue.feed = (docx_options.print.character.feed - docx_options.print.action.feed) / 2 + docx_options.print.action.feed;
+    docx_options.print.character.feed = (aw / 2) + docx_options.print.action.feed - docx_options.print.font_width * 7;//character feed 固定为： 相对于 action 内容的中间, 左移动7个字符
+    docx_options.print.dialogue.feed = (docx_options.print.character.feed - docx_options.print.action.feed) / 2 + docx_options.print.action.feed;//dialogue feed 固定为： character feed 与 action feed 的中间
     docx_options.print.parenthetical.feed = (docx_options.print.character.feed - docx_options.print.dialogue.feed) / 2 + docx_options.print.dialogue.feed;
     docx_options.print.more.feed = docx_options.print.character.feed
     docx_options.print.section.feed = docx_options.print.action.feed - 1 >= 0.2 ? docx_options.print.action.feed - 1 : 0.2

@@ -211,13 +211,13 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
         }
     }
 
-    pdf_options.print.action.feed = pdf_options.print.left_margin
+    pdf_options.print.action.feed = pdf_options.print.left_margin //action feed 固定为文档的 left_margin
     pdf_options.print.scene_heading.feed = pdf_options.print.action.feed
     var iw = pdf_options.print.page_width - pdf_options.print.left_margin - pdf_options.print.right_margin;
     var id = pdf_options.print.action.feed - pdf_options.print.left_margin;
     var aw = iw - id - id;
-    pdf_options.print.character.feed = (aw / 2) + pdf_options.print.action.feed - pdf_options.print.font_width * 4;
-    pdf_options.print.dialogue.feed = (pdf_options.print.character.feed - pdf_options.print.action.feed) / 2 + pdf_options.print.action.feed;
+    pdf_options.print.character.feed = (aw / 2) + pdf_options.print.action.feed - pdf_options.print.font_width * 7; //character feed 固定为： 相对于 action 内容的中间, 左移动7个字符
+    pdf_options.print.dialogue.feed = (pdf_options.print.character.feed - pdf_options.print.action.feed) / 2 + pdf_options.print.action.feed; //dialogue feed 固定为： character feed 与 action feed 的中间
     pdf_options.print.parenthetical.feed = (pdf_options.print.character.feed - pdf_options.print.dialogue.feed) / 2 + pdf_options.print.dialogue.feed;
     pdf_options.print.more.feed = pdf_options.print.character.feed
     pdf_options.print.section.feed = pdf_options.print.action.feed - 1 >= 0.2 ? pdf_options.print.action.feed - 1 : 0.2
