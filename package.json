@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "6.4.2",
+	"version": "6.4.3",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -409,18 +409,18 @@
 			},
 			{
 				"command": "fountain.livepreview",
-				"title": "Show screenplay live preview (Dynamic switching)",
+				"title": "d3 Show screenplay live preview (Dynamic switching)",
 				"category": "Fountain",
 				"icon": "$(open-preview)"
 			},
 			{
 				"command": "fountain.pdfpreview",
-				"title": "Show screenplay PDF Preview (not real-time)",
+				"title": "d1 Show screenplay PDF Preview (not real-time)",
 				"icon": "$(file-pdf)"
 			},
 			{
 				"command": "fountain.docxpreview",
-				"title": "Show screenplay Docx Preview (not real-time)",
+				"title": "d2 Show screenplay Docx Preview (not real-time)",
 				"icon": "$(file-code)"
 			},
 			{
@@ -430,13 +430,13 @@
 			},
 			{
 				"command": "fountain.exportpdf",
-				"title": "Export screenplay PDF",
+				"title": "e1 Export screenplay PDF",
 				"category": "Fountain",
 				"icon": "$(link-external)"
 			},
 			{
 				"command": "fountain.exportdocx",
-				"title": "Export screenplay Docx",
+				"title": "e2 Export screenplay Docx",
 				"category": "Fountain",
 				"icon": "$(file-symlink-file)"
 			},
