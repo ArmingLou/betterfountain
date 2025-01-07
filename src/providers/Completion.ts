@@ -177,7 +177,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 		"paper_size": "a4",
 		"font_size": 12,
 		"note_font_size": 9,
-		"lines_per_page": 41,
+		"lines_per_page": 30,
 		"top_margin": 1.19,
 		"bottom_margin": 1,
 		"page_width": 8.27,
@@ -304,7 +304,22 @@ When both passwords are provided, users with user password are able to decrypt t
         "documentAssembly":false
     },
 	"chinaFormat": 0,
-	"embedFonts": false
+	"embedFonts": false,
+	"print": {
+		"paper_size": "a4",
+		"font_size": 12,
+		"note_font_size": 9,
+		"lines_per_page": 30,
+		"top_margin": 1.19,
+		"bottom_margin": 1,
+		"page_width": 8.27,
+		"page_height": 11.69,
+		"left_margin": 0.5,
+		"right_margin": 0.5,
+		"font_width": 0.1,
+		"note_line_height": 0.17,
+		"page_number_top_margin": 0.4
+	}
 }`, sortText: "0A", kind: vscode.CompletionItemKind.Text });
 				}
 			}
