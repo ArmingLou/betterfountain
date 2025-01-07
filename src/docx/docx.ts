@@ -204,6 +204,9 @@ export var GenerateDocx = async function (outputpath: string, config: FountainCo
         if (metadata.print.note_font_size) {
             docx_options.print.note_font_size = metadata.print.note_font_size;
         }
+        if (metadata.print.character_spacing !== undefined && metadata.print.character_spacing !== null) {
+            docx_options.print.character_spacing = metadata.print.character_spacing;
+        }
         if (metadata.print.font_width) {
             docx_options.print.font_width = metadata.print.font_width;
         }

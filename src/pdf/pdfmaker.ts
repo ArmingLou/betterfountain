@@ -492,7 +492,7 @@ async function initDoc(opts: Options) {
 
         if (options.highlight) {
             doc.highlight(x * 72, (y * 72),
-                measureTextWidth(cleanStlyleChars(text), 'ScriptNormal', print.font_size || 12, doc),
+                measureTextWidth(cleanStlyleChars(text), 'ScriptNormal', print.font_size || 12, print.character_spacing, doc),
                 doc.currentLineHeight(), { color: options.highlightcolor });
         }
 
@@ -843,6 +843,7 @@ async function initDoc(opts: Options) {
                 align: options.align,
                 baseline: 'bottom',
                 fontSize: options.fontSize || print.font_size || 12,
+                characterSpacing: options.characterSpacing === undefined ? print.character_spacing : options.characterSpacing
             });
 
     };

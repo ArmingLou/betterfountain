@@ -4,8 +4,12 @@
 // Basically all functions use the "measureTextWidth" function
 // which uses the "widthOfString" function of pdfKit document.
 
-function measureTextWidth(text, font, fontSize, doc) {
-  return doc.font(font).fontSize(fontSize).widthOfString(text, { lineBreak: false });
+function measureTextWidth(text, font, fontSize, characterSpacing, doc) {
+  let res = doc.font(font).fontSize(fontSize).widthOfString(text, { lineBreak: false, characterSpacing: characterSpacing });
+  if(text){
+    res = res + characterSpacing;
+  } 
+  return res
 }
 function measureTextHeight(text, font, fontSize, doc) {
   return doc.font(font).fontSize(fontSize).heightOfString(text, { lineBreak: false });
@@ -13,8 +17,8 @@ function measureTextHeight(text, font, fontSize, doc) {
 
 function measureTextsWidth(texts, doc) {
   const textsWithWidth = texts.map((textPart) => {
-    const { fontSize, font, text } = textPart;
-    textPart.width = measureTextWidth(text, font, fontSize, doc);
+    const { fontSize, font, text, characterSpacing } = textPart;
+    textPart.width = measureTextWidth(text, font, fontSize, characterSpacing, doc);
     return textPart;
   });
   return textsWithWidth;
@@ -26,7 +30,7 @@ function checkParagraphFitsInLine(paragraph, textWidth) {
   return paragraphWidth <= textWidth;
 }
 
-function measureTextFragments(textArray, spaceWidth, font, fontSize, doc) {
+function measureTextFragments(textArray, spaceWidth, font, fontSize, characterSpacing, doc) {
   return textArray.map((textFragment) => {
     if (textFragment === " ")
       return {
@@ -35,7 +39,7 @@ function measureTextFragments(textArray, spaceWidth, font, fontSize, doc) {
       };
     return {
       text: textFragment,
-      width: measureTextWidth(textFragment, font, fontSize, doc),
+      width: measureTextWidth(textFragment, font, fontSize, characterSpacing, doc),
     };
   });
 }

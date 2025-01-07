@@ -277,7 +277,7 @@ async function initDoc(opts: Options) {
         color: print.note.color,
         font: doc.fontNames.get('normal'),
         size: fontSize_,
-
+        characterSpacing: 0,
     }
 
 
@@ -656,6 +656,7 @@ async function initDoc(opts: Options) {
                             // let font = doc.fontNames.get('normal');
                             var fontSize = undefined;
                             fontSize = options.fontSize || print.font_size || 12;
+                            var spacing2 = options.characterSpacing === undefined ? print.character_spacing : options.characterSpacing;
                             if (doc.format_state.override_color) {
                                 // 注释中
                                 fontSize = print.note_font_size;
@@ -696,6 +697,10 @@ async function initDoc(opts: Options) {
 
                             run.color = coloer2
                             run.size = fontSize
+
+                            if (spacing2) {
+                                run.characterSpacing = spacing2 * 20
+                            }
 
                             if (linkurl || doc.format_state.underline) {
                                 run.underline = {
@@ -908,6 +913,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     var fontSize = print.font_size || 12
     fontSize = fontSize * 2 // docx bug ？ must double
+    // var c_spacing = print.character_spacing * 20;
+
     // 内宽
     var innerWidth = Docx.convertInchesToTwip(print.page_width) - Docx.convertInchesToTwip(print.left_margin) - Docx.convertInchesToTwip(print.right_margin);
 
@@ -982,6 +989,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 run: {
                     font: doc.fontNames.get('normal'),
                     size: fontSize,
+                    // characterSpacing: c_spacing,
                 },
                 paragraph: {
                     spacing: spacing,
@@ -1103,6 +1111,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         left: actionIndent,
                         right: actionIndent,
                     },
+                    spacing: {
+                        line: Docx.convertInchesToTwip(print.note_line_height), //docx bug? must -3
+                        lineRule: Docx.LineRuleType.EXACT,
+                    }
                 },
             },
         ],
@@ -1559,13 +1571,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             var color = (print[line.type] && print[line.type].color) || '#000000';
 
-            var general_text_properties = {
+            var general_text_properties: any = {
                 color: color,
                 highlight: false,
                 bold: false,
                 highlightcolor: [0, 0, 0],
                 width: 0,
                 align: 'left',
+                characterSpacing: undefined
             }
 
             function wrapCharAndDialog(intput: any, lline = line): any {
@@ -2003,6 +2016,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     }
                 }
                 else if (line.type === "scene_heading") {
+                    text_properties.characterSpacing = 0
                     sectionMain.children.push(new Docx.Paragraph({
                         style: "scene",
                         outlineLevel: doOutline > -1 ? doOutline : null,
@@ -2111,7 +2125,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                     children.push(new Docx.Paragraph({
                         style: "notes",
-                        children: doc.format_text(text, { color: '#868686', fontSize: print.note_font_size || 9 })
+                        children: doc.format_text(text, { color: '#868686', fontSize: print.note_font_size || 9, characterSpacing: 0 })
                     }));
                 }
                 footnotes[token[j].no] = { children: children };

@@ -19,6 +19,7 @@ const defaultStyle = {
   link: null,
   oblique: 0,
   underline: false,
+  characterSpacing: 2,
 };
 
 // This is the only function which is needed in the end. It calls
@@ -141,6 +142,7 @@ function drawTextLinesOnPDF(lines, width, firstBreakHeight, breakHeight, switchP
             strike: textPart.strike,
             stroke: textPart.stroke,
             width: width,
+            characterSpacing: textPart.characterSpacing,
           });
         xPosition += textPart.width;
       });
@@ -174,13 +176,13 @@ function getLineStartXPosition(line, width, posX) {
 }
 
 
-function measureTextFragmentsExclude(textArray, font, fontSize, doc, exclude) {
+function measureTextFragmentsExclude(textArray, font, fontSize,characterSpacing, doc, exclude) {
   return textArray.map((textFragment) => {
     if (textFragment === " ") {
       return {
         text: textFragment,
         style_text: textFragment,
-        width: measureTextWidth(" ", font, fontSize, doc),
+        width: measureTextWidth(" ", font, fontSize,characterSpacing, doc),
       };
     }
     var tx = ""; // 带样式字符
@@ -194,7 +196,7 @@ function measureTextFragmentsExclude(textArray, font, fontSize, doc, exclude) {
     return {
       text: tx2,
       style_text: tx,
-      width: measureTextWidth(tx2, font, fontSize, doc),
+      width: measureTextWidth(tx2, font, fontSize,characterSpacing, doc),
     };
   });
 }
@@ -202,7 +204,7 @@ function measureTextFragmentsExclude(textArray, font, fontSize, doc, exclude) {
 // text 包含样式特殊字符的文本
 // width 需要断行的宽度
 // exclude 指定需要排除长度的样式特殊字符
-function breakLines(text, width, font, fontSize, doc, exclude) {
+function breakLines(text, width, font, fontSize, characterSpacing, doc, exclude) {
   // width = width - 36;
   width = Math.round(width);
   var res = [];
@@ -215,6 +217,7 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
       fragmentArray,
       font,
       fontSize,
+      characterSpacing,
       doc,
       exclude
     );
@@ -259,7 +262,7 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
             continue
           }
           tx2 += textFragment.style_text[i];
-          w = measureTextWidth(tx2, font, fontSize, doc);
+          w = measureTextWidth(tx2, font, fontSize,characterSpacing, doc);
           if (w >= spaceLeft) {
             if (tx_l) {
               lineText = lineText + tx_l;
@@ -273,7 +276,7 @@ function breakLines(text, width, font, fontSize, doc, exclude) {
             lineText = "";
             tx = textFragment.style_text[i];
             tx2 = textFragment.style_text[i];
-            w = measureTextWidth(tx2, font, fontSize, doc);
+            w = measureTextWidth(tx2, font, fontSize,characterSpacing, doc);
           }
           tx_l = tx;
         }

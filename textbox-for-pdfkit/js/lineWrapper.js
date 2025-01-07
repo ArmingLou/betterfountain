@@ -75,17 +75,18 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
   // for all other lines it is expected, that the complete Texbox width
   // is available (widthTextbox)
 
-  const { text, fontSize, font } = textPart;
+  const { text, fontSize, font, characterSpacing } = textPart;
   let spaceLeft = widthLeft;
   // This is some crazy positive lookbehind regex, it finds all spaces and "-"
   // This is neccessary that no characters are removed when splitting the text.
   const fragmentArray = text.split(/(?<=[ -])|(?= )/);
-  const spaceWidth = measureTextWidth(" ", font, fontSize, doc);
+  const spaceWidth = measureTextWidth(" ", font, fontSize,characterSpacing, doc);
   const fragmentArrayWithWidth = measureTextFragments(
     fragmentArray,
     spaceWidth,
     font,
     fontSize,
+    characterSpacing,
     doc
   );
   const lines = [];
@@ -125,7 +126,7 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
       var txt_l = "";
       for (let i = 0; i < textFragment.text.length; i++) {
         txt += textFragment.text[i];
-        w = measureTextWidth(txt, font, fontSize, doc);
+        w = measureTextWidth(txt, font, fontSize,characterSpacing, doc);
         if (w > spaceLeft) {
           if (txt_l) {
             lineWidth += w_l;
@@ -138,7 +139,7 @@ function wrapTextInLines(textPart, widthLeft, widthTextbox, doc) {
           spaceLeft = widthTextbox;
           lineText = "";
           txt = textFragment.text[i];
-          w = measureTextWidth(txt, font, fontSize, doc);
+          w = measureTextWidth(txt, font, fontSize,characterSpacing, doc);
         }
         w_l = w;
         txt_l = txt;
@@ -170,6 +171,7 @@ function removeSubsequentSpaces(lines, doc) {
       newLastText,
       lastText.font,
       lastText.fontSize,
+      lastText.characterSpacing,
       doc
     );
     lastText.text = newLastText;

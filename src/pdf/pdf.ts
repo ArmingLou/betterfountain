@@ -203,6 +203,9 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
         if (metadata.print.note_font_size) {
             pdf_options.print.note_font_size = metadata.print.note_font_size;
         }
+        if (metadata.print.character_spacing !== undefined && metadata.print.character_spacing !== null) {
+            pdf_options.print.character_spacing = metadata.print.character_spacing;
+        }
         if (metadata.print.font_width) {
             pdf_options.print.font_width = metadata.print.font_width;
         }

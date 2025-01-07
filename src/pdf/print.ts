@@ -13,6 +13,7 @@ export class PrintProfile{
     bottom_margin:number;
     note_line_height:number;
     line_spacing:number;
+    character_spacing:number;
     page_number_top_margin:number;
     dual_max_factor:number;
     title_page:{
@@ -55,6 +56,7 @@ var A4_DEFAULT_MAX = 57,
             // line_height: 0.1667,
             note_line_height: 0.1667,
             line_spacing: 1,
+            character_spacing: 1,
             page_number_top_margin: 0.5,
             dual_max_factor: 0.75,
             title_page: {
@@ -129,9 +131,10 @@ var A4_DEFAULT_MAX = 57,
             bottom_margin: 1,
             page_width: 8.27,
             page_height: 11.69,
-            left_margin: 1.2,
-            right_margin: 1.2,
+            left_margin: 1.5,
+            right_margin: 1.5,
             font_width: 0.1,
+            character_spacing: 2,
             // line_height: 0.23,
             note_line_height: 0.17,
             line_spacing: 1,
