@@ -176,7 +176,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 	"print": {
 		"paper_size": "a4",
 		"font_size": 12,
-		"character_spacing": 2,
+		"character_spacing": 1,
 		"note_font_size": 9,
 		"lines_per_page": 30,
 		"top_margin": 1.19,
@@ -309,7 +309,7 @@ When both passwords are provided, users with user password are able to decrypt t
 	"print": {
 		"paper_size": "a4",
 		"font_size": 12,
-		"character_spacing": 2,
+		"character_spacing": 1,
 		"note_font_size": 9,
 		"lines_per_page": 30,
 		"top_margin": 1.19,
