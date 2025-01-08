@@ -467,6 +467,9 @@ async function initDoc(opts: Options) {
                 doc.cacheTriangle = false;
             }
         }
+        if (doc.chinaFormat === 1 && text.startsWith('△') && doc.forceNoteOrig) {
+            text = text.substring(1);
+        }
 
         function note_lines(pageIdx: number) {
             var l = 0;
@@ -498,7 +501,9 @@ async function initDoc(opts: Options) {
 
         if (print.note.italic) {
             // text = text.replace(/↺/g, '*↺').replace(/↻/g, '↻*');
-            text = text.replace(new RegExp(charOfStyleTag.note_begin, 'g'), charOfStyleTag.italic + charOfStyleTag.note_begin).
+            text = text.
+                replace(new RegExp(charOfStyleTag.note_begin_ext, 'g'), charOfStyleTag.italic + charOfStyleTag.note_begin_ext).
+                replace(new RegExp(charOfStyleTag.note_begin, 'g'), charOfStyleTag.italic + charOfStyleTag.note_begin).
                 replace(new RegExp(charOfStyleTag.note_end, 'g'), charOfStyleTag.note_end + charOfStyleTag.italic);
         }
         var links: { start: number, length: number, url: string }[] = [];
@@ -663,7 +668,7 @@ async function initDoc(opts: Options) {
             } else if (elem === charOfStyleTag.note_end) {
                 doc.format_state.override_color = null;
                 color = options.color || 'black';
-                if (catchNotes) {
+                if (catchNotes && !doc.forceNoteOrig) {
                     if (currentLineNotes.length > 0) {
                         currentLineNotes[currentLineNotes.length - 1].text = doc.currentNote.note.text;
                         // if (!notesPage[doc.currentNote.pageIdx]) {
@@ -684,6 +689,11 @@ async function initDoc(opts: Options) {
                     }
                     doc.currentNote.pageIdx = -1;
                 }
+                doc.forceNoteOrig = false;
+            } else if (elem === charOfStyleTag.note_begin_ext) {
+                // 强制在原位置打印 note 
+                doc.format_state.override_color = (print.note && print.note.color) || '#000000';
+                doc.forceNoteOrig = true;
             } else {
                 // 特殊标示 note_begin 以及 正常字符，进入。
                 if (elem === charOfStyleTag.note_begin) {
@@ -734,7 +744,7 @@ async function initDoc(opts: Options) {
                                 // }
                             } else {
                                 onlyNoteContent = false;
-                                if (doc.cacheTriangle) {
+                                if (doc.cacheTriangle) { //note结束后   ，对正式内容开头补上△
                                     elem = '△' + elem;
                                     doc.cacheTriangle = false;
                                 }
@@ -2567,25 +2577,25 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             //单个超多行note（超过页面行数了）
             //避免使用右侧注解
         } else {
-            
+
             var expH = leftLines * line_height //预期高度，按照本页的注解条数（不预留多一行间隔）
-    
+
             if (expH + 0.0001 < pagesHeight[pIdx]) { //实际高度比预期高度大，原因是
                 // if (expH < pagesHeight[pIdx]) {
                 useDoubleColumn = true;
                 width_note = (width_note - (1.5 * lineHeight)) / 2 - 0.2;
                 feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2
                 feed_note_right = feed_note_no_right + (1.5 * lineHeight);
-    
+
                 var diffLines = Math.round((pagesHeight[pIdx] - expH) / line_height);
                 var l_lines = print.lines_per_page - Math.round(pagesHeight[pIdx] / line_height);
-    
+
                 if (l_lines <= diffLines + 1) {
                     rightLines = diffLines
                 } else {
                     rightLines = diffLines + Math.floor((l_lines - diffLines) / 2);
                 }
-    
+
             }
         }
 

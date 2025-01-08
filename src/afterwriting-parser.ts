@@ -348,7 +348,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         }
                     }
                 }
-                else if (current === "[[") {
+                else if (current === "[[" || current === "[[|") {
                     if (nested_comments == 0) {
                         nested_notes++;
                         if (nested_notes === 1) {
@@ -357,7 +357,12 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             current_outline_note_text.push("");
                             current_outline_note_linenum.push(li);
                             if (cfg.print_notes) {
-                                text_display = text_display + charOfStyleTag.note_begin + '['; // 首开口，转换成特殊样式字符。
+                                if (current == "[[|") {
+                                    // 扩展 note 语法。可强制个别注解不在底部而在原位置打印。 此为强制在原位置打印注解的特殊标志
+                                    text_display = text_display + charOfStyleTag.note_begin_ext + '['; // 首开口，转换成特殊样式字符。
+                                } else {
+                                    text_display = text_display + charOfStyleTag.note_begin + '['; // 首开口，转换成特殊样式字符。
+                                }
                             }
                         } else {
                             add_outline_note('[', li)
@@ -678,7 +683,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         } else {
             // 2. 至少不是空行了。
 
-            var arr = text.split(/(\/\*)|(\*\/)|(\[\[)|(\]\])/g).filter(if_not_empty);
+            var arr = text.split(/(\/\*)|(\*\/)|(\[\[\|)|(\[\[)|(\]\])/g).filter(if_not_empty);
             reduce_comment_and_note(arr, i);
 
             if (text_valid.trim().length == 0) {
@@ -1078,7 +1083,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_begin"));
                         }
                         text_valid = text_valid.replace(/\^\s*$/, "");
-                        text_display = text_display.replace(/\^\s*(?=(↺.*$)|($))/, "");
+                        text_display = text_display.replace(/\^\s*(?=(இ.*$)|(↺.*$)|($))/, "");
                     }
                     else {
                         pushToken(create_token(undefined, undefined, undefined, undefined, "dialogue_begin")); // TODO Arming (2024-09-05) : 在 角色 line 后插入一个附加的 空token，type = dialogue_begin。 不产生pdf实际空行，只是逻辑处理需要。
@@ -1133,7 +1138,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 if (text_valid.match(regex.centered)) {
                     processTitlePageEnd(i);
                     thistoken.type = "centered";
-                    var mt = text_display.match(/((?:^.*?↻)|^)[ \t]*>\s*(.+)\s*?<\s*((?:↺.*$)|$)/);
+                    var mt = text_display.match(/((?:^.*?↻)|^)[ \t]*>\s*(.+)\s*?<\s*((?:இ.*$)|(?:↺.*$)|$)/);
                     thistoken.text = mt[1].trim() + mt[2].trim() + mt[3].trim();
                     processTokenTextStyleChar(thistoken);
                 }
@@ -1154,7 +1159,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     thistoken.text = '';
                     thistoken.type = "page_break";
                     if (text_valid != text_display) {
-                        text_display = text_display.replace(/(?<=(↻)|(^))\s*\=+\s*(?=(↺)|($))/g, "");
+                        text_display = text_display.replace(/(?<=(↻)|(^))\s*\=+\s*(?=(இ)|(↺)|($))/g, "");
                         notetoken = create_token(text_display, current_cursor, i, new_line_length);
                         notetoken.type = "action";
                         current_cursor = notetoken.end + 1;

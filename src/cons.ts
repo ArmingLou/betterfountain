@@ -1,5 +1,6 @@
 
 export const charOfStyleTag: { [index: string]: string } = {
+    note_begin_ext: "இ",
     note_begin: "↺",
     note_end: "↻",
     italic: "☈",
@@ -19,7 +20,7 @@ export const charOfStyleTag: { [index: string]: string } = {
     style_global_clean: "⇜",
     italic_global_begin: "↾",
     italic_global_end: "↿",
-    all: "☄☈↭↯↺↻↬↫☍☋↷↶↾↿↝↜⇀𓆡⇜",
+    all: "☄☈↭↯↺↻↬↫☍☋↷↶↾↿↝↜⇀𓆡⇜இ",
 }
 
 export const blockRegex: { [index: string]: RegExp } = {
@@ -33,7 +34,7 @@ export const blockRegex: { [index: string]: RegExp } = {
 
 
 export const tokenRegex: { [index: string]: RegExp } = {
-    note_inline: /(?:↺)([\s\S]+?)(?:↻)/g,
+    note_inline: /(?:↺|இ)([\s\S]+?)(?:↻)/g,
     underline: /(☄(?=.+☄))(.+?)(☄)/g,
     italic: /(☈(?=.+☈))(.+?)(☈)/g,
     italic_global: /(↾)([^↿]*)(↿)/g,

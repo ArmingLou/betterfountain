@@ -368,6 +368,10 @@ async function initDoc(opts: Options) {
                 doc.cacheTriangle = false;
             }
         }
+        
+        if (doc.chinaFormat === 1 && text.startsWith('△') && doc.forceNoteOrig) {
+            text = text.substring(1);
+        }
 
         // function note_lines() {
         //     var l = 0;
@@ -399,7 +403,9 @@ async function initDoc(opts: Options) {
 
         if (print.note.italic) {
             // text = text.replace(/↺/g, '*↺').replace(/↻/g, '↻*');
-            text = text.replace(new RegExp(charOfStyleTag.note_begin, 'g'), charOfStyleTag.italic + charOfStyleTag.note_begin).
+            text = text.
+                replace(new RegExp(charOfStyleTag.note_begin_ext, 'g'), charOfStyleTag.italic + charOfStyleTag.note_begin_ext).
+                replace(new RegExp(charOfStyleTag.note_begin, 'g'), charOfStyleTag.italic + charOfStyleTag.note_begin).
                 replace(new RegExp(charOfStyleTag.note_end, 'g'), charOfStyleTag.note_end + charOfStyleTag.italic);
         }
         var links: { start: number, length: number, url: string }[] = [];
@@ -563,7 +569,7 @@ async function initDoc(opts: Options) {
             } else if (elem === charOfStyleTag.note_end) {
                 doc.format_state.override_color = null;
                 color = options.color || '#000000';
-                if (catchNotes) {
+                if (catchNotes && !doc.forceNoteOrig) {
                     if (currentLineNotes.length > 0) {
                         currentLineNotes[currentLineNotes.length - 1].text = doc.currentNote.note.text;
                         // if (!notesPage[doc.currentNote.pageIdx]) {
@@ -584,6 +590,11 @@ async function initDoc(opts: Options) {
                     }
                     doc.currentNote.pageIdx = -1;
                 }
+                doc.forceNoteOrig = false;
+            } else if (elem === charOfStyleTag.note_begin_ext) {
+                // 强制在原位置打印 note 
+                doc.format_state.override_color = (print.note && print.note.color) || '#000000';
+                doc.forceNoteOrig = true;
             } else {
                 // 特殊标示 note_begin 以及 正常字符，进入。
                 if (elem === charOfStyleTag.note_begin) {
