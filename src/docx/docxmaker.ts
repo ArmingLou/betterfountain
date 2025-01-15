@@ -368,7 +368,7 @@ async function initDoc(opts: Options) {
                 doc.cacheTriangle = false;
             }
         }
-        
+
         if (doc.chinaFormat === 1 && text.startsWith('△') && doc.forceNoteOrig) {
             text = text.substring(1);
         }
@@ -886,6 +886,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     }
     // console.log(chinaFormat)
 
+    var sceneOrSectionOrTranStarted = false // 第一个场景头出现之前的内容，不打印页码，也不要算尽实际页数统计。 -1未确定第一个场景头页码。其他，第一个页码需减去多少
+    var sceneStarted = false // 第一个场景头出现之前的内容，不打印 三角形
+
+
     var bottom_notes = cfg.note_position_bottom
     // console.log(print, lines, exportcfg, pageIdx, bottom_notes, lineStructs);
 
@@ -1344,9 +1348,15 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     let lastDialGr: any = null; //国内格式对话第一行
     let lastDialGrLeft: any = null; //国内格式对话第一行
     let lastDialGrRight: any = null; //国内格式对话第一行
+    function getSectionMain() {
+        if (sceneOrSectionOrTranStarted) {
+            return sectionMain;
+        }
+        return sectionMainNoPageNum;
+    }
     function finish_china_dial_first() {
         if (lastDialGr) {
-            sectionMain.children.push(
+            getSectionMain().children.push(
                 new Docx.Paragraph(lastDialGr)
             );
             lastDialGr = null;
@@ -1379,7 +1389,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
         if (lastDialTableLeft.length > 0 || lastDialTableRight.length > 0) {
             // ....
-            sectionMain.children.push(
+            getSectionMain().children.push(
                 new Docx.Table({
                     indent: {
                         size: actionIndent,
@@ -1411,7 +1421,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             if (lastDialTableRight.length == 0) {
                 // 只有左侧有对话，表格后补一个空行
-                sectionMain.children.push(new Docx.Paragraph(""));
+                getSectionMain().children.push(new Docx.Paragraph(""));
             }
 
             lastDialTableLeft = [];
@@ -1420,6 +1430,34 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     }
 
 
+    var sectionMainNoPageNum = {
+        properties: sesctionProps,
+        headers: {
+            default: new Docx.Header({ // The standard default header on every page or header on odd pages when the 'Different Odd & Even Pages' option is activated
+                children: [
+                    new Docx.Paragraph({
+                        alignment: Docx.AlignmentType.CENTER,
+                        children: doc.format_text(cfg.print_header, {
+                            color: '#777777'
+                        }),
+                    }),
+                ],
+            }),
+        },
+        footers: {
+            default: new Docx.Footer({ // The standard default footer on every page or footer on odd pages when the 'Different Odd & Even Pages' option is activated
+                children: [
+                    new Docx.Paragraph({
+                        alignment: Docx.AlignmentType.CENTER,
+                        children: doc.format_text(cfg.print_footer, {
+                            color: '#777777'
+                        }),
+                    }),
+                ],
+            }),
+        },
+        children: [] as any[],
+    };
     var sectionMain = {
         properties: sesctionProps,
         headers: {
@@ -1546,7 +1584,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
 
-            sectionMain.children.push(new Docx.Paragraph({
+            getSectionMain().children.push(new Docx.Paragraph({
                 children: [
                     new Docx.PageBreak(),
                 ],
@@ -1562,7 +1600,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             if (lastDialTableLeft.length > 0) {
                 doc.text2(line.text, null, bottom_notes ? currentLineNotes : null, notesPage)
             } else {
-                sectionMain.children.push(new Docx.Paragraph({
+                getSectionMain().children.push(new Docx.Paragraph({
                     style: "action",
                     children: doc.text2(line.text, null, bottom_notes ? currentLineNotes : null, notesPage)
                 }));
@@ -1669,7 +1707,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 text = ifResetFormat(text, line);
                 // text2Result = center(text, print.top_margin + height, print.lines_per_page * line_height - height, print.lines_per_page * line_height, print.top_margin, 0, 0, true);
 
-                sectionMain.children.push(new Docx.Paragraph({
+                getSectionMain().children.push(new Docx.Paragraph({
                     style: "action",
                     alignment: Docx.AlignmentType.CENTER,
                     children: doc.text2(text, { align: 'center' }, bottom_notes ? currentLineNotes : null, notesPage)
@@ -1680,8 +1718,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 //     height += text2Result.height;
                 // }
             } else if (line.type === "transition") {
+                if (!sceneOrSectionOrTranStarted) {
+                    sceneOrSectionOrTranStarted = true;
+                }
                 text = ifResetFormat(chinaFormat ? '(' + text + ')' : text, line);
-                sectionMain.children.push(new Docx.Paragraph({
+                getSectionMain().children.push(new Docx.Paragraph({
                     style: "action",
                     alignment: chinaFormat ? Docx.AlignmentType.LEFT : Docx.AlignmentType.RIGHT,
                     children: doc.text2(text, text_properties, bottom_notes ? currentLineNotes : null, notesPage)
@@ -1734,6 +1775,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
 
                 if (line.type === "scene_heading") {
+                    if (!sceneOrSectionOrTranStarted) {
+                        sceneOrSectionOrTranStarted = true;
+                    }
+                    if (!sceneStarted) {
+                        sceneStarted = true;
+                    }
+
                     if (cfg.create_bookmarks) {
                         // doOutline = outlineDepth + 1;
                         if (cfg.print_sections) {
@@ -1844,7 +1892,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                                 children: runs,
                             };
                         } else {
-                            sectionMain.children.push(new Docx.Paragraph({
+                            getSectionMain().children.push(new Docx.Paragraph({
                                 style: "character",
                                 children: runs
                             }));
@@ -1921,13 +1969,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             if (lastDialGr) {
                                 lastDialGr.children.push(...runs);
                             } else {
-                                sectionMain.children.push(new Docx.Paragraph({
+                                getSectionMain().children.push(new Docx.Paragraph({
                                     style: "action",
                                     children: runs
                                 }));
                             }
                         } else {
-                            sectionMain.children.push(new Docx.Paragraph({
+                            getSectionMain().children.push(new Docx.Paragraph({
                                 style: "parenthetical",
                                 children: runs
                             }));
@@ -2008,18 +2056,18 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         if (chinaFormat) {
                             if (lastDialGr) {
                                 lastDialGr.children.push(...runs);
-                                sectionMain.children.push(
+                                getSectionMain().children.push(
                                     new Docx.Paragraph(lastDialGr)
                                 );
                                 lastDialGr = null;
                             } else {
-                                sectionMain.children.push(new Docx.Paragraph({
+                                getSectionMain().children.push(new Docx.Paragraph({
                                     style: "action",
                                     children: runs
                                 }));
                             }
                         } else {
-                            sectionMain.children.push(new Docx.Paragraph({
+                            getSectionMain().children.push(new Docx.Paragraph({
                                 style: "dial",
                                 children: runs
                             }));
@@ -2028,18 +2076,21 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
                 else if (line.type === "scene_heading") {
                     text_properties.characterSpacing = 0
-                    sectionMain.children.push(new Docx.Paragraph({
+                    getSectionMain().children.push(new Docx.Paragraph({
                         style: "scene",
                         outlineLevel: doOutline > -1 ? doOutline : null,
                         children: doc.text2(text, text_properties, bottom_notes ? currentLineNotes : null, notesPage)
                     }));
                 }
                 else if (line.type === "section") {
+                    if (!sceneOrSectionOrTranStarted) {
+                        sceneOrSectionOrTranStarted = true;
+                    }
                     var feed: number = (print[line.type] || {}).feed || print.action.feed;
                     feed += current_section_level * print.section.level_indent;
                     var sectionIndent = Docx.convertInchesToTwip(feed - print.action.feed);
 
-                    sectionMain.children.push(new Docx.Paragraph({
+                    getSectionMain().children.push(new Docx.Paragraph({
                         style: "section",
                         indent: {
                             left: sectionIndent,
@@ -2059,7 +2110,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     feed += print.synopsis.padding || 0;
                     var sectionIndent = Docx.convertInchesToTwip(feed - print.action.feed);
 
-                    sectionMain.children.push(new Docx.Paragraph({
+                    getSectionMain().children.push(new Docx.Paragraph({
                         style: "action",
                         indent: {
                             left: sectionIndent,
@@ -2070,10 +2121,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
                 else {
                     // action / lyric
-                    if (chinaFormat === 1) {
+                    if (chinaFormat === 1 && sceneStarted) {
                         text = '△' + ' ' + text;
                     }
-                    sectionMain.children.push(new Docx.Paragraph({
+                    getSectionMain().children.push(new Docx.Paragraph({
                         style: "action",
                         children: doc.text2(text, text_properties, bottom_notes ? currentLineNotes : null, notesPage)
                     }));
@@ -2150,6 +2201,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     doc.options.sections = [];
     if (sectionTitlePage) {
         doc.options.sections.push(sectionTitlePage)
+    }
+    if (sectionMainNoPageNum.children.length > 0) {
+        doc.options.sections.push(sectionMainNoPageNum)
     }
     if (sectionMain) {
         doc.options.sections.push(sectionMain)

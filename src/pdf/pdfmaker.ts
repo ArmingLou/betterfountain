@@ -948,6 +948,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
 
     var pagesHeight: { [key: number]: number } = {};
+    var pageNumPrintSub = -2 // 第一个场景头出现之前的内容，不打印页码，也不要算尽实际页数统计。-2,未插入换页； -1插入换页后，未确定第一个场景头页码。>=0，已确认第一个场景开始，第一个页码需减去多少
+    var sceneStarted = false // 第一个场景头出现之前的内容，不打印 三角形
 
     var title_token = get_title_page_token(parsed, 'title');
     var author_token = get_title_page_token(parsed, 'author');
@@ -1126,12 +1128,16 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var dif = line_height * 0.5
         if (cfg.print_header) {
             doc.format_text(cfg.print_header, 1.5, print.page_number_top_margin, {
-                color: '#777777'
+                color: '#777777',
+                width: innerwidth,
+                align: 'center'
             });
         }
         if (cfg.print_footer) {
             doc.format_text(cfg.print_footer, 1.5, print.page_height - print.page_number_top_margin - dif, {
-                color: '#777777'
+                color: '#777777',
+                width: innerwidth,
+                align: 'center',
             });
         }
     };
@@ -1228,16 +1234,22 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     }
 
     function print_page_number() {
+        if (pageNumPrintSub < 0) {
+            return;
+        }
         var page_num_y = print.page_height - print.page_number_top_margin;
         if (cfg.show_page_numbers) {
-            var page_num = cfg.show_page_numbers.replace("{n}", page.toFixed());
+            var page_num = cfg.show_page_numbers.replace("{n}", (page - pageNumPrintSub).toFixed());
             // var number_x = print.action.feed + print.action.max * print.font_width - page_num.length * print.font_width;
             // doc.simple_text(page_num, number_x * 72, page_num_y * 72);
             doc.format_text(page_num, 0, page_num_y, { align: 'right', width: print.page_width - print.right_margin });
         }
     }
 
-    function print_scene_split_continue(h: number) {
+    function print_scene_split_continue(h: number, sceneNumber: string) {
+        if (!sceneNumber) {
+            return; // 第一个场景开始之后，才打印
+        }
         if (cfg.scene_continuation_bottom) {
             var scene_continued_text = '(' + (cfg.text_scene_continued || 'CONTINUED') + ')';
             // var feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(scene_continued_text) * print.font_width;
@@ -1256,6 +1268,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         return 0;
     }
     function print_scene_split_top(sceneNumber: string, count: number) {
+        if (!sceneNumber) {
+            return; // 第一个场景开始之后，才打印
+        }
         var number_y = line_height * 0.5 + print.page_number_top_margin;
 
         if (cfg.scene_continuation_top) {
@@ -1835,6 +1850,21 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     for (var ii = 0; ii < lines.length; ii++) {
         // lines.forEach(function (line: any) {
+        if (pageNumPrintSub == -2 && lines[ii].token && (lines[ii].token.type === "scene_heading" || lines[ii].token.type === "section" || lines[ii].token.type === "transition")) { //redraw 也可能进入
+
+            pageNumPrintSub = -1;
+            // lines 在 ii 前插入空行
+            lines.splice(ii, 0, {
+                type: "page_break",
+                token: "",
+                text: "",
+                start: 0,
+                end: 0,
+                // scene_split: false, 
+            });
+            ii--;
+            continue
+        }
 
         // 去除页面前面的空行
         if (!pageStarted) {
@@ -1905,7 +1935,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 doc.switchToPage(pageIdx - 1);
                 var h = lashHeight > lashHeightRight ? lashHeight : lashHeightRight;
                 var hPri = lashHeightRight > 0 ? lashHeightRight : lashHeight;
-                print_scene_split_continue(hPri);
+                print_scene_split_continue(hPri, scene_number);
                 pagesHeight[pageIdx - 1] = h;
                 doc.switchToPage(pageIdx);
                 print_scene_split_top(scene_number, count_scene_split_top());
@@ -1915,6 +1945,17 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             subHeight = 0;
 
         }
+
+        if (pageNumPrintSub == -1 && lines[ii].token && (lines[ii].token.type === "scene_heading" || lines[ii].token.type === "section" || lines[ii].token.type === "transition")) { //redraw 也可能进入
+            pageNumPrintSub = page - 1;
+            print_page_number();
+        }
+
+
+        if (!sceneStarted && lines[ii].token && lines[ii].token.type === "scene_heading") { //redraw 也可能进入
+            sceneStarted = true;
+        }
+
 
 
         if (lines[ii].type === "character" || lines[ii].type === "parenthetical" || lines[ii].type === "dialogue") {
@@ -2452,7 +2493,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     }
                     else {
                         // action / lyric
-                        if (chinaFormat === 1) {
+                        if (chinaFormat === 1 && sceneStarted) { //第一个场景之前的action，不加 △
                             text = '△' + ' ' + text;
                         }
                     }
@@ -2541,7 +2582,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         doc.switchToPage(pid - 1);
         var h = v.leftHeight > v.rightHeight ? v.leftHeight : v.rightHeight;
         var hPri = v.rightHeight > 0 ? v.rightHeight : v.leftHeight;
-        print_scene_split_continue(hPri);
+        print_scene_split_continue(hPri, v.sceneNumber);
         pagesHeight[pid - 1] = h;
         doc.switchToPage(pid);
         print_scene_split_top(v.sceneNumber, v.count);
@@ -2713,7 +2754,17 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
         }
     }
-    return pagesHeight
+    // pagesHeight 去除前面 pageNumPrintSub 个元素
+    var res: { [key: number]: number } = {};
+    if (pageNumPrintSub >= 0) {
+        for (var pIdx in pagesHeight) { //pIdx由1开始，而pageNumPrintSub由0开始
+            if (Number(pIdx) > pageNumPrintSub) {  // Convert pIdx to a number before comparison
+                // Your logic here
+                res[pIdx] = pagesHeight[pIdx]
+            }
+        }
+    }
+    return res
 }
 
 export var get_pdf = async function (opts: Options, progress: vscode.Progress<{ message?: string; increment?: number; }>) {
