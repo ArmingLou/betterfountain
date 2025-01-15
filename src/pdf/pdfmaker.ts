@@ -1931,12 +1931,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 print_dialogue_split_top();
             }
 
+            var h = lashHeight > lashHeightRight ? lashHeight : lashHeightRight;
+            pagesHeight[pageIdx - 1] = h;
+
             if (scene_split && lashHeight) { // 左侧对话换页时，不会在此打印。 右侧触发的换页会。其他非对话中的换页也会在此。
                 doc.switchToPage(pageIdx - 1);
-                var h = lashHeight > lashHeightRight ? lashHeight : lashHeightRight;
                 var hPri = lashHeightRight > 0 ? lashHeightRight : lashHeight;
                 print_scene_split_continue(hPri, scene_number);
-                pagesHeight[pageIdx - 1] = h;
                 doc.switchToPage(pageIdx);
                 print_scene_split_top(scene_number, count_scene_split_top());
             }
@@ -2755,16 +2756,18 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
     }
     // pagesHeight 去除前面 pageNumPrintSub 个元素
-    var res: { [key: number]: number } = {};
+    // var res: { [key: number]: number } = {};
+    var cc = 0;
     if (pageNumPrintSub >= 0) {
         for (var pIdx in pagesHeight) { //pIdx由1开始，而pageNumPrintSub由0开始
             if (Number(pIdx) > pageNumPrintSub) {  // Convert pIdx to a number before comparison
                 // Your logic here
-                res[pIdx] = pagesHeight[pIdx]
+                // res[pIdx] = pagesHeight[pIdx]
+                cc++;
             }
         }
     }
-    return res
+    return cc
 }
 
 export var get_pdf = async function (opts: Options, progress: vscode.Progress<{ message?: string; increment?: number; }>) {
@@ -2801,12 +2804,15 @@ export var get_pdf_stats = async function (opts: Options): Promise<pdfstats> {
     });
 
     var ph = await generate(doc, opts, stats.linemap);
-    var lines = 0;
-    for (var pIdx in ph) {
-        var h = ph[pIdx];
-        lines += Math.round(h / opts.line_height);
-    }
-    stats.pagecount = lines / opts.print.lines_per_page; //去除换页等空行后的，统计的页数
+    // // var lines = 0;
+    // var he = 0;
+    // for (var pIdx in ph) {
+    //     var h = ph[pIdx];
+    //     he += h;
+    // }
+    // // lines += Math.round(he / opts.line_height);
+    // stats.pagecount = he / opts.line_height / opts.print.lines_per_page; //去除换页等空行后的，统计的页数
+    stats.pagecount = ph; //去除换页等空行后的，统计的页数
     return stats;
 }
 
@@ -2838,12 +2844,13 @@ export var get_pdf_base64 = async function (opts: Options): Promise<PdfAsBase64>
         stats.pagecountReal++;
     });
     var ph = await generate(doc, opts, stats.linemap);
-    var lines = 0;
-    for (var pIdx in ph) {
-        var h = ph[pIdx];
-        lines += Math.round(h / opts.line_height);
-    }
-    stats.pagecount = lines / opts.print.lines_per_page;
+    // var lines = 0;
+    // for (var pIdx in ph) {
+    //     var h = ph[pIdx];
+    //     lines += Math.round(h / opts.line_height);
+    // }
+    // stats.pagecount = lines / opts.print.lines_per_page;
+    stats.pagecount = ph;
     doc.end();
     return {
         data: await toBase64(doc),
