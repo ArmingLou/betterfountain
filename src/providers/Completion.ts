@@ -158,7 +158,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 				if (parsedDocument.properties.titleKeys.indexOf("font_bold_italic") == -1)
 					completes.push(TitlePageKey({ name: "Font Bold Italic", detail: "The bold_italic font used in the screenplay", triggerIntellisense: true, documentation: `Generally a monospace courier-type font. BetterFountain's default is [Courier Prime](https://quoteunquoteapps.com/courierprime/), with added support for cyrillic.`, sort: "0K3", position: titlePageDisplay['font_bold_italic'].position }));
 				if (parsedDocument.properties.titleKeys.indexOf("metadata") == -1)
-					completes.push(TitlePageKey({ name: "Metadata", detail: "Metadata json string", triggerIntellisense: true, documentation: `
+					completes.push(TitlePageKey({
+						name: "Metadata", detail: "Metadata json string", triggerIntellisense: true, documentation: `
 {
     "userPassword":"",
     "ownerPassword":"",
@@ -228,7 +229,8 @@ You can specify either [userPassword], [ownerPassword] or both passwords. Behavi
 
 When only [userPassword] is provided, users with user password are able to decrypt the file and have full access to the document.
 When only [ownerPassword] is provided, users are able to decrypt and open the document without providing any password, but the access is limited to those operations explicitly permitted. Users with owner password have full access to the document.
-When both passwords are provided, users with user password are able to decrypt the file but only have limited access to the file according to permission settings. Users with owner password have full access to the document.`, sort: "0K4", position: titlePageDisplay['metadata'].position }));
+When both passwords are provided, users with user password are able to decrypt the file but only have limited access to the file according to permission settings. Users with owner password have full access to the document.`, sort: "0K4", position: titlePageDisplay['metadata'].position
+					}));
 				if (parsedDocument.properties.titleKeys.indexOf("revision") == -1)
 					completes.push(TitlePageKey({
 						name: "Revision", detail: "The name of the current and past revisions", documentation: `New revisions are generally printed on different-colored paper, and named accordingly. The WGA order for revisions is:
@@ -292,7 +294,8 @@ When both passwords are provided, users with user password are able to decrypt t
 					})
 				}
 				else if (currentkey == "metadata:") {
-					completes.push({ label: `{
+					completes.push({
+						label: `{
     "userPassword":"",
     "ownerPassword":"",
     "permissions":{
@@ -322,7 +325,8 @@ When both passwords are provided, users with user password are able to decrypt t
 		"note_line_height": 0.17,
 		"page_number_top_margin": 0.4
 	}
-}`, sortText: "0A", kind: vscode.CompletionItemKind.Text });
+}`, sortText: "0A", kind: vscode.CompletionItemKind.Text
+					});
 				}
 			}
 		}
@@ -379,9 +383,9 @@ When both passwords are provided, users with user password are able to decrypt t
 					}
 				});
 			}
-		} 
+		}
 		if (currentline.trim() === "." && previousLineIsEmpty) {
-			if(currentline.indexOf(".") == position.character-1){
+			if (currentline.indexOf(".") == position.character - 1) {
 				completes.push({ label: "(内景) ", documentation: "内景", sortText: "00B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 				completes.push({ label: "(外景) ", documentation: "外景", sortText: "00C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 				completes.push({ label: "(内外景) ", documentation: "内外景", sortText: "00D", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
@@ -393,10 +397,11 @@ When both passwords are provided, users with user password are able to decrypt t
 			var mt = currentline.match(/^[^-–—−]+?[-–—−]\s*$/g);
 			if (mt) {
 				var addspace = !currentline.endsWith(" ");
-				completes.push(TimeofDayCompletion("白天", addspace, "A"));
-				completes.push(TimeofDayCompletion("夜晚", addspace, "B"));
-				completes.push(TimeofDayCompletion("黄昏", addspace, "C"));
-				completes.push(TimeofDayCompletion("黎明", addspace, "D"));
+				completes.push(TimeofDayCompletion("日", addspace, "A"));
+				completes.push(TimeofDayCompletion("夜", addspace, "B"));
+				completes.push(TimeofDayCompletion("傍晚", addspace, "C"));
+				completes.push(TimeofDayCompletion("清晨", addspace, "D1"));
+				completes.push(TimeofDayCompletion("黎明", addspace, "D2"));
 				completes.push(TimeofDayCompletion("DAY", addspace, "E"));
 				completes.push(TimeofDayCompletion("NIGHT", addspace, "F"));
 				completes.push(TimeofDayCompletion("DUSK", addspace, "G"));

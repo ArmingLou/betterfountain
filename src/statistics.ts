@@ -390,13 +390,13 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
         }).map(a => {
             return a.trim().toLowerCase()
         });
-        if (arr.includes('白天') || arr.includes('day')) {
+        if (arr.includes('正午') || arr.includes('日') || arr.includes('白天') || arr.includes('day')) {
             cs = 'day';
-        } else if (arr.includes('夜晚') || arr.includes('night')) {
+        } else if (arr.includes('夜') || arr.includes('夜晚') || arr.includes('night')) {
             cs = 'night';
-        } else if (arr.includes('黄昏') || arr.includes('dusk')) {
+        } else if (arr.includes('傍晚') || arr.includes('黄昏') || arr.includes('dusk')) {
             cs = 'dusk';
-        } else if (arr.includes('黎明') || arr.includes('dawn')) {
+        } else if (arr.includes('清晨') || arr.includes('黎明') || arr.includes('dawn')) {
             cs = 'dawn';
         } else {
             cs = '';
