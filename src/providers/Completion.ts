@@ -409,7 +409,7 @@ When both passwords are provided, users with user password are able to decrypt t
 			}
 			else {
 				// var scenematch = currentline.match(/^[ \t]*((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(内景\)|\(外景\))?)\s*$/gi);
-				var scenematch = currentline.match(/^[ \t]*([.](?=[\w\(（\p{L}])(\(内景\)|\(外景\)|\(内外景\)|（内景）|（外景）|（内外景）)?|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])\s*$/gui);
+				var scenematch = currentline.match(/^[ \t]*([.](?=[\w\(（\p{L}])(\(内景\)|\(外景\)|\(内外景\)|（内景）|（外景）|（内外景）)?|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])\s*([^-–—−]+\/\s*)?$/gui);
 				if (scenematch) {
 					// var previousLabels: string[] = []
 					parsedDocument.properties.locations.forEach((_location, name) => {

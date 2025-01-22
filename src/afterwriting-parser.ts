@@ -963,20 +963,24 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     const location = parseLocationInformation(sceneHeadingMatch);
                     if (location) {
                         const locationSlug = slugify(location.name);
-                        if (result.properties.locations.has(locationSlug)) {
-                            const values = result.properties.locations.get(locationSlug);
-                            if (values.findIndex(it => it.scene_number == scene_number) == -1) {
-                                values.push({
-                                    scene_number: scene_number,
-                                    line: thistoken.line,
-                                    ...location
-                                });
+                        let lslugs = locationSlug.split('/').map(it => it.trim()).filter(it => it.length > 0);
+                        lslugs.forEach(sl => {
+                            if (result.properties.locations.has(sl)) {
+                                const values = result.properties.locations.get(sl);
+                                if (values.findIndex(it => it.scene_number == scene_number) == -1) {
+                                    values.push({
+                                        scene_number: scene_number,
+                                        line: thistoken.line,
+                                        ...location,
+                                        name: sl
+                                    });
+                                }
+                                result.properties.locations.set(sl, values);
                             }
-                            result.properties.locations.set(locationSlug, values);
-                        }
-                        else {
-                            result.properties.locations.set(locationSlug, [{ scene_number, line: thistoken.line, ...location }]);
-                        }
+                            else {
+                                result.properties.locations.set(sl, [{ scene_number, line: thistoken.line, ...location, name: sl }]);
+                            }
+                        })
                     }
                     scene_number++;
 
