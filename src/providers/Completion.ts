@@ -172,6 +172,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
         "contentAccessibility":false,
         "documentAssembly":false
     },
+	"chars_per_minu": 243.22,
 	"chinaFormat": 0,
 	"embedFonts": false,
 	"print": {
@@ -191,6 +192,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 		"page_number_top_margin": 0.4
 	}
 }
+
+[chars_per_minu] - 每分钟多少字符，用于粗略预估剧本时间【主要用于其他客户端软件使用】。
 
 [chinaFormat] - print in china format (dialogue is aligned to the left). 0: don't print in china format; 1: print in china format with △; 2: china format without △ .
 
@@ -307,6 +310,7 @@ When both passwords are provided, users with user password are able to decrypt t
         "contentAccessibility":false,
         "documentAssembly":false
     },
+	"chars_per_minu": 243.22,
 	"chinaFormat": 0,
 	"embedFonts": false,
 	"print": {
