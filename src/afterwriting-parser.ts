@@ -539,30 +539,30 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         return token.text
     }
     const processDialogueBlock = (token: token) => {
-        // let textWithoutNotes = token.text.replace(regex.note_inline, "");
-        // processInlineNote(token.text, token.line);
-        token.textNoNotes = text_valid;
-        let textWithoutNotes = "";
-        // if (current_has_note) {
-        // textWithoutNotes = current_expet_note_text;
-        textWithoutNotes = text_valid;
-        // } else {
-        // textWithoutNotes = token.text;
-        // }
-        token.time = calculateDialogueDuration(textWithoutNotes);
-        // if (!cfg.print_notes) {
-        //     token.text = textWithoutNotes;
-        //     if (token.text.trim().length == 0) token.ignore = true;
-        // }
+        // 第一个场景之前的时间不累计
         if (result.properties.scenes.length > 0) {
-            // 第一个场景之前的时间不累计
+            // let textWithoutNotes = token.text.replace(regex.note_inline, "");
+            // processInlineNote(token.text, token.line);
+            token.textNoNotes = text_valid;
+            let textWithoutNotes = "";
+            // if (current_has_note) {
+            // textWithoutNotes = current_expet_note_text;
+            textWithoutNotes = text_valid;
+            // } else {
+            // textWithoutNotes = token.text;
+            // }
+            token.time = calculateDialogueDuration(textWithoutNotes);
+            // if (!cfg.print_notes) {
+            //     token.text = textWithoutNotes;
+            //     if (token.text.trim().length == 0) token.ignore = true;
+            // }
             result.lengthDialogue += token.time;
-        }
-        if (lastScenStructureToken) {
-            lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
-        }
-        if (lastChartorStructureToken) {
-            lastChartorStructureToken.durationSec = lastChartorStructureToken.durationSec ? lastChartorStructureToken.durationSec + token.time : token.time;
+            if (lastScenStructureToken) {
+                lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
+            }
+            if (lastChartorStructureToken) {
+                lastChartorStructureToken.durationSec = lastChartorStructureToken.durationSec ? lastChartorStructureToken.durationSec + token.time : token.time;
+            }
         }
     }
     // const processParentheticalBlock = (token: token) => {
@@ -574,25 +574,25 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     //     }
     // }
     const processActionBlock = (token: token) => {
-        // processInlineNote(token.text, token.line);
-        // token.time = calculateActionDuration(token.text.length - irrelevantActionLength);
-        let textWithoutNotes = "";
-        // if (current_has_note) {
-        textWithoutNotes = text_valid;
-        // } else {
-        // textWithoutNotes = token.text;
-        // }
-        token.time = calculateActionDuration(textWithoutNotes);
-        // if (!cfg.print_notes) {
-        //     token.text = token.text.replace(regex.note_inline, "");
-        //     if (token.text.trim().length == 0) token.ignore = true;
-        // }
+        // 第一个场景之前的时间不累计
         if (result.properties.scenes.length > 0) {
-            // 第一个场景之前的时间不累计
+            // processInlineNote(token.text, token.line);
+            // token.time = calculateActionDuration(token.text.length - irrelevantActionLength);
+            let textWithoutNotes = "";
+            // if (current_has_note) {
+            textWithoutNotes = text_valid;
+            // } else {
+            // textWithoutNotes = token.text;
+            // }
+            token.time = calculateActionDuration(textWithoutNotes);
+            // if (!cfg.print_notes) {
+            //     token.text = token.text.replace(regex.note_inline, "");
+            //     if (token.text.trim().length == 0) token.ignore = true;
+            // }
             result.lengthAction += token.time;
-        }
-        if (lastScenStructureToken) {
-            lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
+            if (lastScenStructureToken) {
+                lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
+            }
         }
     }
     // var line_match_type = '';

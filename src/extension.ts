@@ -49,17 +49,11 @@ function updateStatus(checkUri: string): void {
       if (editor) {
         const line = editor.selection.active.line;
         var currsorSec = 0;
-        var firstScene = false;
+        // var firstScene = false;
         parsedDoc.tokens.forEach(tk => {
           if (tk.line <= line) {
-            if (firstScene) {
-              if (tk.time) {
-                currsorSec += tk.time;
-              }
-            } else {
-              if (tk.type == "scene_heading") {
-                firstScene = true; // 第一个场景之前的，不算时间。
-              }
+            if (tk.time) {
+              currsorSec += tk.time;
             }
           } else {
             return
