@@ -25,19 +25,69 @@ import { FountainLocationTreeDataProvider } from "./providers/Locations";
 /**
  * Approximates length of the screenplay based on the overall length of dialogue and action tokens
  */
-function updateStatus(lengthAction: number, lengthDialogue: number): void {
-  if (durationStatus != undefined) {
-    if (getActiveFountainDocument() != undefined) {
-      durationStatus.show();
-      var durationDialogue = lengthDialogue;
-      var durationAction = lengthAction;
-      durationStatus.tooltip = "Dialogue: " + secondsToString(durationDialogue) + "\nAction: " + secondsToString(durationAction);
-      durationStatus.text = secondsToString(durationDialogue + durationAction);
-    } else {
-      durationStatus.hide();
+function updateStatus(checkUri: string): void {
+  if (checkUri) {
+    var texteditor = getEditor(getActiveFountainDocument());
+    if (!texteditor) {
+      return
+    }
+    if (texteditor.document.uri.toString() !== checkUri) {
+      return
     }
   }
+  const parsedDoc = activeParsedDocument();
+  if (parsedDoc) {
+    if (durationStatus != undefined) {
+      // if (getActiveFountainDocument() != undefined) {
+      durationStatus.show();
+      var durationDialogue = parsedDoc.lengthDialogue;
+      var durationAction = parsedDoc.lengthAction;
+
+      // Get cursor position
+      const editor = vscode.window.activeTextEditor;
+      let cursorInfo = '';
+      if (editor) {
+        const line = editor.selection.active.line;
+        var currsorSec = 0;
+        var firstScene = false;
+        parsedDoc.tokens.forEach(tk => {
+          if (tk.line <= line) {
+            if (firstScene) {
+              if (tk.time) {
+                currsorSec += tk.time;
+              }
+            } else {
+              if (tk.type == "scene_heading") {
+                firstScene = true; // 第一个场景之前的，不算时间。
+              }
+            }
+          } else {
+            return
+          }
+        })
+        if (currsorSec > 0) {
+          cursorInfo = secondsToString(currsorSec) + ' / ';
+        }
+      }
+
+      durationStatus.tooltip = "Dialogue: " + secondsToString(durationDialogue) + "\nAction: " + secondsToString(durationAction);
+      durationStatus.text = cursorInfo + secondsToString(durationDialogue + durationAction);
+      // } else {
+      //   durationStatus.hide();
+      // }
+    }
+  } else {
+    durationStatus.hide();
+  }
 }
+
+// Add cursor position listener
+vscode.window.onDidChangeTextEditorSelection(() => {
+  const editor = vscode.window.activeTextEditor;
+  if (editor && editor.document.languageId === "fountain") {
+    updateStatus("");
+  }
+});
 
 var durationStatus: vscode.StatusBarItem;
 export const outlineViewProvider: FountainOutlineTreeDataProvider = new FountainOutlineTreeDataProvider();
@@ -82,8 +132,8 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('fountain.jumpto', commands.jumpTo));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdf', commands.exportPdf));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exportdocx', commands.exportDocx)); // TODO Arming (2024-12-10) : 
-  context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfdebug', async () => commands.exportPdf(null,false, true)));
-  context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfcustom', async () => commands.exportPdf(null,true, false, true)));
+  context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfdebug', async () => commands.exportPdf(null, false, true)));
+  context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfcustom', async () => commands.exportPdf(null, true, false, true)));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exporthtml', exportHtml));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.overwriteSceneNumbers', overwriteSceneNumbers));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.updateSceneNumbers', updateSceneNumbers));
@@ -100,7 +150,7 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('fountain.shiftScenesDown', () => commands.shiftScenesUpDn(1)));
 
   vscode.workspace.onWillSaveTextDocument(e => {
-    if(e.document.languageId !== "fountain") {
+    if (e.document.languageId !== "fountain") {
       return;
     }
     const config = getFountainConfig(e.document.uri);
@@ -135,12 +185,12 @@ export function activate(context: ExtensionContext) {
     const cheatsheetViewProvider: FountainCheatSheetWebviewViewProvider = new FountainCheatSheetWebviewViewProvider(context.extensionUri);
     vscode.window.registerWebviewViewProvider("fountain-cheatsheet", cheatsheetViewProvider);
   }
-  
+
   function registerCommandTreeView() {
     vscode.window.registerTreeDataProvider("fountain-commands", outlineViewProvider);
     vscode.window.createTreeView("fountain-commands", { treeDataProvider: commandViewProvider });
   }
-  
+
   function registerCharactersTreeView() {
     vscode.window.registerTreeDataProvider("fountain-characters", charactersViewProvider);
     vscode.window.createTreeView("fountain-characters", { treeDataProvider: charactersViewProvider, showCollapseAll: true });
@@ -150,7 +200,7 @@ export function activate(context: ExtensionContext) {
     vscode.window.registerTreeDataProvider("fountain-locations", locationsViewProvider);
     vscode.window.createTreeView("fountain-locations", { treeDataProvider: locationsViewProvider, showCollapseAll: true });
   }
-  
+
   function registerOutlineTreeView() {
     vscode.window.registerTreeDataProvider("fountain-outline", outlineViewProvider);
     outlineViewProvider.treeView = vscode.window.createTreeView("fountain-outline", { treeDataProvider: outlineViewProvider, showCollapseAll: true });
@@ -311,7 +361,7 @@ export function parseDocument(document: TextDocument) {
     charactersViewProvider.update();
     locationsViewProvider.update();
   }
-  updateStatus(output.lengthAction, output.lengthDialogue);
+  updateStatus(document.uri.toString());
   showDecorations(document.uri);
 
   let t1 = performance.now()
@@ -335,7 +385,7 @@ vscode.window.onDidChangeActiveTextEditor(change => {
         preview.reveal(preview.viewColumn);
     }*/
   } else {
-    if(lastWasFountainDocument){
+    if (lastWasFountainDocument) {
       outlineViewProvider.update();
       charactersViewProvider.update();
       locationsViewProvider.update();
@@ -358,7 +408,7 @@ vscode.workspace.onDidSaveTextDocument(e => {
     for (const pp of pdfPanels) {
       refreshPdfPanel(pp.panel, e, config);
     }
-    
+
     let docxPanels = getDocxPreviewPanels(e.uri);
     for (const pp of docxPanels) {
       refreshDocxPanel(pp.panel, e, config);
