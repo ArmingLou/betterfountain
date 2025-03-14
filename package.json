@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "6.6.8",
+	"version": "6.6.9",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -323,7 +323,7 @@
 					"fountain.pdf.textNote": {
 						"type": "string",
 						"default": "NOTE:",
-						"markdownDescription": "Text to print if `#fountain.pdf.printNotes#` and `#fountain.pdf.notePositionBottom#` are enabled are enabled - `NOTE:` in English.(底部集中显示标注内容时，标注标题显示什么)"
+						"markdownDescription": "Text to print if `#fountain.pdf.printNotes#` and `#fountain.pdf.notePositionBottom#` are enabled - `NOTE:` in English.(底部集中显示标注内容时，标注标题显示什么)"
 					},
 					"fountain.pdf.pageHeader": {
 						"type": "string",
