@@ -61,7 +61,7 @@
           ]
         },
         "4": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         },
         "5": {
           "name": "constant.character.fountain",
@@ -96,7 +96,7 @@
           ]
         },
         "8": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         },
         "9": {
           "patterns": [
@@ -117,7 +117,7 @@
           "include": "#notes"
         },
         {
-          "name": "entity.name.tag",
+          "name": "string.parenthetical.fountain",
           "begin": "^[ \\t]*[\\(（]",
           "end": "([\\)）]\\s*$|(?=^[ ]?$))",
           "patterns": [
@@ -219,10 +219,10 @@
       "name": "entity.name.tag",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.unit"
+          "name": "keyword.title.fountain"
         },
         "2": {
-          "name": "keyword.other.unit"
+          "name": "keyword.title.fountain"
         },
         "3": {
           "patterns": [
@@ -259,10 +259,10 @@
       "name": "entity.name.tag",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.unit"
+          "name": "keyword.title.fountain"
         },
         "2": {
-          "name": "keyword.other.unit"
+          "name": "keyword.title.fountain"
         },
         "3": {
           "patterns": [
@@ -299,10 +299,10 @@
       "name": "markup.deleted.diff",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.unit"
+          "name": "keyword.title.fountain"
         },
         "2": {
-          "name": "keyword.other.unit"
+          "name": "keyword.title.fountain"
         },
         "3": {
           "patterns": [
@@ -338,10 +338,10 @@
       "end": "^[ \\t]*$",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.class"
+          "name": "variable.scene.fountain"
         },
         "2": {
-          "name": "keyword.other.unit"
+          "name": "keyword.title.fountain"
         },
         "3": {
           "name": "token.error-token",
@@ -355,7 +355,7 @@
           ]
         },
         "4": {
-          "name": "keyword.other.unit"
+          "name": "variable.scene.fountain"
         },
         "5": {
           "name": "token.warn-token",
@@ -369,7 +369,7 @@
           ]
         },
         "7": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         },
         "8": {
           "name": "constant.numeric.scene.fountain",
@@ -383,7 +383,7 @@
           ]
         },
         "9": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         },
         "10": {
           "patterns": [
@@ -407,7 +407,7 @@
       "match": "[ \\t]*(#+)(?:\\s*)(.*?)(?=\\s*(?:(?:\\s*(?:(?:\\[\\[(?:(?!\\]\\]).)*?\\]\\])|(?:/\\*(?:(?!\\*/).)*?\\*/))\\s*?)*?)(?:(?:\\s*\\[\\[(?:(?!\\]\\]).)*$)|(?:\\s*/\\*(?:(?!\\*/).)*$)|\\s*$))",
       "captures": {
         "1": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         },
         "2": {
           "patterns": [
@@ -432,7 +432,7 @@
       "match": "\\s*(=)(.*?)(?=\\s*(?:(?:\\s*(?:(?:\\[\\[(?:(?!\\]\\]).)*?\\]\\])|(?:/\\*(?:(?!\\*/).)*?\\*/))\\s*?)*?)(?:(?:\\s*\\[\\[(?:(?!\\]\\]).)*$)|(?:\\s*/\\*(?:(?!\\*/).)*$)|\\s*$))",
       "captures": {
         "1": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         },
         "2": {
           "patterns": [
@@ -457,7 +457,7 @@
       "end": "^[ \\t]*$",
       "beginCaptures": {
         "1": {
-          "name": "variable.other.constant",
+          "name": "variable.transitions.fountain",
           "patterns": [
             {
               "include": "#comments"
@@ -485,10 +485,10 @@
       "end": "^[ \\t]*$",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         },
         "2": {
-          "name": "variable.other.constant",
+          "name": "variable.transitions.fountain",
           "patterns": [
             {
               "include": "#comments"
@@ -516,7 +516,7 @@
       "end": "^[ ]?$",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         },
         "2": {
           "name": "token.info-token",
@@ -536,7 +536,7 @@
           ]
         },
         "3": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         }
       },
       "patterns": [
@@ -560,7 +560,7 @@
           ]
         },
         "2": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         },
         "3": {
           "patterns": [
@@ -579,7 +579,7 @@
           ]
         },
         "4": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         },
         "5": {
           "patterns": [
@@ -631,11 +631,11 @@
       }
     },
     "lyrics": {
-      "name": "markup.italic string",
+      "name": "markup.italic string.lyrics.fountain",
       "match": "\\s*(~)(.*?)(?=\\s*(?:(?:\\s*(?:(?:\\[\\[(?:(?!\\]\\]).)*?\\]\\])|(?:/\\*(?:(?!\\*/).)*?\\*/))\\s*?)*?)(?:(?:\\s*\\[\\[(?:(?!\\]\\]).)*$)|(?:\\s*/\\*(?:(?!\\*/).)*$)|\\s*$))",
       "captures": {
         "1": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         },
         "2": {
           "patterns": [
@@ -678,7 +678,7 @@
       "end": "^[ \\t]*$",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.unit"
+          "name": "keyword.operator.fountain"
         }
       },
       "patterns": [
@@ -1029,7 +1029,7 @@
       "name": "meta.link.inline.fountain"
     },
     "test2": {
-      "name": "variable.other.constant",
+      "name": "variable.transitions.fountain",
       "begin": "^(?!\\s*$).*$",
       "while": "^(?!\\s*$).*$"
     }
