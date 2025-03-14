@@ -1865,8 +1865,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             ii--;
             continue
         } else {
-            if(pageNumPrintSub == -2  && !cfg.print_title_page){
-                // 不打印 title page 的配置情况下，第一个场景/转场/section前的页面 也都不打印。 
+            if(pageNumPrintSub == -2  && !cfg.print_preface_page){
+                // 不打印 print_preface_page 的配置情况下，第一个场景/转场/section前的页面 也都不打印。 
                 continue;
             }
         }

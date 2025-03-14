@@ -15,6 +15,7 @@ export class FountainConfig{
     show_page_numbers:string;
     split_dialogue:boolean;
     print_title_page:boolean;
+    print_preface_page:boolean;
     print_profile:string;
     double_space_between_scenes:boolean;
     print_sections:boolean;
@@ -125,6 +126,7 @@ export var getFountainConfig = function(docuri:vscode.Uri):FountainConfig{
         show_page_numbers: pdfConfig.showPageNumbers,
         split_dialogue: pdfConfig.splitDialog,
         print_title_page: pdfConfig.printTitlePage,
+        print_preface_page: pdfConfig.printPrefacePage,
         print_profile: pdfConfig.printProfile,
         double_space_between_scenes: pdfConfig.doubleSpaceBetweenScenes,
         print_sections: pdfConfig.printSections,
