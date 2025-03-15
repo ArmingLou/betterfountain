@@ -125,6 +125,11 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 		// const previousLineIsEmpty = prevLine === "" || prevLine === " ";
 		const previousLineIsEmpty = prevLine.trim() === "";
 
+		// 固定加入 中文括号转换 提示：
+		if (position.character >0 && currentline.indexOf("（") == position.character - 1) {
+			completes.push({ label: "( 转英文标点",range: new vscode.Range(position.translate(0,-1), position), filterText: '（', insertText: new vscode.SnippetString('($1)'), documentation: "转英文标点", sortText: "0A" });
+		}
+
 		//Title page autocomplete
 		if (parsedDocument.properties.firstTokenLine >= position.line) {
 			if (currentline.trim() === "") {
@@ -395,6 +400,28 @@ When both passwords are provided, users with user password are able to decrypt t
 				completes.push({ label: "(内外景) ", documentation: "内外景", sortText: "00D", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 			}
 		}
+		else if (currentline.trim() === "。" && previousLineIsEmpty) {
+			if (currentline.indexOf("。") == position.character - 1) {
+				completes.push({ label: ".(内景) ", filterText: '。', documentation: "内景", sortText: "00B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: ".(外景) ", filterText: '。', documentation: "外景", sortText: "00C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: ".(内外景) ", filterText: '。', documentation: "内外景", sortText: "00D", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+			}
+		}
+		else if (currentline.trim() === "》" && previousLineIsEmpty) {
+			if (currentline.indexOf("》") == position.character - 1) {
+				completes.push({ label: "> 转场", filterText: '》', insertText: '>', documentation: "加转场", sortText: "0A" });
+			}
+		}
+		else if (currentline.trim() === "〉" && previousLineIsEmpty) {
+			if (currentline.indexOf("〉") == position.character - 1) {
+				completes.push({ label: "> 转场", filterText: '〉', insertText: '>', documentation: "加转场", sortText: "0A" });
+			}
+		}
+		// else if (currentline.trim() === "（") {
+		// 	if (currentline.indexOf("（") == position.character - 1) {
+		// 		completes.push({ label: "( 转英文标点", filterText: '（',insertText: new vscode.SnippetString('($1)'), documentation: "转英文标点", sortText: "0A"});
+		// 	}
+		// }
 		//Scene header autocomplete
 		if (parsedDocument.properties.sceneLines.indexOf(position.line) > -1) {
 			//Time of day
