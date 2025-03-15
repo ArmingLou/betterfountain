@@ -126,7 +126,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 
 		// 固定加入 中文括号转换 提示：
 		if (currentline.endsWith('（')) {
-			completes.push({ label: "( 转英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（', insertText: new vscode.SnippetString('($1)'), documentation: "转英文括号", sortText: "0A" });
+			completes.push({ label: "() 转英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（', insertText: new vscode.SnippetString('($1)'), documentation: "转英文括号", sortText: "0A" });
 		}
 
 		//Title page autocomplete
@@ -340,7 +340,7 @@ When both passwords are provided, users with user password are able to decrypt t
 		}
 		//Other autocompletes
 		else if (currentline.trim() === '@' && currentline.indexOf("@") == position.character - 1) {
-			completes.push({ label: '@', range: new vscode.Range(position.translate(0, -1), position), filterText: '@', insertText: previousLineIsEmpty ? '@' : '\n@', kind: vscode.CompletionItemKind.Keyword, sortText: "000" + index, documentation: "Character from the current scene"});
+			completes.push({ label: '@', range: new vscode.Range(position.translate(0, -1), position), filterText: '@', insertText: previousLineIsEmpty ? '@' : '\n@', kind: vscode.CompletionItemKind.Keyword, sortText: "000" + index, documentation: "Character from the current scene" });
 			//We aren't on the first line, and the previous line is empty
 
 			//Get current scene number
@@ -363,7 +363,7 @@ When both passwords are provided, users with user password are able to decrypt t
 						// var charWithForceSymbolIfNecessary = currentline.trim() === '@' ? character : '@' + character;
 						var it = previousLineIsEmpty ? '@' + character : '\n@' + character;
 						charactersFromCurrentSceneHash.add(character);
-						completes.push({ label: '@' + character, range: new vscode.Range(position.translate(0, -1), position), filterText: '@', insertText: it, kind: vscode.CompletionItemKind.Keyword, sortText: "0A" + index, documentation: "Character from the current scene", command: { command: "type", arguments: [{ "text": "\n" }], title: "newline" } });
+						completes.push({ label: '@' + character, range: new vscode.Range(position.translate(0, -1), position), filterText: '@' + character, insertText: it, kind: vscode.CompletionItemKind.Keyword, sortText: "0A" + index, documentation: "Character from the current scene", command: { command: "type", arguments: [{ "text": "\n" }], title: "newline" } });
 						index++;
 					});
 				}
@@ -390,7 +390,7 @@ When both passwords are provided, users with user password are able to decrypt t
 					if (!charactersFromCurrentSceneHash.has(key) && key.trim() !== '') {
 						// var charWithForceSymbolIfNecessary = currentline.trim() === '@' ? key : '@' + key;
 						var it = previousLineIsEmpty ? '@' + key : '\n@' + key;
-						completes.push({ label: '@' + key, range: new vscode.Range(position.translate(0, -1), position), filterText: '@', insertText: it, documentation: "Character", sortText: sortText, kind: vscode.CompletionItemKind.Text, command: { command: "type", arguments: [{ "text": "\n" }], title: "newline" } });
+						completes.push({ label: '@' + key, range: new vscode.Range(position.translate(0, -1), position), filterText: '@' + key, insertText: it, documentation: "Character", sortText: sortText, kind: vscode.CompletionItemKind.Text, command: { command: "type", arguments: [{ "text": "\n" }], title: "newline" } });
 					}
 				});
 			}
@@ -404,47 +404,48 @@ When both passwords are provided, users with user password are able to decrypt t
 		}
 		else if (currentline.trim() === "。") {
 			if (currentline.indexOf("。") == position.character - 1) {
-				completes.push({ label: ".(内景) ", filterText: '。', insertText: previousLineIsEmpty ? '.(内景) ' : '\n.(内景) ', documentation: "内景", sortText: "00B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
-				completes.push({ label: ".(外景) ", filterText: '。', insertText: previousLineIsEmpty ? '.(外景) ' : '\n.(外景) ', documentation: "外景", sortText: "00C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
-				completes.push({ label: ".(内外景) ", filterText: '。', insertText: previousLineIsEmpty ? '.(内外景) ' : '\n.(内外景) ', documentation: "内外景", sortText: "00D", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: ".(内景) ", filterText: '。（(内景)）', insertText: previousLineIsEmpty ? '.(内景) ' : '\n.(内景) ', documentation: "内景", sortText: "00B", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: ".(外景) ", filterText: '。（(外景)）', insertText: previousLineIsEmpty ? '.(外景) ' : '\n.(外景) ', documentation: "外景", sortText: "00C", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: ".(内外景) ", filterText: '。（(内外景)）', insertText: previousLineIsEmpty ? '.(内外景) ' : '\n.(内外景) ', documentation: "内外景", sortText: "00D", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 			}
 		}
 		else if (currentline.trim() === "》") {
 			if (currentline.indexOf("》") == position.character - 1) {
 				completes.push({ label: ">", filterText: '》', insertText: previousLineIsEmpty ? '>' : '\n>', documentation: "插入转场", sortText: "0A" });
-				completes.push({ label: ">叠化", filterText: '》', insertText: previousLineIsEmpty ? '>叠化' : '\n>叠化', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0b" });
-				completes.push({ label: ">淡出淡入", filterText: '》', insertText: previousLineIsEmpty ? '>淡出淡入' : '\n>淡出淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0c" });
-				completes.push({ label: ">切到", filterText: '》', insertText: previousLineIsEmpty ? '>切到' : '\n>切到', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0d" });
-				completes.push({ label: ">闪回", filterText: '》', insertText: previousLineIsEmpty ? '>闪回' : '\n>闪回', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0f" });
-				completes.push({ label: ">淡出", filterText: '》', insertText: previousLineIsEmpty ? '>淡出' : '\n>淡出', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0g" });
-				completes.push({ label: ">淡入", filterText: '》', insertText: previousLineIsEmpty ? '>淡入' : '\n>淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0h" });
-				completes.push({ label: ">闪回结束", filterText: '》', insertText: previousLineIsEmpty ? '>闪回结束' : '\n>闪回结束', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0i" });
-				completes.push({ label: "> <", filterText: '》', insertText: new vscode.SnippetString('>$1<'), documentation: "插入居中", sortText: "1B" });
+				completes.push({ label: ">叠化", filterText: '》叠化', insertText: previousLineIsEmpty ? '>叠化' : '\n>叠化', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0b" });
+				completes.push({ label: ">淡出淡入", filterText: '》淡出淡入', insertText: previousLineIsEmpty ? '>淡出淡入' : '\n>淡出淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0c" });
+				completes.push({ label: ">切到", filterText: '》切到', insertText: previousLineIsEmpty ? '>切到' : '\n>切到', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0d" });
+				completes.push({ label: ">闪回", filterText: '》闪回', insertText: previousLineIsEmpty ? '>闪回' : '\n>闪回', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0f" });
+				completes.push({ label: ">淡出", filterText: '》淡出', insertText: previousLineIsEmpty ? '>淡出' : '\n>淡出', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0g" });
+				completes.push({ label: ">淡入", filterText: '》淡入', insertText: previousLineIsEmpty ? '>淡入' : '\n>淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0h" });
+				completes.push({ label: ">闪回结束", filterText: '》闪回结束', insertText: previousLineIsEmpty ? '>闪回结束' : '\n>闪回结束', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0i" });
+				completes.push({ label: "> <", filterText: '》《', insertText: new vscode.SnippetString('>$1<'), documentation: "插入居中", sortText: "1B" });
 			}
 		}
 		else if (currentline.trim() === "〉") {
 			if (currentline.indexOf("〉") == position.character - 1) {
 				completes.push({ label: ">", filterText: '〉', insertText: previousLineIsEmpty ? '>' : '\n>', documentation: "插入转场", sortText: "0A" });
-				completes.push({ label: ">叠化", filterText: '〉', insertText: previousLineIsEmpty ? '>叠化' : '\n>叠化', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0b" });
-				completes.push({ label: ">淡出淡入", filterText: '〉', insertText: previousLineIsEmpty ? '>淡出淡入' : '\n>淡出淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0c" });
-				completes.push({ label: ">切到", filterText: '〉', insertText: previousLineIsEmpty ? '>切到' : '\n>切到', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0d" });
-				completes.push({ label: ">闪回", filterText: '〉', insertText: previousLineIsEmpty ? '>闪回' : '\n>闪回', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0f" });
-				completes.push({ label: ">淡出", filterText: '〉', insertText: previousLineIsEmpty ? '>淡出' : '\n>淡出', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0g" });
-				completes.push({ label: ">淡入", filterText: '〉', insertText: previousLineIsEmpty ? '>淡入' : '\n>淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0h" });
-				completes.push({ label: ">闪回结束", filterText: '〉', insertText: previousLineIsEmpty ? '>闪回结束' : '\n>闪回结束', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0i" });
-				completes.push({ label: "> <", filterText: '〉', insertText: new vscode.SnippetString('>$1<'), documentation: "插入居中", sortText: "1B" });
+				completes.push({ label: ">叠化", filterText: '〉叠化', insertText: previousLineIsEmpty ? '>叠化' : '\n>叠化', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0b" });
+				completes.push({ label: ">淡出淡入", filterText: '〉淡出淡入', insertText: previousLineIsEmpty ? '>淡出淡入' : '\n>淡出淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0c" });
+				completes.push({ label: ">切到", filterText: '〉切到', insertText: previousLineIsEmpty ? '>切到' : '\n>切到', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0d" });
+				completes.push({ label: ">闪回", filterText: '〉闪回', insertText: previousLineIsEmpty ? '>闪回' : '\n>闪回', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0f" });
+				completes.push({ label: ">淡出", filterText: '〉淡出', insertText: previousLineIsEmpty ? '>淡出' : '\n>淡出', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0g" });
+				completes.push({ label: ">淡入", filterText: '〉淡入', insertText: previousLineIsEmpty ? '>淡入' : '\n>淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0h" });
+				completes.push({ label: ">闪回结束", filterText: '〉闪回结束', insertText: previousLineIsEmpty ? '>闪回结束' : '\n>闪回结束', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0i" });
+				completes.push({ label: "> <", filterText: '〉〈', insertText: new vscode.SnippetString('>$1<'), documentation: "插入居中", sortText: "1B" });
 			}
 		}
 		else if (currentline.trim() === ">") {
 			if (currentline.indexOf(">") == position.character - 1) {
 				completes.push({ label: ">", filterText: '>', insertText: previousLineIsEmpty ? '>' : '\n>', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0A" });
-				completes.push({ label: ">叠化", filterText: '>', insertText: previousLineIsEmpty ? '>叠化' : '\n>叠化', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0b" });
-				completes.push({ label: ">淡出淡入", filterText: '>', insertText: previousLineIsEmpty ? '>淡出淡入' : '\n>淡出淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0c" });
-				completes.push({ label: ">切到", filterText: '>', insertText: previousLineIsEmpty ? '>切到' : '\n>切到', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0d" });
-				completes.push({ label: ">闪回", filterText: '>', insertText: previousLineIsEmpty ? '>闪回' : '\n>闪回', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0f" });
-				completes.push({ label: ">淡出", filterText: '>', insertText: previousLineIsEmpty ? '>淡出' : '\n>淡出', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0g" });
-				completes.push({ label: ">淡入", filterText: '>', insertText: previousLineIsEmpty ? '>淡入' : '\n>淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0h" });
-				completes.push({ label: ">闪回结束", filterText: '>', insertText: previousLineIsEmpty ? '>闪回结束' : '\n>闪回结束', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0i" });
+				completes.push({ label: ">叠化", filterText: '>叠化', insertText: previousLineIsEmpty ? '>叠化' : '\n>叠化', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0b" });
+				completes.push({ label: ">淡出淡入", filterText: '>淡出淡入', insertText: previousLineIsEmpty ? '>淡出淡入' : '\n>淡出淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0c" });
+				completes.push({ label: ">切到", filterText: '>切到', insertText: previousLineIsEmpty ? '>切到' : '\n>切到', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0d" });
+				completes.push({ label: ">闪回", filterText: '>闪回', insertText: previousLineIsEmpty ? '>闪回' : '\n>闪回', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0f" });
+				completes.push({ label: ">淡出", filterText: '>淡出', insertText: previousLineIsEmpty ? '>淡出' : '\n>淡出', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0g" });
+				completes.push({ label: ">淡入", filterText: '>淡入', insertText: previousLineIsEmpty ? '>淡入' : '\n>淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0h" });
+				completes.push({ label: ">闪回结束", filterText: '>闪回结束', insertText: previousLineIsEmpty ? '>闪回结束' : '\n>闪回结束', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0i" });
+				completes.push({ label: "> <", filterText: '><', insertText: new vscode.SnippetString('>$1<'), range: new vscode.Range(position.translate(0, -1), position), documentation: "插入居中", sortText: "1B" });
 			}
 		}
 		// else if (currentline.trim() === "（") {
