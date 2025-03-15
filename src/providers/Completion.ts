@@ -125,9 +125,31 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 		const previousLineIsEmpty = prevLine.trim() === "";
 
 		// 固定加入 中文括号转换 提示：
-		if (currentline.endsWith('（')) {
-			completes.push({ label: "() 转英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（', insertText: new vscode.SnippetString('($1)'), documentation: "转英文括号", sortText: "0A" });
+		// if (currentline.endsWith('（') && position.character == currentline.length) {
+		// 	completes.push({ label: "() 转英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（', insertText: new vscode.SnippetString('($1)'), documentation: "转英文括号", sortText: "0A" });
+		// } else if (currentline.endsWith('——')) {
+		// 	completes.push({ label: "_ _   插入下划线样式", range: new vscode.Range(position.translate(0, -2), position), filterText: '——', insertText: new vscode.SnippetString('_$1_'), documentation: "插入下划线样式", sortText: "0A" });
+		// }
+
+		//任何地方输入都提示:
+		if (currentline.substring(position.character - 1, position.character) == '【') {
+			completes.push({ label: "[[ ]] 插入note", range: new vscode.Range(position.translate(0, -1), position), filterText: '【【】】', insertText: new vscode.SnippetString('[[$1]]'), documentation: "插入note", sortText: "0B" });
+		} else if (currentline.substring(position.character - 1, position.character) == '（') {
+			if (position.character < currentline.trimRight().length) {
+				//只有中间插入的位置提示提示：
+				completes.push({ label: "(  转为英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（', insertText: '(', documentation: "转为英文括号", sortText: "0A" });
+			}
+			completes.push({ label: "() 插入英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（）', insertText: new vscode.SnippetString('($1)'), documentation: "插入英文括号", sortText: "0B" });
+		} else if (currentline.substring(position.character - 2, position.character) == '——') {
+			if (position.character < currentline.trimRight().length) {
+				//只有中间插入的位置提示提示：
+				completes.push({ label: "_     转为下划线", range: new vscode.Range(position.translate(0, -2), position), filterText: '——', insertText: '_', documentation: "转为下划线", sortText: "0A" });
+			}
+			completes.push({ label: "_ _   插入下划线样式", range: new vscode.Range(position.translate(0, -2), position), filterText: '——', insertText: new vscode.SnippetString('_$1_'), documentation: "插入下划线样式", sortText: "0B" });
+		} else if (currentline.substring(position.character - 1, position.character) == '）' && currentline.substring(position.character - 2, position.character-1) != '（') {
+			completes.push({ label: ")  转为英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '）', insertText: ')', documentation: "转为英文括号", sortText: "0C" });
 		}
+
 
 		//Title page autocomplete
 		if (parsedDocument.properties.firstTokenLine >= position.line) {
