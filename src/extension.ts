@@ -160,7 +160,7 @@ export function activate(context: ExtensionContext) {
 
   //Setup autocomplete
   // get delete key char
-  languages.registerCompletionItemProvider({ language: 'fountain' }, new FountainCompletionProvider(), '\n', '\r', '-', ' ', '.', '@', '。', '》', '（', '）', '〉', '>', '【', '—');
+  languages.registerCompletionItemProvider({ language: 'fountain' }, new FountainCompletionProvider(), '\n', '\r', '-', ' ', '.', '@', '。', '》', '（', '）', '〉', '>', '【', '—', '…');
 
   //Setup symbols (outline)
   languages.registerDocumentSymbolProvider({ language: 'fountain' }, new FountainSymbolProvider());
