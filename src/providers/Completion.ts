@@ -135,20 +135,41 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 		if (currentline.substring(position.character - 1, position.character) == '【') {
 			completes.push({ label: "[[ ]] 插入note", range: new vscode.Range(position.translate(0, -1), position), filterText: '【【】】', insertText: new vscode.SnippetString('[[$1]]'), documentation: "插入note", sortText: "0B" });
 		} else if (currentline.substring(position.character - 1, position.character) == '（') {
-			if (position.character < currentline.trimRight().length) {
-				//只有中间插入的位置提示提示：
-				completes.push({ label: "(  转为英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（', insertText: '(', documentation: "转为英文括号", sortText: "0A" });
+			// 判断角色，补全 画中画，旁白 的自动补全。
+			var scenematch = currentline.match(/^[ \t]*(((?!@)\p{Lu}[^\p{Ll}\r\n]*)|(@[^\r\n\(（\^]*))[\(（](\s*\^)?\s*$/gu);
+			if (scenematch) {
+				completes.push({ label: "(画外音)", range: new vscode.Range(position.translate(0, -1), position), filterText: '（画外音）', insertText: ' (画外音)', documentation: "画外音", sortText: "0A" });
+				completes.push({ label: "(旁白)", range: new vscode.Range(position.translate(0, -1), position), filterText: '（旁白）', insertText: ' (旁白)', documentation: "旁白", sortText: "1A" });
+				completes.push({ label: "()", range: new vscode.Range(position.translate(0, -1), position), filterText: '（）', insertText: new vscode.SnippetString(' ($1)'), documentation: "添加对话说明", sortText: "3B" });
+			} else {
+
+				if (position.character < currentline.trimRight().length) {
+					//只有中间插入的位置提示提示：
+					completes.push({ label: "(  转为英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（', insertText: '(', documentation: "转为英文括号", sortText: "2B" });
+				}
+				completes.push({ label: "() 插入英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（）', insertText: new vscode.SnippetString('($1)'), documentation: "插入英文括号", sortText: "3B" });
 			}
-			completes.push({ label: "() 插入英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（）', insertText: new vscode.SnippetString('($1)'), documentation: "插入英文括号", sortText: "0B" });
+
+		} else if (currentline.substring(position.character - 1, position.character) == '(') {
+			// 判断角色，补全 画中画，旁白 的自动补全。
+			var scenematch = currentline.match(/^[ \t]*(((?!@)\p{Lu}[^\p{Ll}\r\n]*)|(@[^\r\n\(（\^]*))[\(（](\s*\^)?\s*$/gu);
+			if (scenematch) {
+				completes.push({ label: "(画外音)", range: new vscode.Range(position.translate(0, -1), position), filterText: '(画外音)', insertText: ' (画外音)', documentation: "画外音", sortText: "0A" });
+				completes.push({ label: "(旁白)", range: new vscode.Range(position.translate(0, -1), position), filterText: '(旁白)', insertText: ' (旁白)', documentation: "旁白", sortText: "1A" });
+				completes.push({ label: "()", range: new vscode.Range(position.translate(0, -1), position), filterText: '()', insertText: new vscode.SnippetString(' ($1)'), documentation: "添加对话说明", sortText: "2B" });
+			} else {
+				completes.push({ label: "()", range: new vscode.Range(position.translate(0, -1), position), filterText: '()', insertText: new vscode.SnippetString('($1)'), documentation: "插入英文括号", sortText: "2B" });
+			}
+
 		} else if (currentline.substring(position.character - 2, position.character) == '——') {
 			if (position.character < currentline.trimRight().length) {
 				//只有中间插入的位置提示提示：
 				completes.push({ label: "_     转为下划线", range: new vscode.Range(position.translate(0, -2), position), filterText: '——', insertText: '_', documentation: "转为下划线", sortText: "0A" });
 			}
 			completes.push({ label: "_ _   插入下划线语法", range: new vscode.Range(position.translate(0, -2), position), filterText: '——', insertText: new vscode.SnippetString('_$1_'), documentation: "插入下划线语法", sortText: "0B" });
-		} else if (currentline.substring(position.character - 1, position.character) == '）' && currentline.substring(position.character - 2, position.character-1) != '（') {
-			completes.push({ label: ")  转为英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '）', insertText: ')', documentation: "转为英文括号", sortText: "0C" });
-		}else if (currentline.substring(position.character - 2, position.character) == '……') {
+		} else if (currentline.substring(position.character - 1, position.character) == '）' && currentline.substring(position.character - 2, position.character - 1) != '（') {
+			completes.push({ label: ")  转为英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '）', insertText: ')', documentation: "转为英文括号", sortText: "4C" });
+		} else if (currentline.substring(position.character - 2, position.character) == '……') {
 			if (position.character == currentline.trimRight().length) {
 				//只有末尾位置提示提示：
 				completes.push({ label: "^  转为英文符号", range: new vscode.Range(position.translate(0, -2), position), filterText: '……', insertText: '^', documentation: "转为英文符号 ^", sortText: "0A" });
