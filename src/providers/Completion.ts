@@ -530,7 +530,7 @@ When both passwords are provided, users with user password are able to decrypt t
 				completes.push({ label: "() 插入英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（）', insertText: new vscode.SnippetString('($1)'), documentation: "插入英文括号", sortText: "3B" });
 			}
 
-		} else if (currentline.substring(position.character - 1, position.character) == '(' && currentlineTrim !== '.(') {
+		} else if (currentline.substring(position.character - 1, position.character) == '(' && currentlineTrim !== '.(' && currentlineTrim !== '。(') {
 			// 判断角色，补全 画中画，旁白 的自动补全。
 			var its = this.provideCharDesCompletionItems('(', currentline, position);
 			if (its.length) {
