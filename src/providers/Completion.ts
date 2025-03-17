@@ -151,6 +151,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 			}
 			completes.push({ label: "(画外音)", range: new vscode.Range(position.translate(0, -1), position), filterText: key + '画外音)）', insertText: preSpace + '(画外音)', documentation: "画外音", sortText: "0A" });
 			completes.push({ label: "(旁白)", range: new vscode.Range(position.translate(0, -1), position), filterText: key + '旁白)）', insertText: preSpace + '(旁白)', documentation: "旁白", sortText: "1A" });
+			completes.push({ label: "(O. S.)", range: new vscode.Range(position.translate(0, -1), position), filterText: key + 'O. S.)）', insertText: preSpace + '(O. S.)', documentation: "画外音", sortText: "1B" });
+			completes.push({ label: "(V. O.)", range: new vscode.Range(position.translate(0, -1), position), filterText: key + 'V. O.)）', insertText: preSpace + '(V. O.)', documentation: "旁白", sortText: "1B" });
 			completes.push({ label: "()", range: new vscode.Range(position.translate(0, -1), position), filterText: key + ')）', insertText: new vscode.SnippetString(preSpace + '($1)'), documentation: "添加对话说明", sortText: "3B" });
 		}
 		return completes;
@@ -456,6 +458,19 @@ When both passwords are provided, users with user password are able to decrypt t
 			if (currentline.indexOf(currentlineTrim) == position.character - 1) {
 				var its = this.provideTransitionCompletionItems(currentlineTrim, previousLineIsEmpty, position);
 				completes.push(...its)
+			}
+		}
+		else if (currentlineTrim === "e" || currentlineTrim === "E") {
+			if (currentline.indexOf(currentlineTrim) == position.character - 1) {
+				completes.push({ label: "EXT. ", range: new vscode.Range(position.translate(0, -1), position), filterText: 'EXT.', insertText: previousLineIsEmpty ? 'EXT. ' : '\nEXT. ', documentation: "Exterior", sortText: "001F", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: "INT/EXT. ", range: new vscode.Range(position.translate(0, -1), position), filterText: 'INT/EXT.', insertText: previousLineIsEmpty ? 'INT/EXT. ' : '\nINT/EXT. ', documentation: "Interior/Exterior", sortText: "001h", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: "EST. ", range: new vscode.Range(position.translate(0, -1), position), filterText: 'EST.', insertText: previousLineIsEmpty ? 'EST. ' : '\nEST. ', documentation: "Establishing", sortText: "001i", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+			}
+		}
+		else if (currentlineTrim === "i" || currentlineTrim === "I") {
+			if (currentline.indexOf(currentlineTrim) == position.character - 1) {
+				completes.push({ label: "INT. ", range: new vscode.Range(position.translate(0, -1), position), filterText: 'INT.', insertText: previousLineIsEmpty ? 'INT. ' : '\nINT. ', documentation: "Interior", sortText: "001F", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
+				completes.push({ label: "INT/EXT. ", range: new vscode.Range(position.translate(0, -1), position), filterText: 'INT/EXT.', insertText: previousLineIsEmpty ? 'INT/EXT. ' : '\nINT/EXT. ', documentation: "Interior/Exterior", sortText: "001h", command: { command: "editor.action.triggerSuggest", title: "triggersuggest" } });
 			}
 		}
 		// else if (currentlineTrim === "（") {
