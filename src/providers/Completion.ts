@@ -567,6 +567,8 @@ When both passwords are provided, users with user password are able to decrypt t
 				//只有末尾位置提示提示：
 				completes.push({ label: "^  转为英文符号", range: new vscode.Range(position.translate(0, -2), position), filterText: '……', insertText: '^', documentation: "转为英文符号 ^", sortText: "0A" });
 			}
+		} else if (currentline.substring(position.character - 3, position.character) == '。。。') {
+			completes.push({ label: "……  转为省略号", range: new vscode.Range(position.translate(0, -3), position), filterText: '。。。', insertText: '……', documentation: "转为省略号", sortText: "0A" });
 		}
 
 		return completes;
