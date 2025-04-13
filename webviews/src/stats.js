@@ -330,7 +330,7 @@ function updateStats() {
     let renderInteger = function (data, type, row) {
         switch (type) {
             case "display": return data ? data.toFixed(0) : 0;
-            case "sort": return data;
+            case "sort": return -data;
             default: return data
         }
     };

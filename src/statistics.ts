@@ -124,8 +124,13 @@ function gradeToAge(grade: number) {
 const createCharacterStatistics = (parsed: parseoutput): characterStatistics => {
     const dialoguePieces: dialoguePiece[] = [];
 
+    var fisrtScenceStared = false;
+    
     for (var i = 0; i < parsed.tokens.length; i++) {
-        while (i < parsed.tokens.length && parsed.tokens[i].type === "character") {
+        if (parsed.tokens[i].type === "scene_heading") {
+            fisrtScenceStared = true; //第一个场景之前的角色，不统计。
+        }
+        while (i < parsed.tokens.length && parsed.tokens[i].type === "character" && fisrtScenceStared) {
             const character = parsed.tokens[i].name()
             var speech = "";
             while (i++ && i < parsed.tokens.length) {
