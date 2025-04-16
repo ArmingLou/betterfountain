@@ -502,16 +502,88 @@ export class RemoteSyncProvider {
                     return;
                 }
 
-                // 更新文件内容
-                const edit = new vscode.WorkspaceEdit();
-                const fullRange = new vscode.Range(
-                    new vscode.Position(0, 0),
-                    new vscode.Position(editor.document.lineCount, 0)
-                );
-                edit.replace(editor.document.uri, fullRange, message.content);
-                await vscode.workspace.applyEdit(edit);
+                // 获取当前文件内容
+                const currentContent = editor.document.getText();
+                const remoteContent = message.content;
 
-                vscode.window.showInformationMessage(`已从远程获取文件内容，长度: ${message.content.length} 字符`);
+                // 如果内容相同，直接提示并返回
+                if (currentContent === remoteContent) {
+                    vscode.window.showInformationMessage('远程文件与本地文件内容相同，无需更新');
+                    return;
+                }
+
+                // 创建临时文件来显示diff
+                const remoteUri = editor.document.uri.with({ path: editor.document.uri.path + '.fountain_remote' });
+
+                // 创建临时文件
+                const workspaceEdit = new vscode.WorkspaceEdit();
+                workspaceEdit.createFile(remoteUri, { overwrite: true });
+                await vscode.workspace.applyEdit(workspaceEdit);
+
+                // 写入远程内容
+                const writeEdit = new vscode.WorkspaceEdit();
+                writeEdit.insert(remoteUri, new vscode.Position(0, 0), remoteContent);
+                await vscode.workspace.applyEdit(writeEdit);
+
+                // 显示diff
+                await vscode.commands.executeCommand('vscode.diff',
+                    editor.document.uri,
+                    remoteUri,
+                    `本地 ↔ 远程 (可直接修改，然后点击标题栏中的保存按钮应用更改)`,
+                    { preview: true }
+                );
+
+                // 注册一个命令来应用当前编辑器中的内容
+                const applyRemoteCommand = vscode.commands.registerCommand('fountain.remote.applyRemoteContent', async () => {
+                    try {
+                        // 获取当前活动编辑器
+                        const activeEditor = vscode.window.activeTextEditor;
+                        if (!activeEditor) {
+                            vscode.window.showErrorMessage('无法获取当前编辑器');
+                            return;
+                        }
+
+                        // 获取当前编辑器中的内容
+                        const currentContent = activeEditor.document.getText();
+
+                        // 关闭对比视图
+                        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+
+                        // 更新原文件内容
+                        const edit = new vscode.WorkspaceEdit();
+                        const fullRange = new vscode.Range(
+                            new vscode.Position(0, 0),
+                            new vscode.Position(editor.document.lineCount, 0)
+                        );
+                        edit.replace(editor.document.uri, fullRange, currentContent);
+                        await vscode.workspace.applyEdit(edit);
+
+                        vscode.window.showInformationMessage(`已应用更改，长度: ${currentContent.length} 字符`);
+                    } catch (error) {
+                        vscode.window.showErrorMessage(`应用更改时出错: ${error.message}`);
+                    }
+                });
+
+
+
+                // 只显示一个简单的通知，不提供操作选择
+                vscode.window.showInformationMessage(
+                    `已从远程获取文件内容，长度: ${remoteContent.length} 字符。请使用标题栏中的保存按钮应用更改。`
+                );
+
+                // 监听寴比视图关闭事件，清理资源
+                const disposable = vscode.workspace.onDidCloseTextDocument(closedDoc => {
+                    if (closedDoc.uri.toString().includes('.fountain_remote')) {
+                        // 删除临时文件
+                        const deleteEdit = new vscode.WorkspaceEdit();
+                        deleteEdit.deleteFile(remoteUri, { ignoreIfNotExists: true });
+                        vscode.workspace.applyEdit(deleteEdit);
+
+                        // 注销命令和监听器
+                        applyRemoteCommand.dispose();
+                        disposable.dispose();
+                    }
+                });
                 break;
 
             case 'error':

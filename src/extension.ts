@@ -418,3 +418,17 @@ vscode.workspace.onDidSaveTextDocument(e => {
 vscode.workspace.onDidCloseTextDocument(e => {
   parsedDocuments.delete(e.uri.toString());
 });
+
+/**
+ * Called when the extension is deactivated
+ */
+export function deactivate() {
+  // 清理临时文件
+  vscode.workspace.findFiles('**/*.fountain_remote').then(files => {
+    files.forEach(file => {
+      const workspaceEdit = new vscode.WorkspaceEdit();
+      workspaceEdit.deleteFile(file, { ignoreIfNotExists: true });
+      vscode.workspace.applyEdit(workspaceEdit);
+    });
+  });
+}

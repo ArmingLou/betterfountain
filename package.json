@@ -136,6 +136,11 @@
 					"command": "fountain.exportdocx",
 					"group": "navigation",
 					"when": "editorLangId == fountain || activeWebviewPanelId == 'fountain-docxpreview'"
+				},
+				{
+					"command": "fountain.remote.applyRemoteContent",
+					"group": "navigation",
+					"when": "isInDiffEditor && resourceExtname == '.fountain_remote'"
 				}
 			],
 			"commandPalette": [
@@ -564,6 +569,13 @@
 				"title": "r4 推送文件到远程",
 				"category": "Fountain",
 				"icon": "$(cloud-upload)"
+			},
+			{
+				"command": "fountain.remote.applyRemoteContent",
+				"title": "保存远程内容",
+				"category": "Fountain",
+				"enablement": "isInDiffEditor && resourceExtname == .fountain_remote",
+				"icon": "$(save)"
 			}
 		],
 		"keybindings": [
