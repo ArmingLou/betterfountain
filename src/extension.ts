@@ -377,8 +377,7 @@ vscode.window.onDidChangeActiveTextEditor(change => {
   if (change.document.languageId == "fountain") {
     lastWasFountainDocument = true;
     parseDocument(change.document);
-    // 处理自动连接
-    RemoteSyncProvider.handleAutoConnect();
+
     /*if(previewpanels.has(change.document.uri.toString())){
       var preview = previewpanels.get(change.document.uri.toString());
       if(!preview.visible && preview.viewColumn!=undefined)

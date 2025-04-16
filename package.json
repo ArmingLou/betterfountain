@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "7.0.0",
+	"version": "7.0.1",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -220,25 +220,44 @@
 				"title": "Fountain Remote Sync",
 				"type": "object",
 				"properties": {
-					"fountain.remote.serverIp": {
-						"type": "string",
-						"default": "127.0.0.1",
-						"description": "远程服务器IP地址"
+					"fountain.remote.serverConfigs": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"name": {
+									"type": "string",
+									"description": "服务器名称或备注"
+								},
+								"ip": {
+									"type": "string",
+									"description": "IP地址"
+								},
+								"port": {
+									"type": "number",
+									"description": "端口号"
+								},
+								"password": {
+									"type": "string",
+									"description": "连接密码"
+								}
+							},
+							"required": ["ip", "port"]
+						},
+						"default": [
+							{
+								"name": "本地服务器",
+								"ip": "127.0.0.1",
+								"port": 8080,
+								"password": ""
+							}
+						],
+						"description": "远程服务器配置列表"
 					},
-					"fountain.remote.serverPort": {
+					"fountain.remote.lastServerIndex": {
 						"type": "number",
-						"default": 8080,
-						"description": "远程服务器端口"
-					},
-					"fountain.remote.password": {
-						"type": "string",
-						"default": "",
-						"description": "远程连接密码"
-					},
-					"fountain.remote.autoConnect": {
-						"type": "boolean",
-						"default": false,
-						"description": "打开文件时自动连接到远程服务器"
+						"default": 0,
+						"description": "最后使用的服务器配置索引"
 					}
 				}
 			},

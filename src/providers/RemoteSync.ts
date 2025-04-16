@@ -18,9 +18,29 @@ export class RemoteSyncProvider {
     private ws: WebSocket | null = null;
     private statusBarItem: vscode.StatusBarItem;
     private connectionState: ConnectionState = ConnectionState.Disconnected;
-    private serverIp: string = '';
-    private serverPort: number = 8080;
-    private password: string = '';
+    private serverConfigs: Array<{
+        name: string;
+        ip: string;
+        port: number;
+        password: string;
+    }> = [{
+        name: "本地服务器",
+        ip: "127.0.0.1",
+        port: 8080,
+        password: ""
+    }];
+    private currentServerIndex: number = 0;
+    private currentServer: {
+        name: string;
+        ip: string;
+        port: number;
+        password: string;
+    } = {
+        name: "本地服务器",
+        ip: "127.0.0.1",
+        port: 8080,
+        password: ""
+    };
 
     private constructor() {
         // 创建状态栏项
@@ -55,9 +75,21 @@ export class RemoteSyncProvider {
     private loadConfig(): void {
         const config = getFountainConfig(getActiveFountainDocument());
         if (config) {
-            this.serverIp = config.remote_server_ip || '127.0.0.1';
-            this.serverPort = config.remote_server_port || 8080;
-            this.password = config.remote_password || '';
+            this.serverConfigs = config.remote_server_configs || [{
+                name: "本地服务器",
+                ip: "127.0.0.1",
+                port: 8080,
+                password: ""
+            }];
+            this.currentServerIndex = config.remote_last_server_index || 0;
+
+            // 确保索引在有效范围内
+            if (this.currentServerIndex < 0 || this.currentServerIndex >= this.serverConfigs.length) {
+                this.currentServerIndex = 0;
+            }
+
+            // 设置当前服务器
+            this.currentServer = this.serverConfigs[this.currentServerIndex];
         }
     }
 
@@ -121,7 +153,7 @@ export class RemoteSyncProvider {
                 break;
             case ConnectionState.Connected:
                 this.statusBarItem.text = '$(check) 远程: 已连接';
-                this.statusBarItem.tooltip = `已连接到 ${this.serverIp}:${this.serverPort} (点击显示操作菜单)`;
+                this.statusBarItem.tooltip = `已连接到 ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port}) (点击显示操作菜单)`;
                 this.statusBarItem.command = 'fountain.remote.showMenu';
                 break;
             case ConnectionState.Error:
@@ -132,6 +164,107 @@ export class RemoteSyncProvider {
         }
     }
 
+    // 选择服务器
+    private async selectServer(): Promise<number | undefined> {
+        // 加载最新配置
+        this.loadConfig();
+
+        // 准备选项
+        const items: vscode.QuickPickItem[] = [
+            ...this.serverConfigs.map((server, index) => ({
+                label: server.name || `服务器 ${index + 1}`,
+                description: `${server.ip}:${server.port}${server.password ? ' (需要密码)' : ''}${index === this.currentServerIndex ? ' (最近使用)' : ''}`,
+                detail: index === this.currentServerIndex ? '当前选中' : undefined
+            })),
+            {
+                label: '$(add) 添加新的服务器',
+                description: '配置新的远程服务器'
+            }
+        ];
+
+        // 显示选择器
+        const selection = await vscode.window.showQuickPick(items, {
+            placeHolder: '选择远程服务器'
+        });
+
+        if (!selection) {
+            return undefined; // 用户取消
+        }
+
+        // 如果选择了添加新服务器
+        if (selection.label.includes('添加新的服务器')) {
+            // 收集新服务器信息
+            const serverName = await vscode.window.showInputBox({
+                placeHolder: '服务器名称或备注',
+                prompt: '请输入服务器名称或备注',
+                value: ''
+            });
+
+            if (!serverName) {
+                return undefined; // 用户取消
+            }
+
+            const serverIp = await vscode.window.showInputBox({
+                placeHolder: '服务器IP地址',
+                prompt: '请输入服务器IP地址',
+                value: '127.0.0.1'
+            });
+
+            if (!serverIp) {
+                return undefined; // 用户取消
+            }
+
+            const serverPortStr = await vscode.window.showInputBox({
+                placeHolder: '服务器端口',
+                prompt: '请输入服务器端口',
+                value: '8080'
+            });
+
+            if (!serverPortStr) {
+                return undefined; // 用户取消
+            }
+
+            const serverPort = parseInt(serverPortStr, 10);
+            if (isNaN(serverPort)) {
+                vscode.window.showErrorMessage('端口必须是数字');
+                return undefined;
+            }
+
+            const serverPassword = await vscode.window.showInputBox({
+                placeHolder: '服务器密码 (可选)',
+                prompt: '请输入服务器密码，如果有的话',
+                value: '',
+                password: true
+            });
+
+            // 创建新服务器配置
+            const newServer = {
+                name: serverName,
+                ip: serverIp,
+                port: serverPort,
+                password: serverPassword || ''
+            };
+
+            // 添加到配置列表并保存
+            this.serverConfigs.push(newServer);
+            await vscode.workspace.getConfiguration('fountain.remote').update(
+                'serverConfigs',
+                this.serverConfigs,
+                vscode.ConfigurationTarget.Global
+            );
+
+            // 返回新服务器的索引
+            return this.serverConfigs.length - 1;
+        }
+
+        // 返回选择的服务器索引
+        const selectedIndex = this.serverConfigs.findIndex((server, index) =>
+            (server.name || `服务器 ${index + 1}`) === selection.label
+        );
+
+        return selectedIndex;
+    }
+
     // 连接到远程服务器
     public async connect(): Promise<boolean> {
         // 如果已经连接，则先断开
@@ -139,16 +272,30 @@ export class RemoteSyncProvider {
             this.disconnect();
         }
 
+        // 选择服务器
+        const selectedIndex = await this.selectServer();
+        if (selectedIndex === undefined) {
+            return false; // 用户取消了选择
+        }
+
+        // 更新当前服务器索引并保存到配置
+        this.currentServerIndex = selectedIndex;
+        await vscode.workspace.getConfiguration('fountain.remote').update(
+            'lastServerIndex',
+            this.currentServerIndex,
+            vscode.ConfigurationTarget.Global
+        );
+
+        // 更新当前服务器
+        this.currentServer = this.serverConfigs[this.currentServerIndex];
+
         // 更新状态
         this.connectionState = ConnectionState.Connecting;
         this.updateStatusBar();
 
         try {
-            // 加载最新配置
-            this.loadConfig();
-
             // 创建WebSocket连接
-            const wsUrl = `ws://${this.serverIp}:${this.serverPort}`;
+            const wsUrl = `ws://${this.currentServer.ip}:${this.currentServer.port}`;
             this.ws = new WebSocket(wsUrl);
 
             // 设置超时
@@ -167,13 +314,13 @@ export class RemoteSyncProvider {
                 clearTimeout(connectTimeout);
                 this.connectionState = ConnectionState.Connected;
                 this.updateStatusBar();
-                vscode.window.showInformationMessage(`已连接到远程服务器: ${this.serverIp}:${this.serverPort}`);
+                vscode.window.showInformationMessage(`已连接到远程服务器: ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port})`);
 
                 // 如果有密码，发送认证消息
-                if (this.password) {
+                if (this.currentServer.password) {
                     this.sendMessage({
                         type: 'auth',
-                        password: this.password
+                        password: this.currentServer.password
                     });
                 }
 
@@ -371,12 +518,5 @@ export class RemoteSyncProvider {
         );
     }
 
-    // 处理自动连接
-    public static handleAutoConnect(): void {
-        const config = getFountainConfig(getActiveFountainDocument());
-        if (config && config.remote_auto_connect) {
-            const instance = RemoteSyncProvider.getInstance();
-            instance.connect();
-        }
-    }
+
 }

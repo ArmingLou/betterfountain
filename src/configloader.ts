@@ -47,10 +47,13 @@ export class FountainConfig{
     scene_continuation_bottom:boolean;
     parenthetical_newline_helper:boolean;
     // 远程同步配置
-    remote_server_ip: string;
-    remote_server_port: number;
-    remote_password: string;
-    remote_auto_connect: boolean;
+    remote_server_configs: Array<{
+        name: string;
+        ip: string;
+        port: number;
+        password: string;
+    }>;
+    remote_last_server_index: number;
 }
 
 export class ExportConfig {
@@ -164,10 +167,13 @@ export var getFountainConfig = function(docuri:vscode.Uri):FountainConfig{
         preview_texture: generalConfig.previewTexture,
         parenthetical_newline_helper:  generalConfig.parentheticalNewLineHelper,
         // 远程同步配置
-        remote_server_ip: remoteConfig.serverIp,
-        remote_server_port: remoteConfig.serverPort,
-        remote_password: remoteConfig.password,
-        remote_auto_connect: remoteConfig.autoConnect
+        remote_server_configs: remoteConfig.serverConfigs || [{
+            name: "本地服务器",
+            ip: "127.0.0.1",
+            port: 8080,
+            password: ""
+        }],
+        remote_last_server_index: remoteConfig.lastServerIndex || 0
     }
     configMap.set(uriStr, res);
     return res;
