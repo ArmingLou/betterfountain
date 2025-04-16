@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "7.0.4",
+	"version": "7.0.5",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -572,7 +572,7 @@
 			},
 			{
 				"command": "fountain.remote.applyRemoteContent",
-				"title": "保存远程内容",
+				"title": "应用远程更改",
 				"category": "Fountain",
 				"enablement": "isInDiffEditor && resourceExtname == .fountain_remote",
 				"icon": "$(save)"
