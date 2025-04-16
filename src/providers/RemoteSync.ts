@@ -75,21 +75,42 @@ export class RemoteSyncProvider {
     private loadConfig(): void {
         const config = getFountainConfig(getActiveFountainDocument());
         if (config) {
+            // 加载服务器配置列表，如果为空则使用默认配置
             this.serverConfigs = config.remote_server_configs || [{
                 name: "本地服务器",
                 ip: "127.0.0.1",
                 port: 8080,
                 password: ""
             }];
-            this.currentServerIndex = config.remote_last_server_index || 0;
+
+            // 加载上次使用的服务器索引
+            let lastIndex = config.remote_last_server_index;
 
             // 确保索引在有效范围内
-            if (this.currentServerIndex < 0 || this.currentServerIndex >= this.serverConfigs.length) {
-                this.currentServerIndex = 0;
+            if (lastIndex === undefined || lastIndex < 0 || lastIndex >= this.serverConfigs.length) {
+                // 如果索引无效，使用第一个服务器
+                lastIndex = 0;
+
+                // 如果服务器列表为空，则不更新索引
+                if (this.serverConfigs.length === 0) {
+                    lastIndex = -1;
+                }
             }
 
-            // 设置当前服务器
-            this.currentServer = this.serverConfigs[this.currentServerIndex];
+            this.currentServerIndex = lastIndex;
+
+            // 设置当前服务器（如果有效）
+            if (this.currentServerIndex >= 0 && this.currentServerIndex < this.serverConfigs.length) {
+                this.currentServer = this.serverConfigs[this.currentServerIndex];
+            } else {
+                // 设置一个默认的服务器配置
+                this.currentServer = {
+                    name: "本地服务器",
+                    ip: "127.0.0.1",
+                    port: 8080,
+                    password: ""
+                };
+            }
         }
     }
 
@@ -169,19 +190,42 @@ export class RemoteSyncProvider {
         // 加载最新配置
         this.loadConfig();
 
-        // 准备选项
+        // 准备服务器选项，并保存原始索引
+        const serverItems = this.serverConfigs.map((server, index) => ({
+            label: server.name || `服务器 ${index + 1}`,
+            description: `${server.ip}:${server.port}${index === this.currentServerIndex ? ' (最近使用)' : ''}`,
+            originalIndex: index // 保存原始索引
+        }));
+
+        // 排序，将最近使用的服务器排在最前面
+        // 检查currentServerIndex是否有效
+        const isValidIndex = this.currentServerIndex >= 0 && this.currentServerIndex < this.serverConfigs.length;
+
+        if (isValidIndex) {
+            // 如果有有效的上次选择，将其排在最前面
+            serverItems.sort((a, b) => {
+                if (a.originalIndex === this.currentServerIndex) return -1;
+                if (b.originalIndex === this.currentServerIndex) return 1;
+                return 0;
+            });
+        } else {
+            // 如果没有有效的上次选择，保持原始顺序，默认选择第一个
+            // 并更新currentServerIndex为第一个服务器的索引
+            if (this.serverConfigs.length > 0) {
+                this.currentServerIndex = 0;
+            }
+        }
+
+        // 添加新服务器选项
         const items: vscode.QuickPickItem[] = [
-            ...this.serverConfigs.map((server, index) => ({
-                label: server.name || `服务器 ${index + 1}`,
-                description: `${server.ip}:${server.port}${index === this.currentServerIndex ? ' (最近使用)' : ''}`,
-            })),
+            ...serverItems,
             {
                 label: '$(add) 添加新的服务器',
                 description: '配置新的远程服务器'
             }
         ];
 
-        // 显示选择器
+        // 显示选择器，默认选中第一项（最近使用的服务器）
         const selection = await vscode.window.showQuickPick(items, {
             placeHolder: '选择远程服务器'
         });
@@ -257,11 +301,14 @@ export class RemoteSyncProvider {
         }
 
         // 返回选择的服务器索引
-        const selectedIndex = this.serverConfigs.findIndex((server, index) =>
-            (server.name || `服务器 ${index + 1}`) === selection.label
-        );
+        // 如果选择的是服务器项，则返回原始索引
+        const selectedServerItem = serverItems.find(item => item.label === selection.label);
+        if (selectedServerItem) {
+            return selectedServerItem.originalIndex;
+        }
 
-        return selectedIndex;
+        // 如果这里还没有返回，说明选择的不是服务器项
+        return undefined;
     }
 
     // 连接到远程服务器
