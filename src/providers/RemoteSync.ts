@@ -173,7 +173,7 @@ export class RemoteSyncProvider {
         const items: vscode.QuickPickItem[] = [
             ...this.serverConfigs.map((server, index) => ({
                 label: server.name || `服务器 ${index + 1}`,
-                description: `${server.ip}:${server.port}${server.password ? ' (需要密码)' : ''}${index === this.currentServerIndex ? ' (最近使用)' : ''}`,
+                description: `${server.ip}:${server.port}${index === this.currentServerIndex ? ' (最近使用)' : ''}`,
             })),
             {
                 label: '$(add) 添加新的服务器',
