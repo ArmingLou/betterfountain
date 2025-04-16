@@ -46,6 +46,11 @@ export class FountainConfig{
     scene_continuation_top:boolean;
     scene_continuation_bottom:boolean;
     parenthetical_newline_helper:boolean;
+    // 远程同步配置
+    remote_server_ip: string;
+    remote_server_port: number;
+    remote_password: string;
+    remote_auto_connect: boolean;
 }
 
 export class ExportConfig {
@@ -98,7 +103,7 @@ export var cleanFountainConfig = function(){
 
 export var getFountainConfig = function(docuri:vscode.Uri):FountainConfig{
     let uriStr = '';
-    if(!docuri && vscode.window.activeTextEditor != undefined) 
+    if(!docuri && vscode.window.activeTextEditor != undefined)
         docuri = vscode.window.activeTextEditor.document.uri;
 
     if(docuri){
@@ -108,9 +113,10 @@ export var getFountainConfig = function(docuri:vscode.Uri):FountainConfig{
     if(configMap.has(uriStr)){
         return configMap.get(uriStr);
     }
-    
+
     var pdfConfig = vscode.workspace.getConfiguration("fountain.pdf", docuri);
     var generalConfig = vscode.workspace.getConfiguration("fountain.general", docuri);
+    var remoteConfig = vscode.workspace.getConfiguration("fountain.remote", docuri);
     const res = {
         calculate_duration: generalConfig.calculateDuration,
         calculate_duration_long: generalConfig.calculateDurationLong,
@@ -156,7 +162,12 @@ export var getFountainConfig = function(docuri:vscode.Uri):FountainConfig{
         synchronized_markup_and_preview: generalConfig.synchronizedMarkupAndPreview,
         preview_theme: generalConfig.previewTheme,
         preview_texture: generalConfig.previewTexture,
-        parenthetical_newline_helper:  generalConfig.parentheticalNewLineHelper
+        parenthetical_newline_helper:  generalConfig.parentheticalNewLineHelper,
+        // 远程同步配置
+        remote_server_ip: remoteConfig.serverIp,
+        remote_server_port: remoteConfig.serverPort,
+        remote_password: remoteConfig.password,
+        remote_auto_connect: remoteConfig.autoConnect
     }
     configMap.set(uriStr, res);
     return res;

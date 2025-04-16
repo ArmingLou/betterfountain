@@ -21,6 +21,7 @@ import { createPdfPreviewPanel, FountainPdfPanelserializer, getPdfPreviewPanels,
 import { createDocxPreviewPanel, FountainDocxPanelserializer, getDocxPreviewPanels, refreshDocxPanel, updateDocumentVersionDocxPreview } from "./providers/DocxPreview";
 import * as commands from "./commands";
 import { FountainLocationTreeDataProvider } from "./providers/Locations";
+import { RemoteSyncProvider } from "./providers/RemoteSync";
 
 /**
  * Approximates length of the screenplay based on the overall length of dialogue and action tokens
@@ -121,11 +122,11 @@ export function activate(context: ExtensionContext) {
     telemetry.reportTelemetry("command:fountain.livepreviewstatic");
   }));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.pdfpreview', createPdfPreviewPanel));
-  context.subscriptions.push(vscode.commands.registerCommand('fountain.docxpreview', createDocxPreviewPanel)); // TODO Arming (2024-12-10) : 
+  context.subscriptions.push(vscode.commands.registerCommand('fountain.docxpreview', createDocxPreviewPanel)); // TODO Arming (2024-12-10) :
   context.subscriptions.push(vscode.commands.registerCommand('fountain.statistics', createStatisticsPanel));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.jumpto', commands.jumpTo));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdf', commands.exportPdf));
-  context.subscriptions.push(vscode.commands.registerCommand('fountain.exportdocx', commands.exportDocx)); // TODO Arming (2024-12-10) : 
+  context.subscriptions.push(vscode.commands.registerCommand('fountain.exportdocx', commands.exportDocx)); // TODO Arming (2024-12-10) :
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfdebug', async () => commands.exportPdf(null, false, true)));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exportpdfcustom', async () => commands.exportPdf(null, true, false, true)));
   context.subscriptions.push(vscode.commands.registerCommand('fountain.exporthtml', exportHtml));
@@ -174,6 +175,9 @@ export function activate(context: ExtensionContext) {
   vscode.window.registerWebviewPanelSerializer('fountain-pdfpreview', new FountainPdfPanelserializer());
   vscode.window.registerWebviewPanelSerializer('fountain-docxpreview', new FountainDocxPanelserializer());
   vscode.window.registerWebviewPanelSerializer('fountain-statistics', new FountainStatsPanelSerializer());
+
+  // 注册远程同步功能
+  RemoteSyncProvider.registerCommands(context);
 
   function registerCheatsheetWebView() {
     const cheatsheetViewProvider: FountainCheatSheetWebviewViewProvider = new FountainCheatSheetWebviewViewProvider(context.extensionUri);
@@ -373,6 +377,8 @@ vscode.window.onDidChangeActiveTextEditor(change => {
   if (change.document.languageId == "fountain") {
     lastWasFountainDocument = true;
     parseDocument(change.document);
+    // 处理自动连接
+    RemoteSyncProvider.handleAutoConnect();
     /*if(previewpanels.has(change.document.uri.toString())){
       var preview = previewpanels.get(change.document.uri.toString());
       if(!preview.visible && preview.viewColumn!=undefined)

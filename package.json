@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "6.9.2",
+	"version": "7.0.0",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -213,6 +213,32 @@
 						"type": "boolean",
 						"default": false,
 						"description": "对话内容是否可折叠及可在OUTLINE面板中"
+					}
+				}
+			},
+			{
+				"title": "Fountain Remote Sync",
+				"type": "object",
+				"properties": {
+					"fountain.remote.serverIp": {
+						"type": "string",
+						"default": "127.0.0.1",
+						"description": "远程服务器IP地址"
+					},
+					"fountain.remote.serverPort": {
+						"type": "number",
+						"default": 8080,
+						"description": "远程服务器端口"
+					},
+					"fountain.remote.password": {
+						"type": "string",
+						"default": "",
+						"description": "远程连接密码"
+					},
+					"fountain.remote.autoConnect": {
+						"type": "boolean",
+						"default": false,
+						"description": "打开文件时自动连接到远程服务器"
 					}
 				}
 			},
@@ -495,6 +521,30 @@
 				"command": "fountain.shiftScenesDown",
 				"title": "Shift Scenes Down",
 				"category": "Fountain"
+			},
+			{
+				"command": "fountain.remote.connect",
+				"title": "r1 连接到远程服务器",
+				"category": "Fountain",
+				"icon": "$(plug)"
+			},
+			{
+				"command": "fountain.remote.disconnect",
+				"title": "r2 断开远程连接",
+				"category": "Fountain",
+				"icon": "$(debug-disconnect)"
+			},
+			{
+				"command": "fountain.remote.fetch",
+				"title": "r3 从远程获取文件",
+				"category": "Fountain",
+				"icon": "$(cloud-download)"
+			},
+			{
+				"command": "fountain.remote.push",
+				"title": "r4 推送文件到远程",
+				"category": "Fountain",
+				"icon": "$(cloud-upload)"
 			}
 		],
 		"keybindings": [
@@ -576,6 +626,7 @@
 		"@types/node": "^8.10.66",
 		"@types/username": "^3.0.0",
 		"@types/vscode": "^1.62.0",
+		"@types/ws": "^8.18.1",
 		"@vscode/test-web": "*",
 		"copyfiles": "^2.4.1",
 		"css-loader": "^4.3.0",
@@ -605,6 +656,7 @@
 		"readability-scores": "^1.0.8",
 		"textbox-for-pdfkit": "file:textbox-for-pdfkit",
 		"username": "^5.1.0",
-		"vscode-extension-telemetry": "^0.3.2"
+		"vscode-extension-telemetry": "^0.3.2",
+		"ws": "^8.18.1"
 	}
 }
