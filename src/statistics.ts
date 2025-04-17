@@ -65,7 +65,7 @@ type sceneitem = {
     line: number,
     endline: number,
     scene: string,
-    type: 'int' | 'ext' | 'mixed' | 'other',
+    type: 'int' | 'ext' | 'ie' | 'unknown',
     time: string
 }
 
@@ -125,7 +125,7 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
     const dialoguePieces: dialoguePiece[] = [];
 
     var fisrtScenceStared = false;
-    
+
     for (var i = 0; i < parsed.tokens.length; i++) {
         if (parsed.tokens[i].type === "scene_heading") {
             fisrtScenceStared = true; //第一个场景之前的角色，不统计。
@@ -231,12 +231,26 @@ const createLocationStatistics = (parsed: parseoutput): locationStatistics => {
             const times_of_day = references
                 .map(it => locationtime(it.time_of_day))
                 .filter((v, i, a) => a.indexOf(v) === i);
-            const interior = references.some(it => it.interior);
-            const exterior = references.some(it => it.exterior);
-            let interior_exterior = 'other';
-            if (interior && exterior) interior_exterior = 'mixed'
-            else if (interior) interior_exterior = 'int'
-            else if (exterior) interior_exterior = 'ext';
+            const i_e = references.some(it => it.interior && it.exterior); // 此地点 ，有内外景
+            const interior = references.some(it => it.interior && !it.exterior); // 此地点，有内景
+            const exterior = references.some(it => it.exterior && !it.interior); // 此地点，有外景
+            let interior_exterior = 'unknown'; // 不确定什么景. 只有 地点的表格有 unknown
+            let i = 0;
+            if(i_e){
+                i++;
+                interior_exterior = 'int-ext'
+            }
+            if(interior){
+                i++;
+                interior_exterior = 'int'
+            }
+            if(exterior){
+                i++;
+                interior_exterior = 'ext'
+            }
+            if (i > 1){
+                interior_exterior = 'multiple' // 混合景，存在 多个景
+            } 
             return {
                 color: rgbToHex(wordToColor(location_slug)),
                 name: location_slug,
@@ -264,10 +278,18 @@ const createSceneStatistics = (parsed: parseoutput): sceneStatistics => {
     }
 }
 
-function locationtype(val: string): 'int' | 'ext' | 'mixed' | 'other' {
+function locationtype(val: string): 'int' | 'ext' | 'ie' | 'unknown' {
     if (val) {
         if (/i(nt)?\.?\/e(xt)?\.?/i.test(val)) {
-            return "mixed"
+            var idullocl = val.indexOf("/");
+            var idullocl2 = val.lastIndexOf("/");
+            if (idullocl2 > idullocl) { //避开第一个 / ，找到第二个
+                // (内外景) 且 多地点联合 。 归类为 不确定。
+                return "unknown";
+            } else {
+                return "ie";
+            }
+            // return "unknown"
         }
         else if (/i(nt)?\.?/i.test(val)) {
             return "int"
@@ -276,7 +298,7 @@ function locationtype(val: string): 'int' | 'ext' | 'mixed' | 'other' {
             return "ext"
         }
     }
-    return "other";
+    return "unknown";
 }
 function afterdash(val: string): string {
     if (val) {
@@ -370,7 +392,7 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
             scenes[scenes.length - 1].endline = scene.line - 1;
         }
         var deconstructedSlug = regex.scene_heading.exec(scene.text);
-        let sceneType: 'int' | 'ext' | 'mixed' | 'other'
+        let sceneType: 'int' | 'ext' | 'ie' | 'unknown' ; 
         let sceneTime
         if (deconstructedSlug) {
             sceneType = locationtype(deconstructedSlug?.[1]);
@@ -382,9 +404,16 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
             } else if (scene.text.trimLeft().startsWith("(外景)") || scene.text.trimLeft().startsWith("（外景）")) {
                 sceneType = "ext";
             } else if (scene.text.trimLeft().startsWith("(内外景)") || scene.text.trimLeft().startsWith("（内外景）")) {
-                sceneType = "mixed";
+                var idullocl = scene.text.trimLeft().indexOf("/");
+                if (idullocl > 0) {
+                    // (内外景) 且 多地点联合 。 归类为 不确定。
+                    sceneType = "unknown";
+                } else {
+                    sceneType = "ie";
+                }
+                // sceneType = "unknown";
             } else {
-                sceneType = "other";
+                sceneType = "unknown";
             }
             sceneTime = locationtime(afterdash(scene.text));
         }
@@ -395,14 +424,16 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
         }).map(a => {
             return a.trim().toLowerCase()
         });
-        if (arr.includes('正午') || arr.includes('日') || arr.includes('白天') || arr.includes('day')) {
+        if (arr.includes('正午') || arr.includes('上午') || arr.includes('午后') || arr.includes('下午') || arr.includes('日') || arr.includes('白天') || arr.includes('day')) {
             cs = 'day';
-        } else if (arr.includes('夜') || arr.includes('夜晚') || arr.includes('night')) {
+        } else if (arr.includes('夜') || arr.includes('深夜') || arr.includes('子夜') || arr.includes('午夜') || arr.includes('夜晚') || arr.includes('晚上') || arr.includes('night')) {
             cs = 'night';
-        } else if (arr.includes('傍晚') || arr.includes('黄昏') || arr.includes('dusk')) {
+        } else if (arr.includes('傍晚') || arr.includes('黄昏') || arr.includes('dusk') || arr.includes('evening')) {
             cs = 'dusk';
-        } else if (arr.includes('清晨') || arr.includes('黎明') || arr.includes('dawn')) {
+        } else if (arr.includes('拂晓') || arr.includes('黎明') || arr.includes('dawn')) {
             cs = 'dawn';
+        } else if (arr.includes('清晨') || arr.includes('早晨') || arr.includes('清早') || arr.includes('早上') || arr.includes('morning')) {
+            cs = 'morning';
         } else {
             cs = '';
         }

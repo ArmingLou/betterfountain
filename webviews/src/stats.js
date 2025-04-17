@@ -308,7 +308,9 @@ function updateStats() {
 
     let renderIntExt = function (data, type, row) {
         switch (type) {
-            case "display": return `${data}.`.toUpperCase();
+            case "display":
+                if (data == "int-ext") return "INT/EXT.";
+                return `${data}.`.toUpperCase();
             case "sort": return data;
             default: return data
         }
@@ -392,7 +394,7 @@ function updateStats() {
             { data: 'name', name: "name", title: "Name" },
             { data: 'number_of_scenes', name: "number_of_scenes", title: "Number of Scenes", render: renderInteger },
             { data: 'times_of_day', name: "times_of_day", title: "Time", render: renderTimesOfDay, className: 'location-time' },
-            { data: 'interior_exterior', name: "interior_exterior", title: "INT./EXT.", render: renderIntExt, className: 'location-type' },
+            { data: 'interior_exterior', name: "interior_exterior", title: "I or E", render: renderIntExt, className: 'location-type' },
         ],
         createdRow: function (row, data, dataIndex) {
             if (data.color) {
@@ -404,14 +406,16 @@ function updateStats() {
                     }).map(a => {
                         return a.trim().toLowerCase()
                     });
-                    if (arr.includes('正午') || arr.includes('日') || arr.includes('白天') || arr.includes('day')) {
+                    if (arr.includes('正午') || arr.includes('上午') || arr.includes('午后') || arr.includes('下午') || arr.includes('日') || arr.includes('白天') || arr.includes('day')) {
                         cs = 'day';
-                    } else if (arr.includes('夜') || arr.includes('夜晚') || arr.includes('night')) {
+                    } else if (arr.includes('夜') || arr.includes('深夜') || arr.includes('子夜') || arr.includes('午夜') || arr.includes('夜晚') || arr.includes('晚上') || arr.includes('night')) {
                         cs = 'night';
-                    } else if (arr.includes('傍晚') || arr.includes('黄昏') || arr.includes('dusk')) {
+                    } else if (arr.includes('傍晚') || arr.includes('黄昏') || arr.includes('dusk') || arr.includes('evening')) {
                         cs = 'dusk';
-                    } else if (arr.includes('清晨') || arr.includes('黎明') || arr.includes('dawn')) {
+                    } else if (arr.includes('拂晓') || arr.includes('黎明') || arr.includes('dawn')) {
                         cs = 'dawn';
+                    } else if (arr.includes('清晨') || arr.includes('早晨') || arr.includes('清早') || arr.includes('早上') || arr.includes('morning')) {
+                        cs = 'morning';
                     } else {
                         cs = '';
                     }
@@ -523,11 +527,14 @@ function updateStats() {
             case 'type_ext':
                 return 'outside'
                 break;
-            case 'type_mixed':
+            case 'type_ie':
+                return 'from inside to outside'
+                break;
+            case 'type_multiple':
                 return 'both inside and outside'
                 break;
             default:
-                return 'neither inside or outside'
+                return 'unknown whether inside or outside'
                 break;
         }
     }
@@ -539,11 +546,14 @@ function updateStats() {
             case 'type_ext':
                 return 'exterior'
                 break;
-            case 'type_mixed':
+            case 'type_multiple':
                 return 'both interior and exterior'
                 break;
+            case 'type_ie':
+                return 'from interior to exterior'
+                break;
             default:
-                return 'neither interior or exterior'
+                return 'unknown whether interior or exterior'
                 break;
         }
     }

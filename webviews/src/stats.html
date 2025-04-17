@@ -6,15 +6,18 @@
         animation: fadein 0s;
         padding:0;
         --scenecolor-dawn: rgba(166, 83, 0, 0.709);
-        --scenecolor-day: rgb(202 173 142);
+        --scenecolor-day: rgb(250, 87, 23);
         --scenecolor-dusk: rgba(175, 33, 159, 0.748);
         --scenecolor-night: rgb(85, 78, 208);
         --scenecolor-evening: var(--scenecolor-dusk);
-        --scenecolor-morning: var(--scenecolor-dawn);
+        --scenecolor-morning: rgb(228, 162, 91);
         --scenecolor-int: rgb(182, 0, 0);
         --scenecolor-ext: rgb(57, 185, 72);
-        --scenecolor-mixed: rgb(173, 184, 16);
+        --scenecolor-multiple: rgb(173, 184, 16);
+        --scenecolor-int-ext: rgb(16, 134, 184);
         --scenecolor-other: black;
+        --scenecolor-: black;
+        --scenecolor-unknown: black;
     }
 
     @keyframes fadein {
@@ -399,19 +402,28 @@
     .chart-data-barcode[data-y='ext']{
         fill:var(--scenecolor-ext)
     }
-    .chart-data-barcode[data-y='mixed']{
-        fill:var(--scenecolor-mixed)
+    .chart-data-barcode[data-y='ie']{
+        fill:var(--scenecolor-int-ext)
     }
-    .chart-data-barcode[data-y='other']{
-        fill:var(--scenecolor-other)
+    .chart-data-barcode[data-y='multiple']{
+        fill:var(--scenecolor-multiple)
     }
-    .chart-data-barcode[data-y='morning'], .chart-data-barcode[data-y='dawn']{
+    .chart-data-barcode[data-y='unknown']{
+        fill:var(--scenecolor-unknown)
+    }
+    .chart-data-barcode[data-y='morning']{
+        fill:var(--scenecolor-morning)
+    }
+    .chart-data-barcode[data-y='dawn']{
         fill:var(--scenecolor-dawn)
     }
     .chart-data-barcode[data-y='day']{
         fill:var(--scenecolor-day)
     }
-    .chart-data-barcode[data-y='evening'], .chart-data-barcode[data-y='dusk']{
+    .chart-data-barcode[data-y='evening']{
+        fill: var(--scenecolor-evening)
+    }
+    .chart-data-barcode[data-y='dusk']{
         fill: var(--scenecolor-dusk)
     }
     .chart-data-barcode[data-y='night']{
@@ -553,8 +565,12 @@
                     <div data-sceneprop="type_ext" class="number" style="font-weight: 600;color:var(--scenecolor-ext)">0</div>
                 </div>
                 <div class="flexitem minor hidden">
-                    <div class="description">Mixed</div>
-                    <div data-sceneprop="type_mixed" class="number" style="font-weight: 600;color:var(--scenecolor-mixed)">0</div>
+                    <div class="description">INT. to EXT.</div>
+                    <div data-sceneprop="type_ie" class="number" style="font-weight: 600;color:var(--scenecolor-int-ext)">0</div>
+                </div>
+                <div class="flexitem minor hidden">
+                    <div class="description">Confusion</div>
+                    <div data-sceneprop="type_unknown" class="number" style="font-weight: 600;color:var(--scenecolor-unknown)">0</div>
                 </div>
                 <div class="flexitem minor hidden">
                     <div class="description">Dawn</div>

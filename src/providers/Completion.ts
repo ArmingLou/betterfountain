@@ -498,6 +498,7 @@ When both passwords are provided, users with user password are able to decrypt t
 				completes.push(TimeofDayCompletion("NIGHT", addspace, "F"));
 				completes.push(TimeofDayCompletion("DUSK", addspace, "G"));
 				completes.push(TimeofDayCompletion("DAWN", addspace, "H"));
+				completes.push(TimeofDayCompletion("MORNING", addspace, "I"));
 			}
 			else {
 				// var scenematch = currentline.match(/^[ \t]*((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(内景\)|\(外景\))?)\s*$/gi);

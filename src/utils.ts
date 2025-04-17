@@ -99,6 +99,14 @@ export const parseLocationInformation = (scene_heading: RegExpMatchArray) => {
 		var day_t = splitLocationFromTime ? splitLocationFromTime[2].trim() : "";
 		day_t = day_t.toUpperCase().replace(/\s+/g, ' ')
 
+		if (i && e) {
+			if (n.indexOf('/') > 0) {
+				// 内外景， 但是 混合多地点。 归类为 不确定： i 和 e 都false
+				i = false;
+				e = false;
+			}
+		}
+
 		return {
 			name: n,
 			interior: i,
