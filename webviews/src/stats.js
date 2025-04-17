@@ -310,6 +310,7 @@ function updateStats() {
         switch (type) {
             case "display":
                 if (data == "int-ext") return "INT/EXT.";
+                if (data == "unknown") return "UNCLEAR";
                 return `${data}.`.toUpperCase();
             case "sort": return data;
             default: return data
