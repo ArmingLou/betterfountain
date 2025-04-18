@@ -132,6 +132,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 		completes.push({ label: ">淡出", filterText: key + '淡出', insertText: previousLineIsEmpty ? '>淡出' : '\n>淡出', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0g" });
 		completes.push({ label: ">淡入", filterText: key + '淡入', insertText: previousLineIsEmpty ? '>淡入' : '\n>淡入', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0h" });
 		completes.push({ label: ">闪回结束", filterText: key + '闪回结束', insertText: previousLineIsEmpty ? '>闪回结束' : '\n>闪回结束', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入转场", sortText: "0i" });
+		completes.push({ label: ">{+镜头交切+}", filterText: key + '{+镜头交切+}', insertText: previousLineIsEmpty ? '>{+镜头交切+}' : '\n>{+镜头交切+}', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入镜头交切", sortText: "0j" });
+		completes.push({ label: ">{-结束交切-}", filterText: key + '{-结束交切-}', insertText: previousLineIsEmpty ? '>{-结束交切-}' : '\n>{-结束交切-}', range: new vscode.Range(position.translate(0, -1), position), documentation: "插入结束交切", sortText: "0k" });
 		completes.push({ label: "> <", filterText: key + '<《〈', insertText: new vscode.SnippetString('>$1<'), range: new vscode.Range(position.translate(0, -1), position), documentation: "插入居中语法", sortText: "1B" });
 		return completes;
 	}
@@ -502,7 +504,8 @@ When both passwords are provided, users with user password are able to decrypt t
 			}
 			else {
 				// var scenematch = currentline.match(/^[ \t]*((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(内景\)|\(外景\))?)\s*$/gi);
-				var scenematch = currentline.match(/^[ \t]*([.](?=[\w\(（\p{L}])(\(内景\)|\(外景\)|\(内外景\)|（内景）|（外景）|（内外景）)?|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])\s*([^-–—−]+\/\s*)?$/gui);
+				// var scenematch = currentline.match(/^[ \t]*([.](?=[\w\(（\p{L}])(\(内景\)|\(外景\)|\(内外景\)|（内景）|（外景）|（内外景）)?|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])\s*([^-–—−]+\/\s*)?$/gui);
+				var scenematch = currentline.match(/^[ \t]*([.](?=[\w\(（\p{L}])(\(内景\)|\(外景\)|\(内外景\)|（内景）|（外景）|（内外景）)?|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[.\s])\s*$/gui); // 去掉用斜杠区分多个地点的逻辑，优化了镜头交切的 语法。
 				if (scenematch) {
 
 					// var previousLabels: string[] = []

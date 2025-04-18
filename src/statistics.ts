@@ -281,15 +281,15 @@ const createSceneStatistics = (parsed: parseoutput): sceneStatistics => {
 function locationtype(val: string): 'int' | 'ext' | 'ie' | 'unknown' {
     if (val) {
         if (/i(nt)?\.?\/e(xt)?\.?/i.test(val)) {
-            var idullocl = val.indexOf("/");
-            var idullocl2 = val.lastIndexOf("/");
-            if (idullocl2 > idullocl) { //避开第一个 / ，找到第二个
-                // (内外景) 且 多地点联合 。 归类为 不确定。
-                return "unknown";
-            } else {
-                return "ie";
-            }
-            // return "unknown"
+            // var idullocl = val.indexOf("/");
+            // var idullocl2 = val.lastIndexOf("/");
+            // if (idullocl2 > idullocl) { //避开第一个 / ，找到第二个
+            //     // (内外景) 且 多地点联合 。 归类为 不确定。
+            //     return "unknown";
+            // } else {
+            //     return "ie";
+            // }
+            return "ie"
         }
         else if (/i(nt)?\.?/i.test(val)) {
             return "int"
@@ -404,14 +404,14 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
             } else if (scene.text.trimLeft().startsWith("(外景)") || scene.text.trimLeft().startsWith("（外景）")) {
                 sceneType = "ext";
             } else if (scene.text.trimLeft().startsWith("(内外景)") || scene.text.trimLeft().startsWith("（内外景）")) {
-                var idullocl = scene.text.trimLeft().indexOf("/");
-                if (idullocl > 0) {
-                    // (内外景) 且 多地点联合 。 归类为 不确定。
-                    sceneType = "unknown";
-                } else {
-                    sceneType = "ie";
-                }
-                // sceneType = "unknown";
+                // var idullocl = scene.text.trimLeft().indexOf("/");
+                // if (idullocl > 0) {
+                //     // (内外景) 且 多地点联合 。 归类为 不确定。
+                //     sceneType = "unknown";
+                // } else {
+                //     sceneType = "ie";
+                // }
+                sceneType = "ie";
             } else {
                 sceneType = "unknown";
             }

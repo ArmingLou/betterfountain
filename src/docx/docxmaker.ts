@@ -942,7 +942,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     // var sectionIndent = Docx.convertInchesToTwip(print.section.feed - print.left_margin); // 章节
     var actionIndent = Docx.convertInchesToTwip(print.action.feed - print.left_margin);
-
+    
+    var shotCutIndent = actionIndent - Docx.convertInchesToTwip(4 * print.font_width); // 镜头交切标志
+    
     // 单对话：
     var dialIndent = Docx.convertInchesToTwip(print.dialogue.feed - print.left_margin); // 对话缩进
     var parentheticalIndent = Docx.convertInchesToTwip(print.parenthetical.feed - print.left_margin); //对话伴随动作缩进
@@ -1044,6 +1046,26 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     indent: {
                         left: sceneIndent,
                         right: sceneIndent,
+                    },
+                    spacing: spacing,
+                },
+            },
+            {
+                id: "shotCut",
+                name: "ShotCut",
+                basedOn: "Normal",
+                next: "Normal",
+                // run: {
+                //     font: cfg.embolden_scene_headers ? opts.found_font_bold ? doc.fontNames.get("bold") : doc.fontNames.get("normal") : doc.fontNames.get("normal"),
+                //     bold: cfg.embolden_scene_headers ? !opts.found_font_bold : false,
+                //     underline: {
+                //         type: cfg.underline_scene_headers ? Docx.UnderlineType.SINGLE : Docx.UnderlineType.NONE,
+                //     },
+                // },
+                paragraph: {
+                    indent: {
+                        left: shotCutIndent,
+                        right: shotCutIndent,
                     },
                     spacing: spacing,
                 },
@@ -1720,10 +1742,24 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 if (!sceneOrSectionOrTranStarted) {
                     sceneOrSectionOrTranStarted = true;
                 }
-                text = ifResetFormat(chinaFormat ? '(' + text + ')' : text, line);
+
+                var sty = 'action';
+                var al;
+                if ((text.startsWith('{+') && text.endsWith('+}')) || (text.startsWith('{-') && text.endsWith('-}'))) {
+                    // 交切镜头标志
+                    text_properties.bold = true;
+                    sty = 'shotCut';
+                    al = Docx.AlignmentType.LEFT;
+                } else {
+                    // 一般 转场
+                    text = chinaFormat ? '(' + text + ')' : text;
+                    al = chinaFormat ? Docx.AlignmentType.LEFT : Docx.AlignmentType.RIGHT;
+                }
+                text = ifResetFormat(text, line);
+
                 getSectionMain().children.push(new Docx.Paragraph({
-                    style: "action",
-                    alignment: chinaFormat ? Docx.AlignmentType.LEFT : Docx.AlignmentType.RIGHT,
+                    style: sty,
+                    alignment: al,
                     children: doc.text2(text, text_properties, bottom_notes ? currentLineNotes : null, notesPage)
                 }));
             } else {

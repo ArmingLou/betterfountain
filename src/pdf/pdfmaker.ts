@@ -1865,7 +1865,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             ii--;
             continue
         } else {
-            if(pageNumPrintSub == -2  && !cfg.print_preface_page){
+            if (pageNumPrintSub == -2 && !cfg.print_preface_page) {
                 // 不打印 print_preface_page 的配置情况下，第一个场景/转场/section前的页面 也都不打印。 
                 continue;
             }
@@ -2220,9 +2220,20 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // }
             } else if (line.type === "transition") {
                 var feed: number = print.action.feed;
-                text_properties.width = actionWidth;
-                text_properties.align = chinaFormat ? 'left' : 'right';
-                text = ifResetFormat(chinaFormat ? '(' + text + ')' : text, line);
+
+                if ((text.startsWith('{+') && text.endsWith('+}')) || (text.startsWith('{-') && text.endsWith('-}'))) {
+                    // 交切镜头标志
+                    text_properties.bold = true;
+                    text_properties.width = actionWidth;
+                    text_properties.align = 'left';
+                    feed = print.action.feed - (4 * print.font_width);
+                } else {
+                    text_properties.width = actionWidth;
+                    text_properties.align = chinaFormat ? 'left' : 'right'
+                    text = chinaFormat ? '(' + text + ')' : text;
+                }
+                text = ifResetFormat(text, line);
+
                 text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin, print.lines_per_page * line_height - height, print.lines_per_page * line_height, 0, 0, true, text_properties, bottom_notes ? currentLineNotes : null, notesPage, pageIdx);
                 // if (text2Result.breaks > 0) {
                 //     height = text2Result.height;
@@ -2231,8 +2242,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // }
             } else {
                 var feed: number = (print[line.type] || {}).feed || print.action.feed;
-                var indent = feed - print.left_margin
                 text_properties.width = innerwidth - indent - indent;
+                var indent = feed - print.left_margin
                 // if (line.type === "transition") {
                 //     feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(line.text) * print.font_width;
                 // }

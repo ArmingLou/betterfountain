@@ -43,7 +43,7 @@ export const regex: { [index: string]: RegExp } = {
     scene_number: /#(.+)#/,
 
     // transition: /^[ \t]*((?:FADE (?:TO BLACK|OUT)|CUT TO BLACK)\.|.+ TO\:|^TO\:$)|^(?:> *)(.+)/,
-    transition: /^\s*(?:(>)[^\n\r]*(?!<[ \t]*)|[A-Z ]+TO:)$/,
+    transition: /^\s*(?:(>)([^\n\r]*(?!<[ \t]*))|[A-Z ]+TO:)$/,
 
     dialogue: /^[ \t]*([*_]+[^\p{Ll}\p{Lo}\p{So}\r\n]*)(\^?)?(?:\n(?!\n+))([\s\S]+)/u,
 
@@ -224,6 +224,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     // var block_dialogue = false;
     // var block_except_dialogue = false;
 
+    var shotCut = 0; //0,无交切；1，已开启交切标记；
+    var shotCutStrctTokens = [];// 二维数组
     var lastFountainEditor: vscode.Uri;
     var config = getFountainConfig(lastFountainEditor);
     var emptytitlepage = true;
@@ -953,6 +955,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         }
                     }
                     lastScenStructureToken = cobj;
+                    if (shotCut === 1) {
+                        shotCutStrctTokens[shotCutStrctTokens.length - 1].push(cobj);
+                    }
 
                     updatePreviousSceneLength();
                     result.properties.scenes.push({ scene: thistoken.number, text: text_valid, line: thistoken.line, actionLength: 0, dialogueLength: 0 })
@@ -963,7 +968,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     const location = parseLocationInformation(sceneHeadingMatch);
                     if (location) {
                         const locationSlug = slugify(location.name);
-                        let lslugs = locationSlug.split('/').map(it => it.trim()).filter(it => it.length > 0);
+                        // let lslugs = locationSlug.split('/').map(it => it.trim()).filter(it => it.length > 0);
+                        let lslugs = [locationSlug].map(it => it.trim()).filter(it => it.length > 0);
                         lslugs.forEach(sl => {
                             if (result.properties.locations.has(sl)) {
                                 const values = result.properties.locations.get(sl);
@@ -990,6 +996,19 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     //下面再处理
                 }
                 else if (text_valid.match(regex.transition)) {
+
+                    // 处理镜头交切 标志
+                    var matchdisplay = text_valid.match(regex.transition)
+                    if (matchdisplay && matchdisplay.length > 2 && matchdisplay[2]) {
+                        var tx = matchdisplay[2].trim();
+                        if (tx.startsWith('{+') && tx.endsWith('+}')) {
+                            shotCut = 1;
+                            shotCutStrctTokens.push([]);
+                        } else if (tx.startsWith('{-') && tx.endsWith('-}')) {
+                            shotCut = 0;
+                        }
+                    }
+
                     processTitlePageEnd(i);
                     thistoken.text = text_display.replace(/(?<=(^.*?↻)|(^))\s*>\s*/, "");
                     processTokenTextStyleChar(thistoken);
@@ -1321,6 +1340,18 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     }
 
     updatePreviousSceneLength();//统计最后一个场景的 时长
+
+
+    // 处理 镜头交切的场景， 将场景时间平均分配调整一下：
+    shotCutStrctTokens.forEach(it => {
+        var totalDuration = 0;
+        it.forEach(it2 => {
+            totalDuration += it2.durationSec;
+        })
+        it.forEach(it2 => {
+            it2.durationSec = totalDuration / it.length;
+        })
+    })
 
     // tidy up separators
 
