@@ -942,9 +942,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     // var sectionIndent = Docx.convertInchesToTwip(print.section.feed - print.left_margin); // 章节
     var actionIndent = Docx.convertInchesToTwip(print.action.feed - print.left_margin);
-    
+
     var shotCutIndent = actionIndent - Docx.convertInchesToTwip(4 * print.font_width); // 镜头交切标志
-    
+
     // 单对话：
     var dialIndent = Docx.convertInchesToTwip(print.dialogue.feed - print.left_margin); // 对话缩进
     var parentheticalIndent = Docx.convertInchesToTwip(print.parenthetical.feed - print.left_margin); //对话伴随动作缩进
@@ -1745,7 +1745,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                 var sty = 'action';
                 var al;
-                if ((text.startsWith('{+') && text.endsWith('+}')) || (text.startsWith('{-') && text.endsWith('-}'))) {
+                if ((text.startsWith('{=') && text.endsWith('=}')) || (text.startsWith('{#') && text.endsWith('#}')) || (text.startsWith('{+') && text.endsWith('+}')) || (text.startsWith('{-') && text.endsWith('-}'))) {
                     // 交切镜头标志
                     text_properties.bold = true;
                     sty = 'shotCut';

@@ -224,12 +224,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     // var block_dialogue = false;
     // var block_except_dialogue = false;
 
-    var shotCut = 0; //0,无交切；1，已开启交切标记；
-    var shotCutStrctTokens = [];// 二维数组
+    var shotCut = 0; //0,无交切；1，已开启交切标记，包含当前与以后； 2，包含前一个，当前，与以后场景； 3, 开启交切 只包含 以后scence
+    var shotCutStrctTokens: { structs: StructToken[]; duration: number }[] = [];// 二维数组
     var lastFountainEditor: vscode.Uri;
     var config = getFountainConfig(lastFountainEditor);
     var emptytitlepage = true;
     var lastScenStructureToken: StructToken;
+    var lastScenStructureTokenPre: StructToken; // 前前一个 场景
     var lastChartorStructureToken: StructToken;
     var script = original_script,
         result: parseoutput = {
@@ -560,7 +561,21 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             // }
             result.lengthDialogue += token.time;
             if (lastScenStructureToken) {
-                lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
+                var need = false;
+                if (shotCut > 0) {
+                    // 看 lastScenStructureToken 是否已经加入到当前 shotCutStrctTokens 了
+                    for (var i = 0; i < shotCutStrctTokens[shotCutStrctTokens.length - 1].structs.length; i++) {
+                        if (shotCutStrctTokens[shotCutStrctTokens.length - 1].structs[i] === lastScenStructureToken) {
+                            need = true;
+                            break;
+                        }
+                    }
+                }
+                if (need) {
+                    shotCutStrctTokens[shotCutStrctTokens.length - 1].duration += token.time;
+                } else {
+                    lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
+                }
             }
             if (lastChartorStructureToken) {
                 lastChartorStructureToken.durationSec = lastChartorStructureToken.durationSec ? lastChartorStructureToken.durationSec + token.time : token.time;
@@ -593,7 +608,23 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             // }
             result.lengthAction += token.time;
             if (lastScenStructureToken) {
-                lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
+                // 判断是否需要统计到 镜头交切时长计算
+                var need = false;
+                if (shotCut > 0) {
+                    // 看 lastScenStructureToken 是否已经加入到当前 shotCutStrctTokens 了
+                    for (var i = 0; i < shotCutStrctTokens[shotCutStrctTokens.length - 1].structs.length; i++) {
+                        if (shotCutStrctTokens[shotCutStrctTokens.length - 1].structs[i] === lastScenStructureToken) {
+                            need = true;
+                            break;
+                        }
+                    }
+                }
+                if (need) {
+                    shotCutStrctTokens[shotCutStrctTokens.length - 1].duration += token.time;
+                } else {
+                    lastScenStructureToken.durationSec = lastScenStructureToken.durationSec ? lastScenStructureToken.durationSec + token.time : token.time;
+
+                }
             }
         }
     }
@@ -954,9 +985,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             result.properties.structure.push(cobj);
                         }
                     }
+                    lastScenStructureTokenPre = lastScenStructureToken;
                     lastScenStructureToken = cobj;
-                    if (shotCut === 1) {
-                        shotCutStrctTokens[shotCutStrctTokens.length - 1].push(cobj);
+                    if (shotCut > 0) {
+                        shotCutStrctTokens[shotCutStrctTokens.length - 1].structs.push(cobj);
                     }
 
                     updatePreviousSceneLength();
@@ -1003,7 +1035,21 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         var tx = matchdisplay[2].trim();
                         if (tx.startsWith('{+') && tx.endsWith('+}')) {
                             shotCut = 1;
-                            shotCutStrctTokens.push([]);
+                            shotCutStrctTokens.push({ duration: 0, structs: lastScenStructureToken ? [lastScenStructureToken] : [] });// 默认添加当前所在的 scence
+                        } else if (tx.startsWith('{#') && tx.endsWith('#}')) {
+                            shotCut = 2;
+                            shotCutStrctTokens.push({ duration: 0, structs: [] });
+                            // 包含 前一个，当前，和以后都
+                            if (lastScenStructureTokenPre) {
+                                shotCutStrctTokens[shotCutStrctTokens.length - 1].structs.push(lastScenStructureTokenPre);
+                            }
+                            if (lastScenStructureToken) {
+                                shotCutStrctTokens[shotCutStrctTokens.length - 1].structs.push(lastScenStructureToken);
+                            }
+                            
+                        } else if (tx.startsWith('{=') && tx.endsWith('=}')) {
+                            shotCut = 3;
+                            shotCutStrctTokens.push({ duration: 0, structs: [] });
                         } else if (tx.startsWith('{-') && tx.endsWith('-}')) {
                             shotCut = 0;
                         }
@@ -1344,12 +1390,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
 
     // 处理 镜头交切的场景， 将场景时间平均分配调整一下：
     shotCutStrctTokens.forEach(it => {
-        var totalDuration = 0;
-        it.forEach(it2 => {
-            totalDuration += it2.durationSec;
-        })
-        it.forEach(it2 => {
-            it2.durationSec = totalDuration / it.length;
+        if (it.duration == 0 || it.structs.length == 0) return;
+        var averageDuration = it.duration / it.structs.length;
+        it.structs.forEach(it2 => {
+            it2.durationSec = it2.durationSec ? it2.durationSec + averageDuration : averageDuration;
         })
     })
 

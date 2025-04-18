@@ -2221,7 +2221,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             } else if (line.type === "transition") {
                 var feed: number = print.action.feed;
 
-                if ((text.startsWith('{+') && text.endsWith('+}')) || (text.startsWith('{-') && text.endsWith('-}'))) {
+                if ((text.startsWith('{=') && text.endsWith('=}')) || (text.startsWith('{#') && text.endsWith('#}')) || (text.startsWith('{+') && text.endsWith('+}')) || (text.startsWith('{-') && text.endsWith('-}'))) {
                     // 交切镜头标志
                     text_properties.bold = true;
                     text_properties.width = actionWidth;
