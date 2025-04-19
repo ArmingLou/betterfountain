@@ -1037,7 +1037,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         lslugs.forEach(sl => {
                             if (result.properties.locations.has(sl)) {
                                 const values = result.properties.locations.get(sl);
-                                if (values.findIndex(it => it.scene_number == nb) == -1) {
+                                if (values.findIndex(it => it.line == thistoken.line) == -1) {
                                     values.push({
                                         scene_number: nb,
                                         line: thistoken.line,
