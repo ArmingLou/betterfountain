@@ -39,8 +39,8 @@ export const regex: { [index: string]: RegExp } = {
     section: /^[ \t]*(#+)(?:\s*)(.*)/,
     synopsis: /^[ \t]*(?:\=)(.*)/,
 
-    scene_heading: /^[ \t]*([.](?=[\w\(（\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[. ])([^#]*)(#\s*[^\s].*#)?\s*$/iu,
-    scene_number: /#(.+)#/,
+    scene_heading: /^[ \t]*([.](?=[\w\(（\p{L}])|(?:int|ext|est|int[.]?\/ext|i[.]?\/e)[. ])([^#\n]*)(#[ \t]*[^\s].*#)?[ \t]*$/iu,
+    scene_number: /#\s*(?:\$\{\s*([^\}\s]*)\s*\})?\s*((?:(?!\$\{).)*)\s*#/,
 
     // transition: /^[ \t]*((?:FADE (?:TO BLACK|OUT)|CUT TO BLACK)\.|.+ TO\:|^TO\:$)|^(?:> *)(.+)/,
     transition: /^\s*(?:(>)([^\n\r]*(?!<[ \t]*))|[A-Z ]+TO:)$/,
@@ -196,7 +196,7 @@ export class StructToken {
     durationSec: number;
 }
 export class screenplayProperties {
-    scenes: { scene: string; text: string, line: number, actionLength: number, dialogueLength: number }[];
+    scenes: { scene: string; text: string, line: number, actionLength: number, dialogueLength: number, number: string }[];
     sceneLines: number[];
     sceneNames: string[];
     titleKeys: string[];
@@ -226,6 +226,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
 
     var shotCut = 0; //0,无交切；1，已开启交切标记，包含当前与以后； 2，包含前一个，当前，与以后场景； 3, 开启交切 只包含 以后scence
     var shotCutStrctTokens: { structs: StructToken[]; duration: number }[] = [];// 二维数组
+    var dupScenceNuber: Map<string, string> = new Map(); // 重复场号标记
     var lastFountainEditor: vscode.Uri;
     var config = getFountainConfig(lastFountainEditor);
     var emptytitlepage = true;
@@ -935,11 +936,30 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         pushToken(page_break); //第一个 scene 之前 ，制造一个 分页 token
                     }
                     thistoken.type = "scene_heading";
-                    thistoken.number = scene_number.toString();
+                    var nb = scene_number.toString();
+                    var scene_number_dup = false;
                     if (match = text_valid.match(regex.scene_number)) {
                         text_valid = text_valid.replace(regex.scene_number, "");
                         text_display = text_display.replace(regex.scene_number, "");
-                        thistoken.number = match[1].trim();
+
+                        // 扩展场号 特殊语法， 重复场号使用支持。 # ${ 同一个场的唯一标识,程序使用不可见 } 可选自定义场号 # 
+                        if (match[2] && match[2].trim()) {
+                            nb = match[2].trim();
+                        }
+                        if (match[1] && match[1].trim()) {
+                            var tab = match[1].trim();
+                            if (dupScenceNuber.has(tab)) {
+                                nb = dupScenceNuber.get(tab);
+                                scene_number_dup = true;
+                            } else {
+                                dupScenceNuber.set(tab, nb);
+                            }
+                        }
+                    }
+                    if (scene_number_dup) {
+                        thistoken.number = '↑' + nb; // 用 ↑ 打印标记 提示重复 
+                    } else {
+                        thistoken.number = nb;
                     }
 
 
@@ -992,7 +1012,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     }
 
                     updatePreviousSceneLength();
-                    result.properties.scenes.push({ scene: thistoken.number, text: text_valid, line: thistoken.line, actionLength: 0, dialogueLength: 0 })
+                    result.properties.scenes.push({ scene: thistoken.number, text: text_valid, line: thistoken.line, actionLength: 0, dialogueLength: 0, number: nb });
                     result.properties.sceneLines.push(thistoken.line);
                     result.properties.sceneNames.push(text_valid);
 
@@ -1020,7 +1040,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             }
                         })
                     }
-                    scene_number++;
+                    if (!scene_number_dup) {
+                        scene_number++;
+                    }
 
                 }
                 else if (text_valid.match(regex.centered)) {
@@ -1046,7 +1068,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             if (lastScenStructureToken) {
                                 shotCutStrctTokens[shotCutStrctTokens.length - 1].structs.push(lastScenStructureToken);
                             }
-                            
+
                         } else if (tx.startsWith('{=') && tx.endsWith('=}')) {
                             shotCut = 3;
                             shotCutStrctTokens.push({ duration: 0, structs: [] });

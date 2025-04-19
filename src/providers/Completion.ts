@@ -579,6 +579,8 @@ When both passwords are provided, users with user password are able to decrypt t
 			}
 		} else if (currentline.substring(position.character - 3, position.character) == '。。。') {
 			completes.push({ label: "……  转为省略号", range: new vscode.Range(position.translate(0, -3), position), filterText: '。。。', insertText: '……', documentation: "转为省略号", sortText: "0A" });
+		} else if (currentline.substring(position.character - 2, position.character) == '#¥' || currentline.substring(position.character - 2, position.character) == '#$') {
+			completes.push({ label: "${}  插入场号重复ID", range: new vscode.Range(position.translate(0, -1), position), filterText: '¥$', insertText: new vscode.SnippetString('${$1}'), documentation: "插入场号重复ID", sortText: "0A" });
 		}
 
 		return completes;

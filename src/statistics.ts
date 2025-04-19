@@ -493,7 +493,10 @@ const createLengthStatistics = (script: string, pdf: pdfstats, parsed: parseoutp
         words: getWordCount(script),
         pagesreal: pdf.pagecountReal,
         pages: pdf.pagecount,
-        scenes: parsed.properties.scenes.length
+        scenes: Array.from(new Set(parsed.properties.scenes
+            .map(scene => scene.number)
+            .filter(number => number)))
+            .length
     }
 }
 

@@ -335,7 +335,7 @@ const writeSceneNumbers = (fullText: string) => {
 	const numberingSchema = sceneNumbering.makeSceneNumberingSchema(sceneNumbering.SceneNumberingSchemas.Standard);
 	var m;
 	while (m = regexSceneHeadings.exec(fullText)) {
-		const matchExisting = m[0].match(/#(.+)#$/);
+		const matchExisting = m[0].match(/#(.+)#[ \t]*$/);
 
 		if (!matchExisting) oldNumbers.push(null) /* no match = no number = new number required in this slot */
 		else if (numberingSchema.canParse(matchExisting[1])) oldNumbers.push(matchExisting[1]); /* existing scene number */
@@ -347,11 +347,11 @@ const writeSceneNumbers = (fullText: string) => {
 	if (newNumbers) {
 		// replace scene numbers
 		const newText = fullText.replace(regexSceneHeadings, (heading) => {
-			const matchExisting = heading.match(/#(.+)#$/);
+			const matchExisting = heading.match(/#(.+)#[ \t]*$/);
 			if (matchExisting && !numberingSchema.canParse(matchExisting[1]))
 				return heading; /* skip re-writing custom scene numbers */
 
-			const noPrevHeadingNumbers = heading.replace(/ #.+#$/, "")
+			const noPrevHeadingNumbers = heading.replace(/ #.+#[ \t]*$/, "")
 			const newHeading = `${noPrevHeadingNumbers} #${newNumbers.shift()}#`
 			return newHeading
 		})
