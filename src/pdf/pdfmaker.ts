@@ -2302,7 +2302,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                 if (line.type === "scene_heading") {
                     if (cfg.create_bookmarks) {
-                        getOutlineChild(outline, outlineDepth, 0).addItem(clearFormatting(line.token.textNoNotes));
+                        getOutlineChild(outline, outlineDepth, 0).addItem(line.token.number + ' ' + clearFormatting(line.token.textNoNotes));
                         lastPdfOutlineWasSection = false;
                     }
                     currentScene = text;

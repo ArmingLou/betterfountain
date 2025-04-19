@@ -16,7 +16,7 @@ interface dialoguePerCharacter {
 
 type locationStatisticPerLocation = {
     name: string,
-    scene_numbers: number[],
+    scene_numbers: string[],
     times_of_day: string[],
     color: string,
 };
@@ -256,7 +256,11 @@ const createLocationStatistics = (parsed: parseoutput): locationStatistics => {
                 name: location_slug,
                 scene_numbers: references.map(reference => reference.scene_number),
                 scene_lines: references.map(reference => reference.line),
-                number_of_scenes: references.length,
+                // number_of_scenes: references.length,
+                number_of_scenes: Array.from(new Set(references
+                    .map(scene => scene.scene_number)
+                    .filter(number => number)))
+                    .length,
                 times_of_day,
                 interior_exterior
             }

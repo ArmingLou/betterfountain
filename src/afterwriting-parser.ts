@@ -173,7 +173,7 @@ export function lexer(s: string, type: string, replacer: LexerReplacements, titl
     return s;
 }
 export class Location {
-    scene_number: number;
+    scene_number: string;
     name: string;
     interior: boolean;
     exterior: boolean;
@@ -207,6 +207,7 @@ export class screenplayProperties {
     characters: Map<string, number[]>;
     locations: Map<string, Location[]>;
     structure: StructToken[];
+    sceneNumberVars: Set<string>;
 }
 export interface parseoutput {
     scriptHtml: string,
@@ -227,7 +228,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     var shotCut = 0; //0,无交切；1，已开启交切标记，包含当前与以后； 2，包含前一个，当前，与以后场景； 3, 开启交切 只包含 以后scence
     var shotCutStrctTokens: { structs: StructToken[]; duration: number }[] = [];// 二维数组
     var dupScenceNuber: Map<string, string> = new Map(); // 重复场号标记
-    var scenceNumbers: Set<String> = new Set();
+    var scenceNumbers: Set<string> = new Set();
     var lastFountainEditor: vscode.Uri;
     var config = getFountainConfig(lastFountainEditor);
     var emptytitlepage = true;
@@ -264,7 +265,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 lengthDialogue: 0,
                 characters: new Map<string, number[]>(),
                 locations: new Map<string, Location[]>(),
-                structure: []
+                structure: [],
+                sceneNumberVars: new Set<string>()
             }
         };
     if (!script) {
@@ -927,7 +929,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     let sceneHeadingMatch = text_valid.match(regex.scene_heading);
 
                     force_not_dual = true;
-                    text_valid = text_valid.replace(/^[ \t]*\./, "");
+                    // text_valid = text_valid.replace(/^[ \t]*\./, "");
                     text_display = text_display.replace(/(?<=(^.*?↻)|(^))[ \t]*\./, "");
                     if (cfg.each_scene_on_new_page && scene_number !== 1) {
                         var page_break = create_token();
@@ -939,8 +941,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     thistoken.type = "scene_heading";
                     var nb = scene_number.toString();
                     var scene_number_dup = false;
+                    var textForToken = text_valid.replace(/^[ \t]*\./, ""); //去掉note 和 场号 和前面的 .
                     if (match = text_valid.match(regex.scene_number)) {
-                        text_valid = text_valid.replace(regex.scene_number, "");
+                        // text_valid = text_valid.replace(regex.scene_number, "");
+                        textForToken = textForToken.replace(regex.scene_number, "");
                         text_display = text_display.replace(regex.scene_number, "");
 
                         // 扩展场号 特殊语法， 重复场号使用支持。 # ${ 同一个场的唯一标识,程序使用不可见 } 可选自定义场号 # 
@@ -970,13 +974,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     }
 
 
-                    var idx = text_valid.indexOf('-');
+                    var idx = textForToken.indexOf('-');
                     if (idx >= 0) {
                         // if(thistoken.text.charAt(idx-1) != ' '){
-                        text_valid = text_valid.substring(0, idx) + ' - ' + text_valid.substring(idx + 1);
+                            textForToken = textForToken.substring(0, idx) + ' - ' + textForToken.substring(idx + 1);
                         // }
                     }
-                    text_valid = text_valid.toUpperCase().replace(/\s+/g, ' ');//合并空格，转成大写
+                    textForToken = textForToken.toUpperCase().replace(/\s+/g, ' ');//合并空格，转成大写
 
                     idx = -1;
                     idx = text_display.indexOf('-');
@@ -987,10 +991,11 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     }
                     text_display = text_display.toUpperCase().replace(/\s+/g, ' ');//合并空格，转成大写
                     thistoken.text = text_display;
-                    thistoken.textNoNotes = text_valid;
+                    // thistoken.textNoNotes = text_valid;
+                    thistoken.textNoNotes = textForToken;
 
                     let cobj: StructToken = new StructToken();
-                    cobj.text = text_valid;
+                    cobj.text = thistoken.number + ' ' + textForToken; //左侧面板和编辑器标题栏导航需要显示用
                     cobj.children = [];
                     cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, text_valid.length));
                     cobj.isscene = true;
@@ -1019,9 +1024,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     }
 
                     updatePreviousSceneLength();
-                    result.properties.scenes.push({ scene: thistoken.number, text: text_valid, line: thistoken.line, actionLength: 0, dialogueLength: 0, number: nb });
+                    result.properties.scenes.push({ scene: nb, text: textForToken, line: thistoken.line, actionLength: 0, dialogueLength: 0, number: nb });
                     result.properties.sceneLines.push(thistoken.line);
-                    result.properties.sceneNames.push(text_valid);
+                    result.properties.sceneNames.push(text_valid); //自动完成需要用
 
 
                     const location = parseLocationInformation(sceneHeadingMatch);
@@ -1032,9 +1037,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         lslugs.forEach(sl => {
                             if (result.properties.locations.has(sl)) {
                                 const values = result.properties.locations.get(sl);
-                                if (values.findIndex(it => it.scene_number == scene_number) == -1) {
+                                if (values.findIndex(it => it.scene_number == nb) == -1) {
                                     values.push({
-                                        scene_number: scene_number,
+                                        scene_number: nb,
                                         line: thistoken.line,
                                         ...location,
                                         name: sl
@@ -1043,7 +1048,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                                 result.properties.locations.set(sl, values);
                             }
                             else {
-                                result.properties.locations.set(sl, [{ scene_number, line: thistoken.line, ...location, name: sl }]);
+                                result.properties.locations.set(sl, [{ scene_number: nb, line: thistoken.line, ...location, name: sl }]);
                             }
                         })
                     }
@@ -1425,6 +1430,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             it2.durationSec = it2.durationSec ? it2.durationSec + averageDuration : averageDuration;
         })
     })
+    
+    result.properties.sceneNumberVars =  new Set(dupScenceNuber.keys());
 
     // tidy up separators
 
