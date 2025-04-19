@@ -227,6 +227,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     var shotCut = 0; //0,无交切；1，已开启交切标记，包含当前与以后； 2，包含前一个，当前，与以后场景； 3, 开启交切 只包含 以后scence
     var shotCutStrctTokens: { structs: StructToken[]; duration: number }[] = [];// 二维数组
     var dupScenceNuber: Map<string, string> = new Map(); // 重复场号标记
+    var scenceNumbers: Set<String> = new Set();
     var lastFountainEditor: vscode.Uri;
     var config = getFountainConfig(lastFountainEditor);
     var emptytitlepage = true;
@@ -950,12 +951,18 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             var tab = match[1].trim();
                             if (dupScenceNuber.has(tab)) {
                                 nb = dupScenceNuber.get(tab);
-                                scene_number_dup = true;
                             } else {
                                 dupScenceNuber.set(tab, nb);
                             }
                         }
                     }
+                    
+                    if (scenceNumbers.has(nb)) {
+                        scene_number_dup = true;
+                    } else {
+                        scenceNumbers.add(nb);
+                    }
+                    
                     if (scene_number_dup) {
                         thistoken.number = '↑' + nb; // 用 ↑ 打印标记 提示重复 
                     } else {
