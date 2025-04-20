@@ -36,11 +36,11 @@ export class RemoteSyncProvider {
         port: number;
         password: string;
     } = {
-        name: "本地服务器",
-        ip: "127.0.0.1",
-        port: 8080,
-        password: ""
-    };
+            name: "本地服务器",
+            ip: "127.0.0.1",
+            port: 8080,
+            password: ""
+        };
 
     private constructor() {
         // 创建状态栏项
@@ -363,12 +363,12 @@ export class RemoteSyncProvider {
                 vscode.window.showInformationMessage(`已连接到远程服务器: ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port})`);
 
                 // 如果有密码，发送认证消息
-                if (this.currentServer.password) {
-                    this.sendMessage({
-                        type: 'auth',
-                        password: this.currentServer.password
-                    });
-                }
+                // if (this.currentServer.password) {
+                this.sendMessage({
+                    type: 'auth',
+                    password: this.currentServer.password ?? ""
+                });
+                // }
 
                 telemetry.reportTelemetry("command:fountain.remote.connect");
                 return true;
