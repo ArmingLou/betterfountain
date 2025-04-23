@@ -185,6 +185,40 @@ export class RemoteSyncProvider {
         }
     }
 
+    // 获取本地网络IP地址，优先返回192开头的IP地址
+    private getLocalNetworkIP(): string {
+        try {
+            const networkInterfaces = require('os').networkInterfaces();
+            let localIPs: string[] = [];
+            let ip192 = '';
+            let otherIP = '';
+
+            // 遍历所有网络接口
+            for (const name of Object.keys(networkInterfaces)) {
+                for (const net of networkInterfaces[name]) {
+                    // 只获取IPv4地址，且不是内部地址
+                    const familyV4Value = typeof net.family === 'string' ? 'IPv4' : 4;
+                    if (net.family === familyV4Value && !net.internal) {
+                        localIPs.push(net.address);
+
+                        // 如果是192开头的IP，优先保存
+                        if (net.address.startsWith('192.168.')) {
+                            ip192 = net.address;
+                        } else if (!otherIP) {
+                            otherIP = net.address;
+                        }
+                    }
+                }
+            }
+
+            // 优先返回192开头的IP，其次返回其他IP，最后返回默认值
+            return ip192 || otherIP || '127.0.0.1';
+        } catch (error) {
+            console.error('获取本地IP地址时出错:', error);
+            return '127.0.0.1';
+        }
+    }
+
     // 选择服务器
     private async selectServer(): Promise<number | undefined> {
         // 加载最新配置
@@ -247,10 +281,13 @@ export class RemoteSyncProvider {
                 return undefined; // 用户取消
             }
 
+            // 获取本地网络IP地址作为默认值
+            const localIP = this.getLocalNetworkIP();
+
             const serverIp = await vscode.window.showInputBox({
                 placeHolder: '服务器IP地址',
                 prompt: '请输入服务器IP地址',
-                value: '127.0.0.1'
+                value: localIP
             });
 
             if (!serverIp) {
