@@ -331,6 +331,8 @@ export class RemoteSyncProvider {
             };
 
             // 添加到配置列表并保存
+            // 检查 serverConfigs 中，ip相同的，替换。否则 push
+            this.serverConfigs = this.serverConfigs.filter(server => server.ip !== serverIp);
             this.serverConfigs.push(newServer);
             await vscode.workspace.getConfiguration('fountain.remote').update(
                 'serverConfigs',
