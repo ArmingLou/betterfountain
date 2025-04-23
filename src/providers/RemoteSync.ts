@@ -272,12 +272,12 @@ export class RemoteSyncProvider {
         if (selection.label.includes('添加新的服务器')) {
             // 收集新服务器信息
             const serverName = await vscode.window.showInputBox({
-                placeHolder: '服务器名称或备注',
+                placeHolder: '服务器名称或备注 (可选)',
                 prompt: '请输入服务器名称或备注',
                 value: ''
             });
 
-            if (!serverName) {
+            if (serverName === undefined) {
                 return undefined; // 用户取消
             }
 
@@ -317,6 +317,10 @@ export class RemoteSyncProvider {
                 value: '',
                 password: true
             });
+            
+            if (serverPassword === undefined) {
+                return undefined; // 用户取消
+            }
 
             // 创建新服务器配置
             const newServer = {
