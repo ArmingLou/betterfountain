@@ -202,10 +202,10 @@ export class RemoteSyncProvider {
                         localIPs.push(net.address);
 
                         // 如果是192开头的IP，优先保存
-                        if (net.address.startsWith('192.168.')) {
-                            ip192 = net.address;
+                        if (net.address.startsWith('192.')) {
+                            ip192 = net.address.split('.').slice(0, 3).join('.')+'.';
                         } else if (!otherIP) {
-                            otherIP = net.address;
+                            otherIP = net.address.split('.').slice(0, 3).join('.')+'.';
                         }
                     }
                 }
@@ -287,7 +287,8 @@ export class RemoteSyncProvider {
             const serverIp = await vscode.window.showInputBox({
                 placeHolder: '服务器IP地址',
                 prompt: '请输入服务器IP地址',
-                value: localIP
+                value: localIP,
+                valueSelection: [localIP.length, localIP.length]
             });
 
             if (!serverIp) {
