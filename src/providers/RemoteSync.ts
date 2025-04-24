@@ -317,7 +317,7 @@ export class RemoteSyncProvider {
                 value: '',
                 password: true
             });
-            
+
             if (serverPassword === undefined) {
                 return undefined; // 用户取消
             }
@@ -526,6 +526,21 @@ export class RemoteSyncProvider {
         }
     }
 
+    // 发送pong响应
+    private sendPongResponse(timestamp: number): void {
+        if (!this.ws || this.connectionState !== ConnectionState.Connected) {
+            console.log('无法发送pong响应: WebSocket连接为空或未连接');
+            return;
+        }
+
+        this.sendMessage({
+            type: 'pong',
+            timestamp: timestamp
+        });
+
+        console.log(`已发送pong响应，时间戳: ${timestamp}`);
+    }
+
     // 处理接收到的消息
     private async handleMessage(message: any): Promise<void> {
         switch (message.type) {
@@ -536,6 +551,13 @@ export class RemoteSyncProvider {
                     vscode.window.showErrorMessage('认证失败: ' + message.message);
                     this.disconnect();
                 }
+                break;
+
+            case 'ping':
+                // 处理ping消息，立即回复pong消息
+                const timestamp = message.timestamp || Date.now();
+                this.sendPongResponse(timestamp);
+                console.log(`收到ping消息，已回复pong响应，时间戳: ${timestamp}`);
                 break;
 
             case 'content':
