@@ -42,6 +42,11 @@ export class RemoteSyncProvider {
             password: ""
         };
 
+    // ping-pong机制相关属性
+    private pingInterval: any = null;  // ping定时器
+    private pongTimeoutId: any = null; // pong超时定时器
+    private isPingPending: boolean = false;              // 是否有未响应的ping请求
+
     private constructor() {
         // 创建状态栏项
         this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -414,6 +419,9 @@ export class RemoteSyncProvider {
                 });
                 // }
 
+                // 启动ping定时器
+                this.startPingInterval();
+
                 telemetry.reportTelemetry("command:fountain.remote.connect");
                 return true;
             });
@@ -442,6 +450,9 @@ export class RemoteSyncProvider {
             // 处理关闭事件
             this.ws.on('close', () => {
                 clearTimeout(connectTimeout);
+                // 停止ping定时器
+                this.stopPingInterval();
+
                 if (this.connectionState !== ConnectionState.Error) {
                     this.connectionState = ConnectionState.Disconnected;
                     this.updateStatusBar();
@@ -462,6 +473,9 @@ export class RemoteSyncProvider {
 
     // 断开连接
     public disconnect(): void {
+        // 停止ping定时器
+        this.stopPingInterval();
+
         if (this.ws) {
             this.ws.close();
             this.ws = null;
@@ -526,6 +540,87 @@ export class RemoteSyncProvider {
         }
     }
 
+    // 启动ping定时器
+    private startPingInterval(): void {
+        // 先清除可能存在的定时器
+        this.stopPingInterval();
+
+        // 每30秒发送一次ping
+        this.pingInterval = setInterval(() => {
+            this.sendPingRequest();
+        }, 30000); // 30秒
+
+        console.log('已启动ping定时器');
+    }
+
+    // 停止ping定时器
+    private stopPingInterval(): void {
+        if (this.pingInterval) {
+            clearInterval(this.pingInterval);
+            this.pingInterval = null;
+            console.log('已停止ping定时器');
+        }
+
+        // 同时清除pong超时定时器
+        this.clearPongTimeout();
+    }
+
+    // 清除pong超时定时器
+    private clearPongTimeout(): void {
+        if (this.pongTimeoutId) {
+            clearTimeout(this.pongTimeoutId);
+            this.pongTimeoutId = null;
+        }
+        this.isPingPending = false;
+    }
+
+    // 发送ping请求
+    private sendPingRequest(): void {
+        if (!this.ws || this.connectionState !== ConnectionState.Connected) {
+            console.log('无法发送ping请求: WebSocket连接为空或未连接');
+            return;
+        }
+
+        // 如果已经有一个未响应的ping，不再发送新的ping
+        if (this.isPingPending) {
+            console.log('已有未响应的ping请求，不再发送新的ping');
+            return;
+        }
+
+        const timestamp = Date.now();
+        this.sendMessage({
+            type: 'ping',
+            timestamp: timestamp
+        });
+
+        console.log(`已发送ping请求，时间戳: ${timestamp}`);
+        this.isPingPending = true;
+
+        // 设置28秒超时，如果没有收到pong响应，则认为连接已断开
+        this.pongTimeoutId = setTimeout(() => {
+            if (this.isPingPending) {
+                console.log('ping请求超时，未收到pong响应，连接可能已断开');
+                this.handleConnectionLost();
+            }
+        }, 28000); // 28秒
+    }
+
+    // 处理连接丢失
+    private handleConnectionLost(): void {
+        if (this.connectionState === ConnectionState.Connected) {
+            this.connectionState = ConnectionState.Disconnected;
+            this.updateStatusBar();
+            this.stopPingInterval();
+
+            if (this.ws) {
+                this.ws.close();
+                this.ws = null;
+            }
+
+            vscode.window.showErrorMessage('与远程服务器的连接已断开（ping超时）');
+        }
+    }
+
     // 发送pong响应
     private sendPongResponse(timestamp: number): void {
         if (!this.ws || this.connectionState !== ConnectionState.Connected) {
@@ -558,6 +653,12 @@ export class RemoteSyncProvider {
                 const timestamp = message.timestamp || Date.now();
                 this.sendPongResponse(timestamp);
                 console.log(`收到ping消息，已回复pong响应，时间戳: ${timestamp}`);
+                break;
+
+            case 'pong':
+                // 处理pong响应，清除超时定时器
+                console.log(`收到pong响应，时间戳: ${message.timestamp}`);
+                this.clearPongTimeout();
                 break;
 
             case 'content':
