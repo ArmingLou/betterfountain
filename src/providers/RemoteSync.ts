@@ -23,11 +23,13 @@ export class RemoteSyncProvider {
         ip: string;
         port: number;
         password: string;
+        isDefault?: boolean;  // 是否为默认服务器
     }> = [{
         name: "本地服务器",
         ip: "127.0.0.1",
         port: 8080,
-        password: ""
+        password: "",
+        isDefault: true  // 初始默认服务器
     }];
     private currentServerIndex: number = 0;
     private currentServer: {
@@ -35,17 +37,25 @@ export class RemoteSyncProvider {
         ip: string;
         port: number;
         password: string;
+        isDefault?: boolean;
     } = {
             name: "本地服务器",
             ip: "127.0.0.1",
             port: 8080,
-            password: ""
+            password: "",
+            isDefault: true
         };
+
+    // 认证状态
+    private isAuthenticated: boolean = false;
 
     // ping-pong机制相关属性
     private pingInterval: any = null;  // ping定时器
     private pongTimeoutId: any = null; // pong超时定时器
     private isPingPending: boolean = false;              // 是否有未响应的ping请求
+
+    // 待执行的操作
+    private pendingOperation: (() => Promise<void>) | null = null;
 
     private constructor() {
         // 创建状态栏项
@@ -76,6 +86,56 @@ export class RemoteSyncProvider {
         return RemoteSyncProvider.instance;
     }
 
+    // 获取默认服务器索引
+    private getDefaultServerIndex(): number {
+        // 查找标记为默认的服务器
+        const defaultIndex = this.serverConfigs.findIndex(server => server.isDefault === true);
+
+        // 如果找到默认服务器，返回其索引
+        if (defaultIndex >= 0) {
+            return defaultIndex;
+        }
+
+        // 如果没有默认服务器但列表不为空，将第一个设为默认并返回0
+        if (this.serverConfigs.length > 0) {
+            this.serverConfigs[0].isDefault = true;
+            this.saveServerConfigs();
+            return 0;
+        }
+
+        // 如果列表为空，返回-1
+        return -1;
+    }
+
+    // 设置默认服务器
+    private async setDefaultServer(index: number): Promise<boolean> {
+        if (index < 0 || index >= this.serverConfigs.length) {
+            return false;
+        }
+
+        // 清除所有服务器的默认标记
+        for (const server of this.serverConfigs) {
+            server.isDefault = false;
+        }
+
+        // 设置新的默认服务器
+        this.serverConfigs[index].isDefault = true;
+
+        // 保存配置
+        await this.saveServerConfigs();
+
+        return true;
+    }
+
+    // 保存服务器配置
+    private async saveServerConfigs(): Promise<void> {
+        await vscode.workspace.getConfiguration('fountain.remote').update(
+            'serverConfigs',
+            this.serverConfigs,
+            vscode.ConfigurationTarget.Global
+        );
+    }
+
     // 加载配置
     private loadConfig(): void {
         const config = getFountainConfig(getActiveFountainDocument());
@@ -85,15 +145,21 @@ export class RemoteSyncProvider {
                 name: "本地服务器",
                 ip: "127.0.0.1",
                 port: 8080,
-                password: ""
+                password: "",
+                isDefault: true
             }];
 
-            // 加载上次使用的服务器索引
+            // 确保至少有一个默认服务器
+            const defaultIndex = this.getDefaultServerIndex();
+
+            // 加载上次使用的服务器索引，优先使用默认服务器
             let lastIndex = config.remote_last_server_index;
 
-            // 确保索引在有效范围内
-            if (lastIndex === undefined || lastIndex < 0 || lastIndex >= this.serverConfigs.length) {
-                // 如果索引无效，使用第一个服务器
+            // 如果有默认服务器且没有指定上次使用的服务器，使用默认服务器
+            if (defaultIndex >= 0 && (lastIndex === undefined || lastIndex < 0 || lastIndex >= this.serverConfigs.length)) {
+                lastIndex = defaultIndex;
+            } else if (lastIndex === undefined || lastIndex < 0 || lastIndex >= this.serverConfigs.length) {
+                // 如果索引无效且没有默认服务器，使用第一个服务器
                 lastIndex = 0;
 
                 // 如果服务器列表为空，则不更新索引
@@ -113,21 +179,27 @@ export class RemoteSyncProvider {
                     name: "本地服务器",
                     ip: "127.0.0.1",
                     port: 8080,
-                    password: ""
+                    password: "",
+                    isDefault: true
                 };
             }
         }
     }
 
     // 显示操作菜单
-    private showOperationMenu(): void {
-        if (this.connectionState !== ConnectionState.Connected) {
-            // 如果未连接，直接连接
-            this.connect();
-            return;
+    private async showOperationMenu(): Promise<void> {
+        // 根据连接状态显示不同的操作菜单
+        if (this.connectionState === ConnectionState.Connected && this.isAuthenticated) {
+            // 已连接且已认证状态下的操作
+            await this.showConnectedMenu();
+        } else {
+            // 未连接状态下的操作
+            await this.showDisconnectedMenu();
         }
+    }
 
-        // 如果已连接，显示操作菜单
+    // 显示已连接状态下的操作菜单
+    private async showConnectedMenu(): Promise<void> {
         const items: vscode.QuickPickItem[] = [
             {
                 label: '$(cloud-download) 从远程获取文件',
@@ -143,33 +215,557 @@ export class RemoteSyncProvider {
             }
         ];
 
-        vscode.window.showQuickPick(items, {
-            placeHolder: '选择远程操作'
-        }).then(selection => {
-            if (!selection) {
+        const selection = await vscode.window.showQuickPick(items, {
+            placeHolder: `已连接到: ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port})`
+        });
+
+        if (!selection) {
+            return;
+        }
+
+        if (selection.label.includes('获取文件')) {
+            await this.fetchFromRemote();
+        } else if (selection.label.includes('推送文件')) {
+            await this.pushToRemote();
+        } else if (selection.label.includes('断开远程连接')) {
+            this.disconnect();
+        }
+    }
+
+    // 显示未连接状态下的操作菜单
+    private async showDisconnectedMenu(): Promise<void> {
+        // 获取默认服务器信息
+        const defaultIndex = this.getDefaultServerIndex();
+        const defaultServer = defaultIndex >= 0 ? this.serverConfigs[defaultIndex] : null;
+
+        // 如果没有服务器配置，提示添加服务器
+        if (this.serverConfigs.length === 0) {
+            vscode.window.showErrorMessage('没有可用的服务器配置，请先添加服务器');
+            await this.directAddServer();
+            return;
+        }
+
+        const items: vscode.QuickPickItem[] = [
+            {
+                label: '$(cloud-download) 从远程获取文件',
+                description: '连接默认服务器并获取文件内容'
+            },
+            {
+                label: '$(cloud-upload) 推送文件到远程',
+                description: '连接默认服务器并推送文件内容'
+            },
+            {
+                label: '$(settings-gear) 管理服务器',
+                description: '管理服务器列表（添加/修改/删除/设置默认）'
+            }
+        ];
+
+        const selection = await vscode.window.showQuickPick(items, {
+            placeHolder: defaultServer
+                ? `默认服务器: ${defaultServer.name} (${defaultServer.ip}:${defaultServer.port})`
+                : '选择远程操作'
+        });
+
+        if (!selection) {
+            return;
+        }
+
+        if (selection.label.includes('获取文件')) {
+            // 连接默认服务器并获取文件
+            await this.connectAndExecute(this.fetchFromRemote.bind(this));
+        } else if (selection.label.includes('推送文件')) {
+            // 连接默认服务器并推送文件
+            await this.connectAndExecute(this.pushToRemote.bind(this));
+        } else if (selection.label.includes('管理服务器')) {
+            await this.manageServers();
+        }
+    }
+
+    // 直接添加新服务器，不显示服务器列表
+    private async directAddServer(): Promise<number | undefined> {
+        // 加载最新配置
+        this.loadConfig();
+
+        // 收集新服务器信息
+        const serverName = await vscode.window.showInputBox({
+            placeHolder: '服务器名称或备注 (可选)',
+            prompt: '请输入服务器名称或备注',
+            value: ''
+        });
+
+        if (serverName === undefined) {
+            return undefined; // 用户取消
+        }
+
+        // 获取本地网络IP地址作为默认值
+        const localIP = this.getLocalNetworkIP();
+
+        const serverIp = await vscode.window.showInputBox({
+            placeHolder: '服务器IP地址',
+            prompt: '请输入服务器IP地址',
+            value: localIP,
+            valueSelection: [localIP.length, localIP.length]
+        });
+
+        if (!serverIp) {
+            return undefined; // 用户取消
+        }
+
+        const serverPortStr = await vscode.window.showInputBox({
+            placeHolder: '服务器端口',
+            prompt: '请输入服务器端口',
+            value: '8080'
+        });
+
+        if (!serverPortStr) {
+            return undefined; // 用户取消
+        }
+
+        const serverPort = parseInt(serverPortStr, 10);
+        if (isNaN(serverPort)) {
+            vscode.window.showErrorMessage('端口必须是数字');
+            return undefined;
+        }
+
+        const serverPassword = await vscode.window.showInputBox({
+            placeHolder: '服务器密码 (可选)',
+            prompt: '请输入服务器密码，如果有的话',
+            value: '',
+            password: true
+        });
+
+        if (serverPassword === undefined) {
+            return undefined; // 用户取消
+        }
+
+        // 检查IP是否与现有服务器重复（不考虑端口）
+        const duplicateIndex = this.serverConfigs.findIndex(s => s.ip === serverIp);
+
+        if (duplicateIndex >= 0) {
+            // 找到重复IP的服务器
+            const duplicateServer = this.serverConfigs[duplicateIndex];
+
+            // 询问用户是否要替换
+            const answer = await vscode.window.showWarningMessage(
+                `已存在IP为 ${serverIp} 的服务器: ${duplicateServer.name} (${duplicateServer.ip}:${duplicateServer.port})。是否替换该服务器？`,
+                { modal: true },
+                '替换', '取消'
+            );
+
+            if (answer === '替换') {
+                // 用户选择替换，记录是否为默认服务器
+                const wasDefault = duplicateServer.isDefault;
+
+                // 删除重复IP的服务器
+                this.serverConfigs.splice(duplicateIndex, 1);
+
+                // 创建新服务器配置，如果替换的是默认服务器，则保持默认状态
+                const newServer = {
+                    name: serverName,
+                    ip: serverIp,
+                    port: serverPort,
+                    password: serverPassword || '',
+                    isDefault: wasDefault || this.serverConfigs.length === 0  // 如果是默认服务器或是第一个服务器，设为默认
+                };
+
+                // 添加到配置列表并保存
+                this.serverConfigs.push(newServer);
+                await this.saveServerConfigs();
+
+                // 如果删除的是当前连接的服务器，更新currentServerIndex并断开连接
+                if (this.currentServerIndex === duplicateIndex) {
+                    this.currentServerIndex = this.serverConfigs.length - 1;
+                    if (this.connectionState === ConnectionState.Connected) {
+                        vscode.window.showInformationMessage('当前连接的服务器已被替换，需要重新连接');
+                        this.disconnect();
+                    }
+                } else if (this.currentServerIndex > duplicateIndex) {
+                    // 如果删除的服务器索引小于当前连接的服务器索引，需要更新currentServerIndex
+                    this.currentServerIndex--;
+                }
+
+                vscode.window.showInformationMessage(`已替换服务器: ${duplicateServer.name}`);
+            } else {
+                // 用户取消替换
+                return undefined;
+            }
+        } else {
+            // 没有重复IP，创建新服务器配置
+            const isFirstServer = this.serverConfigs.length === 0;
+            const newServer = {
+                name: serverName,
+                ip: serverIp,
+                port: serverPort,
+                password: serverPassword || '',
+                isDefault: isFirstServer  // 如果是第一个服务器，自动设为默认
+            };
+
+            // 添加到配置列表并保存
+            this.serverConfigs.push(newServer);
+            await this.saveServerConfigs();
+        }
+
+        // 如果只有一个服务器，自动设为默认
+        if (this.serverConfigs.length === 1) {
+            await this.setDefaultServer(0);
+        }
+
+        // 返回新服务器的索引
+        const newIndex = this.serverConfigs.length - 1;
+        vscode.window.showInformationMessage(`已添加服务器: ${serverName} (${serverIp}:${serverPort})`);
+        return newIndex;
+    }
+
+    // 删除服务器
+    private async deleteServer(index: number): Promise<boolean> {
+        if (index < 0 || index >= this.serverConfigs.length) {
+            return false;
+        }
+
+        const server = this.serverConfigs[index];
+        const wasDefault = server.isDefault;
+
+        // 从配置列表中删除
+        this.serverConfigs.splice(index, 1);
+
+        // 如果删除的是默认服务器，且还有其他服务器，则设置第一个为默认
+        if (wasDefault && this.serverConfigs.length > 0) {
+            this.serverConfigs[0].isDefault = true;
+        }
+
+        // 保存配置
+        await this.saveServerConfigs();
+
+        // 如果删除的是当前连接的服务器，则断开连接
+        if (this.currentServerIndex === index && this.connectionState === ConnectionState.Connected) {
+            this.disconnect();
+        }
+
+        // 更新当前服务器索引
+        if (this.currentServerIndex >= this.serverConfigs.length) {
+            this.currentServerIndex = this.serverConfigs.length > 0 ? 0 : -1;
+        }
+
+        return true;
+    }
+
+    // 修改服务器
+    private async editServer(index: number): Promise<boolean> {
+        if (index < 0 || index >= this.serverConfigs.length) {
+            return false;
+        }
+
+        const server = this.serverConfigs[index];
+        let wasDefault = server.isDefault;
+        const originalIp = server.ip;
+
+        // 收集修改后的服务器信息
+        const serverName = await vscode.window.showInputBox({
+            placeHolder: '服务器名称或备注 (可选)',
+            prompt: '请输入服务器名称或备注',
+            value: server.name
+        });
+
+        if (serverName === undefined) {
+            return false; // 用户取消
+        }
+
+        const serverIp = await vscode.window.showInputBox({
+            placeHolder: '服务器IP地址',
+            prompt: '请输入服务器IP地址',
+            value: server.ip
+        });
+
+        if (!serverIp) {
+            return false; // 用户取消
+        }
+
+        const serverPortStr = await vscode.window.showInputBox({
+            placeHolder: '服务器端口',
+            prompt: '请输入服务器端口',
+            value: server.port.toString()
+        });
+
+        if (!serverPortStr) {
+            return false; // 用户取消
+        }
+
+        const serverPort = parseInt(serverPortStr, 10);
+        if (isNaN(serverPort)) {
+            vscode.window.showErrorMessage('端口必须是数字');
+            return false;
+        }
+
+        const serverPassword = await vscode.window.showInputBox({
+            placeHolder: '服务器密码 (可选)',
+            prompt: '请输入服务器密码，如果有的话',
+            value: server.password,
+            password: true
+        });
+
+        if (serverPassword === undefined) {
+            return false; // 用户取消
+        }
+
+        // 检查IP是否与其他服务器重复（不考虑端口）
+        if (serverIp !== originalIp) {
+            // 查找是否有相同IP的服务器（排除当前正在编辑的服务器）
+            const duplicateIndex = this.serverConfigs.findIndex((s, i) => i !== index && s.ip === serverIp);
+
+            if (duplicateIndex >= 0) {
+                // 找到重复IP的服务器
+                const duplicateServer = this.serverConfigs[duplicateIndex];
+
+                // 询问用户是否要替换
+                const answer = await vscode.window.showWarningMessage(
+                    `已存在IP为 ${serverIp} 的服务器: ${duplicateServer.name} (${duplicateServer.ip}:${duplicateServer.port})。是否替换该服务器并删除当前服务器？`,
+                    { modal: true },
+                    '替换', '取消'
+                );
+
+                if (answer === '替换') {
+                    // 记录是否为默认服务器
+                    const wasDefaultDuplicate = duplicateServer.isDefault;
+                    const wasDefaultCurrent = this.serverConfigs[index].isDefault;
+                    const shouldBeDefault = wasDefaultDuplicate || wasDefaultCurrent;
+
+                    // 创建新服务器配置
+                    const newServer = {
+                        name: serverName,
+                        ip: serverIp,
+                        port: serverPort,
+                        password: serverPassword || '',
+                        isDefault: shouldBeDefault
+                    };
+
+                    // 确定要删除的索引（当前服务器和重复IP的服务器）
+                    const indicesToRemove = [index, duplicateIndex].sort((a, b) => b - a); // 从大到小排序，避免删除影响索引
+
+                    // 删除服务器
+                    for (const idxToRemove of indicesToRemove) {
+                        // 如果删除的是当前连接的服务器，断开连接
+                        if (this.currentServerIndex === idxToRemove && this.connectionState === ConnectionState.Connected) {
+                            vscode.window.showInformationMessage('当前连接的服务器已被替换，需要重新连接');
+                            this.disconnect();
+                        }
+
+                        // 更新currentServerIndex
+                        if (this.currentServerIndex === idxToRemove) {
+                            // 将在添加新服务器后更新
+                            this.currentServerIndex = -1;
+                        } else if (this.currentServerIndex > idxToRemove) {
+                            // 如果删除的服务器索引小于当前连接的服务器索引，需要更新currentServerIndex
+                            this.currentServerIndex--;
+                        }
+
+                        // 删除服务器
+                        this.serverConfigs.splice(idxToRemove, 1);
+                    }
+
+                    // 添加新服务器
+                    this.serverConfigs.push(newServer);
+
+                    // 更新currentServerIndex（如果之前连接的是被删除的服务器）
+                    if (this.currentServerIndex === -1) {
+                        this.currentServerIndex = this.serverConfigs.length - 1;
+                    }
+
+                    // 保存配置
+                    await this.saveServerConfigs();
+
+                    vscode.window.showInformationMessage(`已替换服务器，新服务器: ${serverName} (${serverIp}:${serverPort})`);
+
+                    // 直接返回成功，因为已经完成了所有操作
+                    return true;
+                } else {
+                    // 用户取消替换
+                    return false;
+                }
+            }
+        }
+
+        // 更新服务器配置（只有在没有IP冲突或没有修改IP的情况下才会执行到这里）
+        this.serverConfigs[index] = {
+            name: serverName,
+            ip: serverIp,
+            port: serverPort,
+            password: serverPassword || '',
+            isDefault: wasDefault
+        };
+
+        // 保存配置
+        await this.saveServerConfigs();
+
+        // 如果修改的是当前连接的服务器，则断开连接
+        if (this.currentServerIndex === index && this.connectionState === ConnectionState.Connected) {
+            vscode.window.showInformationMessage('服务器配置已更改，需要重新连接');
+            this.disconnect();
+        }
+
+        return true;
+    }
+
+    // 管理服务器列表
+    private async manageServers(): Promise<void> {
+        if (this.serverConfigs.length === 0) {
+            vscode.window.showErrorMessage('没有可用的服务器配置，请先添加服务器');
+            await this.directAddServer();
+            return;
+        }
+
+        // 准备服务器选项
+        const serverItems = this.serverConfigs.map((server, index) => ({
+            label: server.name || `服务器 ${index + 1}`,
+            description: `${server.ip}:${server.port}${server.isDefault ? ' (默认)' : ''}`,
+            index: index
+        }));
+
+        // 添加操作选项
+        const items = [
+            ...serverItems,
+            { label: '$(add) 添加新的服务器', description: '配置新的远程服务器', index: -1 }
+        ];
+
+        const selection = await vscode.window.showQuickPick(items, {
+            placeHolder: '选择要管理的服务器'
+        });
+
+        if (!selection) {
+            return;
+        }
+
+        // 如果选择了添加新服务器
+        if (selection.index === -1) {
+            await this.directAddServer();
+            return;
+        }
+
+        // 显示服务器操作菜单
+        const serverIndex = selection.index;
+        const server = this.serverConfigs[serverIndex];
+        const isDefault = server.isDefault;
+
+        const actions = [
+            { label: '$(edit) 修改服务器', description: '修改服务器配置' },
+            { label: '$(trash) 删除服务器', description: '从列表中删除服务器' }
+        ];
+
+        // 如果不是默认服务器，添加设为默认选项
+        if (!isDefault) {
+            actions.unshift({ label: '$(star) 设为默认服务器', description: '将此服务器设为默认' });
+        }
+
+        const actionSelection = await vscode.window.showQuickPick(actions, {
+            placeHolder: `选择对 ${server.name} (${server.ip}:${server.port}) 的操作`
+        });
+
+        if (!actionSelection) {
+            return;
+        }
+
+        if (actionSelection.label.includes('设为默认')) {
+            await this.setDefaultServer(serverIndex);
+            vscode.window.showInformationMessage(`已将 ${server.name} 设为默认服务器`);
+        } else if (actionSelection.label.includes('修改')) {
+            const success = await this.editServer(serverIndex);
+            if (success) {
+                vscode.window.showInformationMessage(`已修改服务器 ${server.name}`);
+            }
+        } else if (actionSelection.label.includes('删除')) {
+            // 确认删除
+            const confirm = await vscode.window.showWarningMessage(
+                `确定要删除服务器 ${server.name} (${server.ip}:${server.port}) 吗？`,
+                { modal: true },
+                '确定删除'
+            );
+
+            if (confirm === '确定删除') {
+                const success = await this.deleteServer(serverIndex);
+                if (success) {
+                    vscode.window.showInformationMessage(`已删除服务器 ${server.name}`);
+                }
+            }
+        }
+    }
+
+    // 连接默认服务器并执行操作
+    private async connectAndExecute(operation: () => Promise<void>): Promise<void> {
+        // 如果已经连接并认证成功，直接执行操作
+        if (this.connectionState === ConnectionState.Connected && this.isAuthenticated) {
+            await operation();
+            return;
+        }
+
+        // 获取默认服务器索引
+        const defaultIndex = this.getDefaultServerIndex();
+
+        if (defaultIndex < 0) {
+            vscode.window.showErrorMessage('没有默认服务器，请先设置默认服务器');
+            return;
+        }
+
+        // 如果已连接但未认证，或者连接到的不是默认服务器
+        if (this.connectionState === ConnectionState.Connected) {
+            // 如果未认证，等待认证完成
+            if (!this.isAuthenticated) {
+                // 保存待执行的操作
+                this.pendingOperation = operation;
+                vscode.window.showInformationMessage('正在等待认证完成，认证成功后将自动执行操作');
                 return;
             }
 
-            if (selection.label.includes('获取文件')) {
-                this.fetchFromRemote();
-            } else if (selection.label.includes('推送文件')) {
-                this.pushToRemote();
-            } else if (selection.label.includes('断开远程连接')) {
+            // 如果连接的不是默认服务器，询问用户是否要断开当前连接并连接到默认服务器
+            if (this.currentServerIndex !== defaultIndex) {
+                const answer = await vscode.window.showWarningMessage(
+                    `当前已连接到 ${this.currentServer.name}，但默认服务器是 ${this.serverConfigs[defaultIndex].name}。是否断开当前连接并连接到默认服务器？`,
+                    { modal: true },
+                    '是', '否'
+                );
+
+                if (answer !== '是') {
+                    // 用户选择不断开，直接在当前连接上执行操作
+                    await operation();
+                    return;
+                }
+
+                // 用户选择断开，继续执行下面的连接逻辑
                 this.disconnect();
             }
-        });
+        }
+
+        // 保存待执行的操作
+        this.pendingOperation = operation;
+
+        // 连接到默认服务器
+        this.currentServerIndex = defaultIndex;
+        this.currentServer = this.serverConfigs[defaultIndex];
+
+        // 尝试连接
+        const connected = await this.connect(true);
+
+        if (!connected) {
+            this.pendingOperation = null;
+            vscode.window.showErrorMessage('连接默认服务器失败，无法执行操作');
+        }
     }
 
     // 更新状态栏和上下文变量
     private updateStatusBar(): void {
         // 设置上下文变量，控制UI显示
-        const isConnected = this.connectionState === ConnectionState.Connected;
+        const isConnected = this.connectionState === ConnectionState.Connected && this.isAuthenticated;
         vscode.commands.executeCommand('setContext', 'fountain.remote.isConnected', isConnected);
+
+        // 获取默认服务器信息
+        const defaultIndex = this.getDefaultServerIndex();
+        const defaultServer = defaultIndex >= 0 ? this.serverConfigs[defaultIndex] : null;
+        const defaultServerInfo = defaultServer
+            ? `默认服务器: ${defaultServer.name} (${defaultServer.ip}:${defaultServer.port})`
+            : '未设置默认服务器';
 
         switch (this.connectionState) {
             case ConnectionState.Disconnected:
                 this.statusBarItem.text = '$(plug) 远程: 未连接';
-                this.statusBarItem.tooltip = '点击连接到远程服务器';
+                this.statusBarItem.tooltip = `${defaultServerInfo} (点击显示操作菜单)`;
                 this.statusBarItem.command = 'fountain.remote.showMenu';
                 break;
             case ConnectionState.Connecting:
@@ -178,8 +774,13 @@ export class RemoteSyncProvider {
                 this.statusBarItem.command = undefined;
                 break;
             case ConnectionState.Connected:
-                this.statusBarItem.text = '$(check) 远程: 已连接';
-                this.statusBarItem.tooltip = `已连接到 ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port}) (点击显示操作菜单)`;
+                if (this.isAuthenticated) {
+                    this.statusBarItem.text = '$(check) 远程: 已连接';
+                    this.statusBarItem.tooltip = `已连接到 ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port}) (点击显示操作菜单)`;
+                } else {
+                    this.statusBarItem.text = '$(warning) 远程: 未认证';
+                    this.statusBarItem.tooltip = `已连接到 ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port})，但未认证成功 (点击显示操作菜单)`;
+                }
                 this.statusBarItem.command = 'fountain.remote.showMenu';
                 break;
             case ConnectionState.Error:
@@ -275,78 +876,8 @@ export class RemoteSyncProvider {
 
         // 如果选择了添加新服务器
         if (selection.label.includes('添加新的服务器')) {
-            // 收集新服务器信息
-            const serverName = await vscode.window.showInputBox({
-                placeHolder: '服务器名称或备注 (可选)',
-                prompt: '请输入服务器名称或备注',
-                value: ''
-            });
-
-            if (serverName === undefined) {
-                return undefined; // 用户取消
-            }
-
-            // 获取本地网络IP地址作为默认值
-            const localIP = this.getLocalNetworkIP();
-
-            const serverIp = await vscode.window.showInputBox({
-                placeHolder: '服务器IP地址',
-                prompt: '请输入服务器IP地址',
-                value: localIP,
-                valueSelection: [localIP.length, localIP.length]
-            });
-
-            if (!serverIp) {
-                return undefined; // 用户取消
-            }
-
-            const serverPortStr = await vscode.window.showInputBox({
-                placeHolder: '服务器端口',
-                prompt: '请输入服务器端口',
-                value: '8080'
-            });
-
-            if (!serverPortStr) {
-                return undefined; // 用户取消
-            }
-
-            const serverPort = parseInt(serverPortStr, 10);
-            if (isNaN(serverPort)) {
-                vscode.window.showErrorMessage('端口必须是数字');
-                return undefined;
-            }
-
-            const serverPassword = await vscode.window.showInputBox({
-                placeHolder: '服务器密码 (可选)',
-                prompt: '请输入服务器密码，如果有的话',
-                value: '',
-                password: true
-            });
-
-            if (serverPassword === undefined) {
-                return undefined; // 用户取消
-            }
-
-            // 创建新服务器配置
-            const newServer = {
-                name: serverName,
-                ip: serverIp,
-                port: serverPort,
-                password: serverPassword || ''
-            };
-
-            // 添加到配置列表并保存
-            // 检查 serverConfigs 中，ip相同的，替换。否则 push
-            this.serverConfigs = this.serverConfigs.filter(server => server.ip !== serverIp);
-            this.serverConfigs.push(newServer);
-            await vscode.workspace.getConfiguration('fountain.remote').update(
-                'serverConfigs',
-                this.serverConfigs,
-                vscode.ConfigurationTarget.Global
-            );
-
-            // 返回新服务器的索引
-            return this.serverConfigs.length - 1;
+            // 使用直接添加服务器的方法
+            return await this.directAddServer();
         }
 
         // 返回选择的服务器索引
@@ -361,28 +892,40 @@ export class RemoteSyncProvider {
     }
 
     // 连接到远程服务器
-    public async connect(): Promise<boolean> {
-        // 如果已经连接，则先断开
+    public async connect(skipServerSelection: boolean = false): Promise<boolean> {
+        // 如果已经连接，提示用户并返回，不断开现有连接
         if (this.connectionState === ConnectionState.Connected) {
-            this.disconnect();
+            if (this.isAuthenticated) {
+                vscode.window.showInformationMessage(`已连接到远程服务器: ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port})`);
+                return true;
+            } else {
+                vscode.window.showInformationMessage(`已连接到远程服务器，但尚未认证成功，请等待认证完成`);
+                return false;
+            }
         }
 
-        // 选择服务器
-        const selectedIndex = await this.selectServer();
-        if (selectedIndex === undefined) {
-            return false; // 用户取消了选择
+        // 重置认证状态
+        this.isAuthenticated = false;
+
+        // 如果不跳过服务器选择，则让用户选择服务器
+        if (!skipServerSelection) {
+            // 选择服务器
+            const selectedIndex = await this.selectServer();
+            if (selectedIndex === undefined) {
+                return false; // 用户取消了选择
+            }
+
+            // 更新当前服务器索引并保存到配置
+            this.currentServerIndex = selectedIndex;
+            await vscode.workspace.getConfiguration('fountain.remote').update(
+                'lastServerIndex',
+                this.currentServerIndex,
+                vscode.ConfigurationTarget.Global
+            );
+
+            // 更新当前服务器
+            this.currentServer = this.serverConfigs[this.currentServerIndex];
         }
-
-        // 更新当前服务器索引并保存到配置
-        this.currentServerIndex = selectedIndex;
-        await vscode.workspace.getConfiguration('fountain.remote').update(
-            'lastServerIndex',
-            this.currentServerIndex,
-            vscode.ConfigurationTarget.Global
-        );
-
-        // 更新当前服务器
-        this.currentServer = this.serverConfigs[this.currentServerIndex];
 
         // 更新状态
         this.connectionState = ConnectionState.Connecting;
@@ -408,16 +951,15 @@ export class RemoteSyncProvider {
             this.ws.on('open', () => {
                 clearTimeout(connectTimeout);
                 this.connectionState = ConnectionState.Connected;
+                // 此时认证尚未完成，isAuthenticated仍为false
                 this.updateStatusBar();
-                vscode.window.showInformationMessage(`已连接到远程服务器: ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port})`);
+                vscode.window.showInformationMessage(`已连接到远程服务器: ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port})，正在认证...`);
 
-                // 如果有密码，发送认证消息
-                // if (this.currentServer.password) {
+                // 发送认证消息
                 this.sendMessage({
                     type: 'auth',
                     password: this.currentServer.password ?? ""
                 });
-                // }
 
                 // 启动ping定时器
                 this.startPingInterval();
@@ -453,6 +995,12 @@ export class RemoteSyncProvider {
                 // 停止ping定时器
                 this.stopPingInterval();
 
+                // 重置认证状态
+                this.isAuthenticated = false;
+
+                // 清除待执行的操作
+                this.pendingOperation = null;
+
                 if (this.connectionState !== ConnectionState.Error) {
                     this.connectionState = ConnectionState.Disconnected;
                     this.updateStatusBar();
@@ -476,6 +1024,12 @@ export class RemoteSyncProvider {
         // 停止ping定时器
         this.stopPingInterval();
 
+        // 重置认证状态
+        this.isAuthenticated = false;
+
+        // 清除待执行的操作
+        this.pendingOperation = null;
+
         if (this.ws) {
             this.ws.close();
             this.ws = null;
@@ -487,8 +1041,9 @@ export class RemoteSyncProvider {
 
     // 从远程获取文件
     public async fetchFromRemote(): Promise<void> {
-        if (this.connectionState !== ConnectionState.Connected) {
-            vscode.window.showErrorMessage('未连接到远程服务器，请先连接');
+        // 检查连接状态和认证状态
+        if (this.connectionState !== ConnectionState.Connected || !this.isAuthenticated) {
+            vscode.window.showErrorMessage('未连接到远程服务器或未认证成功，无法获取文件');
             return;
         }
 
@@ -505,8 +1060,9 @@ export class RemoteSyncProvider {
 
     // 推送文件到远程
     public async pushToRemote(): Promise<void> {
-        if (this.connectionState !== ConnectionState.Connected) {
-            vscode.window.showErrorMessage('未连接到远程服务器，请先连接');
+        // 检查连接状态和认证状态
+        if (this.connectionState !== ConnectionState.Connected || !this.isAuthenticated) {
+            vscode.window.showErrorMessage('未连接到远程服务器或未认证成功，无法推送文件');
             return;
         }
 
@@ -609,8 +1165,13 @@ export class RemoteSyncProvider {
     private handleConnectionLost(): void {
         if (this.connectionState === ConnectionState.Connected) {
             this.connectionState = ConnectionState.Disconnected;
+            // 重置认证状态
+            this.isAuthenticated = false;
             this.updateStatusBar();
             this.stopPingInterval();
+
+            // 清除待执行的操作
+            this.pendingOperation = null;
 
             if (this.ws) {
                 this.ws.close();
@@ -641,10 +1202,26 @@ export class RemoteSyncProvider {
         switch (message.type) {
             case 'auth_response':
                 if (message.success) {
+                    this.isAuthenticated = true;
+                    // 更新状态栏以反映认证状态
+                    this.updateStatusBar();
                     vscode.window.showInformationMessage('认证成功: ' + message.message);
+
+                    // 如果有待执行的操作，执行它
+                    if (this.pendingOperation) {
+                        const operation = this.pendingOperation;
+                        this.pendingOperation = null;
+                        await operation();
+                    }
                 } else {
+                    this.isAuthenticated = false;
+                    // 更新状态栏以反映认证失败
+                    this.updateStatusBar();
                     vscode.window.showErrorMessage('认证失败: ' + message.message);
                     this.disconnect();
+
+                    // 清除待执行的操作
+                    this.pendingOperation = null;
                 }
                 break;
 
