@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "7.3.1",
+	"version": "7.3.5",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -263,6 +263,11 @@
 						"type": "number",
 						"default": 0,
 						"description": "最后使用的服务器配置索引"
+					},
+					"fountain.remote.fixedSalt": {
+						"type": "string",
+						"default": "screenwriter_fixed_salt_value_2024",
+						"description": "远程同步认证使用的固定盐值，客户端和服务端必须一致"
 					}
 				}
 			},

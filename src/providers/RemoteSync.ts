@@ -3,6 +3,7 @@ import * as WebSocket from 'ws';
 import { getFountainConfig } from '../configloader';
 import { getActiveFountainDocument, getEditor } from '../utils';
 import * as telemetry from '../telemetry';
+import { AuthUtils } from '../utils/AuthUtils';
 
 // WebSocket连接状态
 enum ConnectionState {
@@ -934,7 +935,33 @@ export class RemoteSyncProvider {
         try {
             // 创建WebSocket连接
             const wsUrl = `ws://${this.currentServer.ip}:${this.currentServer.port}`;
-            this.ws = new WebSocket(wsUrl);
+
+            // 准备连接选项
+            let options: WebSocket.ClientOptions = {};
+
+            // 如果需要密码，准备认证头部
+            if (this.currentServer.password && this.currentServer.password.length > 0) {
+                // 生成时间戳
+                const timestamp = Date.now();
+
+                // 生成令牌
+                const token = AuthUtils.generateToken(
+                    this.currentServer.password,
+                    AuthUtils.getFixedSalt(),
+                    timestamp
+                );
+
+                // 设置认证头部
+                options.headers = {
+                    'Authorization': `Bearer ${token}`,
+                    'X-Auth-Timestamp': timestamp.toString()
+                };
+
+                console.log('已添加认证头部');
+            }
+
+            // 创建WebSocket连接
+            this.ws = new WebSocket(wsUrl, options);
 
             // 设置超时
             const connectTimeout = setTimeout(() => {
@@ -951,18 +978,22 @@ export class RemoteSyncProvider {
             this.ws.on('open', () => {
                 clearTimeout(connectTimeout);
                 this.connectionState = ConnectionState.Connected;
-                // 此时认证尚未完成，isAuthenticated仍为false
+                // 在新的认证流程中，连接成功即认证成功
+                this.isAuthenticated = true;
                 this.updateStatusBar();
-                vscode.window.showInformationMessage(`已连接到远程服务器: ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port} ${this.currentServer.password ? `[${this.currentServer.password}]` : '[无密码]'})，正在认证...`);
-
-                // 发送认证消息
-                this.sendMessage({
-                    type: 'auth',
-                    password: this.currentServer.password ?? ""
-                });
+                vscode.window.showInformationMessage(`已连接到远程服务器: ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port})`);
 
                 // 启动ping定时器
                 this.startPingInterval();
+
+                // 如果有待执行的操作，执行它
+                if (this.pendingOperation) {
+                    const operation = this.pendingOperation;
+                    this.pendingOperation = null;
+                    setTimeout(() => {
+                        operation();
+                    }, 100); // 稍微延迟执行，确保连接完全建立
+                }
 
                 telemetry.reportTelemetry("command:fountain.remote.connect");
                 return true;
@@ -984,7 +1015,21 @@ export class RemoteSyncProvider {
                 console.error('WebSocket错误:', error);
                 this.connectionState = ConnectionState.Error;
                 this.updateStatusBar();
-                vscode.window.showErrorMessage(`连接远程服务器时出错: ${error.message}`);
+
+                // 尝试从错误消息中提取HTTP状态码
+                const errorMessage = error.message;
+                const statusCode = AuthUtils.extractStatusCodeFromError(errorMessage);
+
+                if (statusCode === 401) {
+                    vscode.window.showErrorMessage(`连接失败: 授权失败`);
+                } else if (statusCode === 403) {
+                    vscode.window.showErrorMessage(`连接失败: 您已被加入黑名单`);
+                } else if (statusCode) {
+                    vscode.window.showErrorMessage(`连接失败: HTTP ${statusCode}`);
+                } else {
+                    vscode.window.showErrorMessage(`连接远程服务器时出错: ${error.message}`);
+                }
+
                 this.ws = null;
                 return false;
             });
@@ -1200,30 +1245,8 @@ export class RemoteSyncProvider {
     // 处理接收到的消息
     private async handleMessage(message: any): Promise<void> {
         switch (message.type) {
-            case 'auth_response':
-                if (message.success) {
-                    this.isAuthenticated = true;
-                    // 更新状态栏以反映认证状态
-                    this.updateStatusBar();
-                    vscode.window.showInformationMessage('认证成功: ' + message.message);
-
-                    // 如果有待执行的操作，执行它
-                    if (this.pendingOperation) {
-                        const operation = this.pendingOperation;
-                        this.pendingOperation = null;
-                        await operation();
-                    }
-                } else {
-                    this.isAuthenticated = false;
-                    // 更新状态栏以反映认证失败
-                    this.updateStatusBar();
-                    vscode.window.showErrorMessage('认证失败: ' + message.message);
-                    this.disconnect();
-
-                    // 清除待执行的操作
-                    this.pendingOperation = null;
-                }
-                break;
+            // 移除旧的auth_response处理，因为现在认证在连接建立时通过header完成
+            // 保留此注释作为提醒
 
             case 'ping':
                 // 处理ping消息，立即回复pong消息
