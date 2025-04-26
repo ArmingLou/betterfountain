@@ -262,7 +262,7 @@ export class RemoteSyncProvider {
 
         const selection = await vscode.window.showQuickPick(items, {
             placeHolder: defaultServer
-                ? `默认服务器: ${defaultServer.name} (${defaultServer.ip}:${defaultServer.port})`
+                ? `默认服务器: ${defaultServer.name} (${defaultServer.ip}:${defaultServer.port} ${defaultServer.password ? `[${defaultServer.password}]` : '[无密码]'})`
                 : '选择远程操作'
         });
 
@@ -331,7 +331,7 @@ export class RemoteSyncProvider {
             placeHolder: '服务器密码 (可选)',
             prompt: '请输入服务器密码，如果有的话',
             value: '',
-            password: true
+            password: false // 使用明文显示密码
         });
 
         if (serverPassword === undefined) {
@@ -347,7 +347,7 @@ export class RemoteSyncProvider {
 
             // 询问用户是否要替换
             const answer = await vscode.window.showWarningMessage(
-                `已存在IP为 ${serverIp} 的服务器: ${duplicateServer.name} (${duplicateServer.ip}:${duplicateServer.port})。是否替换该服务器？`,
+                `已存在IP为 ${serverIp} 的服务器: ${duplicateServer.name} (${duplicateServer.ip}:${duplicateServer.port} ${duplicateServer.password ? `[${duplicateServer.password}]` : '[无密码]'})。是否替换该服务器？`,
                 { modal: true },
                 '替换', '取消'
             );
@@ -384,7 +384,7 @@ export class RemoteSyncProvider {
                     this.currentServerIndex--;
                 }
 
-                vscode.window.showInformationMessage(`已替换服务器: ${duplicateServer.name}`);
+                vscode.window.showInformationMessage(`已替换服务器: ${duplicateServer.name} (${duplicateServer.ip}:${duplicateServer.port} ${duplicateServer.password ? `[${duplicateServer.password}]` : '[无密码]'})`);
             } else {
                 // 用户取消替换
                 return undefined;
@@ -412,7 +412,7 @@ export class RemoteSyncProvider {
 
         // 返回新服务器的索引
         const newIndex = this.serverConfigs.length - 1;
-        vscode.window.showInformationMessage(`已添加服务器: ${serverName} (${serverIp}:${serverPort})`);
+        vscode.window.showInformationMessage(`已添加服务器: ${serverName} (${serverIp}:${serverPort} ${serverPassword ? `[${serverPassword}]` : '[无密码]'})`);
         return newIndex;
     }
 
@@ -500,7 +500,7 @@ export class RemoteSyncProvider {
             placeHolder: '服务器密码 (可选)',
             prompt: '请输入服务器密码，如果有的话',
             value: server.password,
-            password: true
+            password: false // 使用明文显示密码
         });
 
         if (serverPassword === undefined) {
@@ -518,7 +518,7 @@ export class RemoteSyncProvider {
 
                 // 询问用户是否要替换
                 const answer = await vscode.window.showWarningMessage(
-                    `已存在IP为 ${serverIp} 的服务器: ${duplicateServer.name} (${duplicateServer.ip}:${duplicateServer.port})。是否替换该服务器并删除当前服务器？`,
+                    `已存在IP为 ${serverIp} 的服务器: ${duplicateServer.name} (${duplicateServer.ip}:${duplicateServer.port} ${duplicateServer.password ? `[${duplicateServer.password}]` : '[无密码]'})。是否替换该服务器并删除当前服务器？`,
                     { modal: true },
                     '替换', '取消'
                 );
@@ -573,7 +573,7 @@ export class RemoteSyncProvider {
                     // 保存配置
                     await this.saveServerConfigs();
 
-                    vscode.window.showInformationMessage(`已替换服务器，新服务器: ${serverName} (${serverIp}:${serverPort})`);
+                    vscode.window.showInformationMessage(`已替换服务器，新服务器: ${serverName} (${serverIp}:${serverPort} ${serverPassword ? `[${serverPassword}]` : '[无密码]'})`);
 
                     // 直接返回成功，因为已经完成了所有操作
                     return true;
@@ -616,7 +616,7 @@ export class RemoteSyncProvider {
         // 准备服务器选项
         const serverItems = this.serverConfigs.map((server, index) => ({
             label: server.name || `服务器 ${index + 1}`,
-            description: `${server.ip}:${server.port}${server.isDefault ? ' (默认)' : ''}`,
+            description: `${server.ip}:${server.port} ${server.password ? `[${server.password}]` : '[无密码]'}${server.isDefault ? ' (默认)' : ''}`,
             index: index
         }));
 
@@ -656,7 +656,7 @@ export class RemoteSyncProvider {
         }
 
         const actionSelection = await vscode.window.showQuickPick(actions, {
-            placeHolder: `选择对 ${server.name} (${server.ip}:${server.port}) 的操作`
+            placeHolder: `选择对 ${server.name} (${server.ip}:${server.port} ${server.password ? `[${server.password}]` : '[无密码]'}) 的操作`
         });
 
         if (!actionSelection) {
@@ -674,7 +674,7 @@ export class RemoteSyncProvider {
         } else if (actionSelection.label.includes('删除')) {
             // 确认删除
             const confirm = await vscode.window.showWarningMessage(
-                `确定要删除服务器 ${server.name} (${server.ip}:${server.port}) 吗？`,
+                `确定要删除服务器 ${server.name} (${server.ip}:${server.port} ${server.password ? `[${server.password}]` : '[无密码]'}) 吗？`,
                 { modal: true },
                 '确定删除'
             );
@@ -759,7 +759,7 @@ export class RemoteSyncProvider {
         const defaultIndex = this.getDefaultServerIndex();
         const defaultServer = defaultIndex >= 0 ? this.serverConfigs[defaultIndex] : null;
         const defaultServerInfo = defaultServer
-            ? `默认服务器: ${defaultServer.name} (${defaultServer.ip}:${defaultServer.port})`
+            ? `默认服务器: ${defaultServer.name} (${defaultServer.ip}:${defaultServer.port} ${defaultServer.password ? `[${defaultServer.password}]` : '[无密码]'})`
             : '未设置默认服务器';
 
         switch (this.connectionState) {
@@ -779,7 +779,7 @@ export class RemoteSyncProvider {
                     this.statusBarItem.tooltip = `已连接到 ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port}) (点击显示操作菜单)`;
                 } else {
                     this.statusBarItem.text = '$(warning) 远程: 未认证';
-                    this.statusBarItem.tooltip = `已连接到 ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port})，但未认证成功 (点击显示操作菜单)`;
+                    this.statusBarItem.tooltip = `已连接到 ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port} ${this.currentServer.password ? `[${this.currentServer.password}]` : '[无密码]'})，但未认证成功 (点击显示操作菜单)`;
                 }
                 this.statusBarItem.command = 'fountain.remote.showMenu';
                 break;
@@ -833,7 +833,7 @@ export class RemoteSyncProvider {
         // 准备服务器选项，并保存原始索引
         const serverItems = this.serverConfigs.map((server, index) => ({
             label: server.name || `服务器 ${index + 1}`,
-            description: `${server.ip}:${server.port}${index === this.currentServerIndex ? ' (最近使用)' : ''}`,
+            description: `${server.ip}:${server.port} ${server.password ? `[${server.password}]` : '[无密码]'}${index === this.currentServerIndex ? ' (最近使用)' : ''}`,
             originalIndex: index // 保存原始索引
         }));
 
@@ -953,7 +953,7 @@ export class RemoteSyncProvider {
                 this.connectionState = ConnectionState.Connected;
                 // 此时认证尚未完成，isAuthenticated仍为false
                 this.updateStatusBar();
-                vscode.window.showInformationMessage(`已连接到远程服务器: ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port})，正在认证...`);
+                vscode.window.showInformationMessage(`已连接到远程服务器: ${this.currentServer.name} (${this.currentServer.ip}:${this.currentServer.port} ${this.currentServer.password ? `[${this.currentServer.password}]` : '[无密码]'})，正在认证...`);
 
                 // 发送认证消息
                 this.sendMessage({
