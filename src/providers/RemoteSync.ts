@@ -1368,14 +1368,24 @@ export class RemoteSyncProvider {
         // 注册获取文件命令
         context.subscriptions.push(
             vscode.commands.registerCommand('fountain.remote.fetch', async () => {
-                await instance.fetchFromRemote();
+                // await instance.fetchFromRemote();
+                if (instance.connectionState === ConnectionState.Connected && instance.isAuthenticated) {
+                    await instance.fetchFromRemote();
+                } else {
+                    await instance.connectAndExecute(instance.fetchFromRemote.bind(instance))
+                }
             })
         );
 
         // 注册推送文件命令
         context.subscriptions.push(
             vscode.commands.registerCommand('fountain.remote.push', async () => {
-                await instance.pushToRemote();
+                // await instance.pushToRemote();
+                if (instance.connectionState === ConnectionState.Connected && instance.isAuthenticated) {
+                    await instance.pushToRemote();
+                } else {
+                    await instance.connectAndExecute(instance.pushToRemote.bind(instance))
+                }
             })
         );
     }
