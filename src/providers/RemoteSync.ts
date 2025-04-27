@@ -1026,8 +1026,10 @@ export class RemoteSyncProvider {
                     vscode.window.showErrorMessage(`连接失败: 您已被加入黑名单`);
                 } else if (statusCode) {
                     vscode.window.showErrorMessage(`连接失败: HTTP ${statusCode}`);
+                } else if (errorMessage.includes('socket hang up')) {
+                    vscode.window.showErrorMessage(`网络问题或者远程服务器未启动`);
                 } else {
-                    vscode.window.showErrorMessage(`连接远程服务器时出错: ${error.message}`);
+                    vscode.window.showErrorMessage(`连接失败: ${error.message}`);
                 }
 
                 this.ws = null;
