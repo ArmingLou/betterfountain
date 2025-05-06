@@ -67,6 +67,25 @@ export class LocationDefinitionProvider implements vscode.DefinitionProvider {
     const lineText = document.lineAt(position.line).text;
     for (const [name, locations] of doc.properties.locations) {
       if (lineText.includes(name)) {
+        
+        if(lineText.indexOf('#${')>0) {
+          if(position.character > lineText.indexOf('#${')) {
+            
+            var currentLocation = locations.find(loc => {
+              if(loc.line == position.line) {
+                // 如果当前行是引用行，返回所有引用
+                return true;
+              }
+              return false;
+            });
+            // 指向相同场号
+            return locations.filter(loc => loc.scene_number == currentLocation.scene_number).map(loc => new vscode.Location(
+              document.uri,
+              new vscode.Range(new vscode.Position(loc.line, document.lineAt(loc.line).text.indexOf('#${')), new vscode.Position(loc.line, document.lineAt(loc.line).text.length))
+            ));
+          }
+        }
+        
         var st = lineText.indexOf(name);
         var en = st + name.length;
         if(position.character < st || position.character > en) {
@@ -92,6 +111,23 @@ export class LocationReferenceProvider implements vscode.ReferenceProvider {
     // 收集所有引用位置的行
     for (const [name, locations] of doc.properties.locations) {
       if (lineText.includes(name)) {
+        if(lineText.indexOf('#${')>0) {
+          if(position.character > lineText.indexOf('#${')) {
+            
+            var currentLocation = locations.find(loc => {
+              if(loc.line == position.line) {
+                // 如果当前行是引用行，返回所有引用
+                return true;
+              }
+              return false;
+            });
+            // 指向相同场号
+            return locations.filter(loc => loc.scene_number == currentLocation.scene_number).map(loc => new vscode.Location(
+              document.uri,
+              new vscode.Range(new vscode.Position(loc.line, document.lineAt(loc.line).text.indexOf('#${')), new vscode.Position(loc.line, document.lineAt(loc.line).text.length))
+            ));
+          }
+        }
         var st = lineText.indexOf(name);
         var en = st + name.length;
         if(position.character < st || position.character > en) {
