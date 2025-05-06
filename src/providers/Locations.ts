@@ -58,3 +58,53 @@ class LocationTreeItem extends vscode.TreeItem {
     }
   }
 }
+
+export class LocationDefinitionProvider implements vscode.DefinitionProvider {
+  provideDefinition(document: vscode.TextDocument, position: vscode.Position): vscode.Definition {
+    const doc = activeParsedDocument();
+    if (!doc) return null;
+
+    const lineText = document.lineAt(position.line).text;
+    for (const [name, locations] of doc.properties.locations) {
+      if (lineText.includes(name)) {
+        var st = lineText.indexOf(name);
+        var en = st + name.length;
+        if(position.character < st || position.character > en) {
+          return null;
+        }
+        return locations.map(loc => new vscode.Location(
+          document.uri,
+          new vscode.Range(new vscode.Position(loc.line, document.lineAt(loc.line).text.indexOf(name)), new vscode.Position(loc.line, document.lineAt(loc.line).text.indexOf(name) + name.length))
+        ));
+      }
+    }
+    return null;
+  }
+}
+
+export class LocationReferenceProvider implements vscode.ReferenceProvider {
+  provideReferences(document: vscode.TextDocument, position: vscode.Position, _context: vscode.ReferenceContext): vscode.ProviderResult<vscode.Location[]> {
+    const doc = activeParsedDocument();
+    if (!doc) return null;
+
+    const lineText = document.lineAt(position.line).text;
+
+    // 收集所有引用位置的行
+    for (const [name, locations] of doc.properties.locations) {
+      if (lineText.includes(name)) {
+        var st = lineText.indexOf(name);
+        var en = st + name.length;
+        if(position.character < st || position.character > en) {
+          return null;
+        }
+        // 返回第一个
+        return locations.map(loc => new vscode.Location(
+          document.uri,
+          new vscode.Range(new vscode.Position(loc.line, document.lineAt(loc.line).text.indexOf(name)), new vscode.Position(loc.line, document.lineAt(loc.line).text.indexOf(name) + name.length))
+        ));
+      }
+    }
+
+    return null;
+  }
+}

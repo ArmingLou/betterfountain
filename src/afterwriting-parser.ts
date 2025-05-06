@@ -1195,15 +1195,16 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     let character = trimCharacterExtension(text_valid).trim();
                     previousCharacter = character;
                     thistoken.character = character;
+                    var sceneIdx = result.properties.scenes.length - 1;
                     if (result.properties.characters.has(character)) {
                         var values = result.properties.characters.get(character);
-                        if (values.indexOf(scene_number) == -1) {
-                            values.push(scene_number);
+                        if (values.indexOf(sceneIdx) == -1) {
+                            values.push(sceneIdx);
                         }
                         result.properties.characters.set(character, values);
                     }
                     else {
-                        result.properties.characters.set(character, [scene_number]);
+                        result.properties.characters.set(character, [sceneIdx]);
                     }
                     last_character_index = result.tokens.length;
 

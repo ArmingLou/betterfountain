@@ -51,15 +51,20 @@ class CharacterTreeItem extends vscode.TreeItem {
 
   constructor(label: string, public scenes: number[], public parent: CharacterTreeItem) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
-    this.description = `${scenes.length} scenes`;
+    var tot = 0;
     const doc = activeParsedDocument();
     if (doc) {
       for (const scene of scenes) {
+        if(scene < 0) {
+          continue;
+        }
+        tot += 1;
         const properties = doc.properties;
-        const sceneName = properties.sceneNames[scene - 2];
-        const sceneLineNumber = properties.sceneLines[scene - 2];
+        const sceneName = properties.sceneNames[scene];
+        const sceneLineNumber = properties.sceneLines[scene];
         this.children.push(new SceneTreeItem(sceneName, sceneLineNumber, this));
       }
     }
+    this.description = `${tot} scenes`;
   }
 }

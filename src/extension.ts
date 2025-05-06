@@ -20,7 +20,7 @@ import { FountainCheatSheetWebviewViewProvider } from "./providers/Cheatsheet";
 import { createPdfPreviewPanel, FountainPdfPanelserializer, getPdfPreviewPanels, refreshPdfPanel, updateDocumentVersionPdfPreview } from "./providers/PdfPreview";
 import { createDocxPreviewPanel, FountainDocxPanelserializer, getDocxPreviewPanels, refreshDocxPanel, updateDocumentVersionDocxPreview } from "./providers/DocxPreview";
 import * as commands from "./commands";
-import { FountainLocationTreeDataProvider } from "./providers/Locations";
+import { FountainLocationTreeDataProvider, LocationDefinitionProvider, LocationReferenceProvider } from "./providers/Locations";
 import { RemoteSyncProvider } from "./providers/RemoteSync";
 
 /**
@@ -165,6 +165,10 @@ export function activate(context: ExtensionContext) {
 
   //Setup symbols (outline)
   languages.registerDocumentSymbolProvider({ language: 'fountain' }, new FountainSymbolProvider());
+  
+  //Setup location definition and references
+  languages.registerDefinitionProvider({ language: 'fountain' }, new LocationDefinitionProvider());
+  languages.registerReferenceProvider({ language: 'fountain' }, new LocationReferenceProvider());
 
 
   //parse the document
