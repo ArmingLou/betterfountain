@@ -74,9 +74,9 @@ export class CharacterDefinitionProvider implements vscode.DefinitionProvider {
     const doc = activeParsedDocument();
     if (!doc) return null;
 
-    // if(!doc.properties.characterLines.has(position.line)) {
-    //   return null;
-    // }
+    if(!doc.properties.characterLines.has(position.line)) {
+      return null;
+    }
 
     const lineText = document.lineAt(position.line).text;
     for (const [name, sceneIdxs] of doc.properties.characters) {
@@ -120,9 +120,9 @@ export class CharacterReferenceProvider implements vscode.ReferenceProvider {
     const doc = activeParsedDocument();
     if (!doc) return null;
 
-    // if(!doc.properties.characterLines.has(position.line)) {
-    //   return null;
-    // }
+    if(!doc.properties.characterLines.has(position.line)) {
+      return null;
+    }
 
     const lineText = document.lineAt(position.line).text;
 
