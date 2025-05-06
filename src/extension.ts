@@ -13,7 +13,7 @@ import { FountainCommandTreeDataProvider } from "./providers/Commands";
 import { createPreviewPanel, FountainPreviewSerializer, getPreviewsToUpdate } from "./providers/Preview";
 import { createStatisticsPanel, FountainStatsPanelserializer as FountainStatsPanelSerializer, getStatisticsPanels, refreshStatsPanel, updateDocumentVersionStats } from "./providers/Statistics";
 import { FountainOutlineTreeDataProvider } from "./providers/Outline";
-import { FountainCharacterTreeDataProvider } from "./providers/Characters";
+import { CharacterDefinitionProvider, CharacterReferenceProvider, FountainCharacterTreeDataProvider } from "./providers/Characters";
 import { performance } from "perf_hooks";
 import { exportHtml } from "./providers/StaticHtml";
 import { FountainCheatSheetWebviewViewProvider } from "./providers/Cheatsheet";
@@ -169,6 +169,9 @@ export function activate(context: ExtensionContext) {
   //Setup location definition and references
   languages.registerDefinitionProvider({ language: 'fountain' }, new LocationDefinitionProvider());
   languages.registerReferenceProvider({ language: 'fountain' }, new LocationReferenceProvider());
+  
+  languages.registerDefinitionProvider({ language: 'fountain' }, new CharacterDefinitionProvider());
+  languages.registerReferenceProvider({ language: 'fountain' }, new CharacterReferenceProvider());
 
 
   //parse the document

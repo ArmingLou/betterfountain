@@ -208,6 +208,8 @@ export class screenplayProperties {
     locations: Map<string, Location[]>;
     structure: StructToken[];
     sceneNumberVars: Set<string>;
+    characterLines: Map<number, string>;
+    characterFirstLine: Map<string, number>;
 }
 export interface parseoutput {
     scriptHtml: string,
@@ -266,7 +268,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 characters: new Map<string, number[]>(),
                 locations: new Map<string, Location[]>(),
                 structure: [],
-                sceneNumberVars: new Set<string>()
+                sceneNumberVars: new Set<string>(),
+                characterLines: new Map<number, string>(),
+                characterFirstLine: new Map<string, number>(),
             }
         };
     if (!script) {
@@ -960,13 +964,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             }
                         }
                     }
-                    
+
                     if (scenceNumbers.has(nb)) {
                         scene_number_dup = true;
                     } else {
                         scenceNumbers.add(nb);
                     }
-                    
+
                     if (scene_number_dup) {
                         thistoken.number = '↑' + nb; // 用 ↑ 打印标记 提示重复 
                     } else {
@@ -977,7 +981,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     var idx = textForToken.indexOf('-');
                     if (idx >= 0) {
                         // if(thistoken.text.charAt(idx-1) != ' '){
-                            textForToken = textForToken.substring(0, idx) + ' - ' + textForToken.substring(idx + 1);
+                        textForToken = textForToken.substring(0, idx) + ' - ' + textForToken.substring(idx + 1);
                         // }
                     }
                     textForToken = textForToken.toUpperCase().replace(/\s+/g, ' ');//合并空格，转成大写
@@ -1206,6 +1210,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     else {
                         result.properties.characters.set(character, [sceneIdx]);
                     }
+                    result.properties.characterLines.set(thistoken.line, character);
+                    if (!result.properties.characterFirstLine.has(character)) {
+                        result.properties.characterFirstLine.set(character, thistoken.line);
+                    }
                     last_character_index = result.tokens.length;
 
                     // todo 对话角色加入结构树
@@ -1431,8 +1439,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             it2.durationSec = it2.durationSec ? it2.durationSec + averageDuration : averageDuration;
         })
     })
-    
-    result.properties.sceneNumberVars =  new Set(dupScenceNuber.keys());
+
+    result.properties.sceneNumberVars = new Set(dupScenceNuber.keys());
 
     // tidy up separators
 

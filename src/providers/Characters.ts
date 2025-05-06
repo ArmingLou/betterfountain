@@ -55,7 +55,7 @@ class CharacterTreeItem extends vscode.TreeItem {
     const doc = activeParsedDocument();
     if (doc) {
       for (const scene of scenes) {
-        if(scene < 0) {
+        if (scene < 0) {
           continue;
         }
         tot += 1;
@@ -66,5 +66,83 @@ class CharacterTreeItem extends vscode.TreeItem {
       }
     }
     this.description = `${tot} scenes`;
+  }
+}
+
+export class CharacterDefinitionProvider implements vscode.DefinitionProvider {
+  provideDefinition(document: vscode.TextDocument, position: vscode.Position): vscode.Definition {
+    const doc = activeParsedDocument();
+    if (!doc) return null;
+
+    // if(!doc.properties.characterLines.has(position.line)) {
+    //   return null;
+    // }
+
+    const lineText = document.lineAt(position.line).text;
+    for (const [name, sceneIdxs] of doc.properties.characters) {
+      if (lineText.includes(name)) {
+        var st = lineText.indexOf(name);
+        var en = st + name.length;
+        if (position.character < st || position.character > en) {
+          return null;
+        }
+
+        var res = sceneIdxs.filter(idx => idx >= 0).map(idx => {
+          const sceneLineNumber = doc.properties.sceneLines[idx];
+          return new vscode.Location(
+            document.uri,
+            new vscode.Position(sceneLineNumber, 0)
+          )
+        });
+        if (doc.properties.characterFirstLine.has(name)) {
+          const firstLine = doc.properties.characterFirstLine.get(name);
+          if (firstLine !== position.line) {
+            var minidx = Math.min(...sceneIdxs.filter(idx => idx >= 0));
+            var minLine = doc.properties.sceneLines[minidx];
+            if (firstLine < minLine) {
+              // 放在res的前面
+              res.unshift(new vscode.Location(
+                document.uri,
+                new vscode.Position(firstLine, 0)
+              ));
+            }
+          }
+        }
+        return res.length > 0 ? res : null;
+      }
+    }
+    return null;
+  }
+}
+
+export class CharacterReferenceProvider implements vscode.ReferenceProvider {
+  provideReferences(document: vscode.TextDocument, position: vscode.Position, _context: vscode.ReferenceContext): vscode.ProviderResult<vscode.Location[]> {
+    const doc = activeParsedDocument();
+    if (!doc) return null;
+
+    // if(!doc.properties.characterLines.has(position.line)) {
+    //   return null;
+    // }
+
+    const lineText = document.lineAt(position.line).text;
+
+    for (const [name, sceneIdxs] of doc.properties.characters) {
+      if (lineText.includes(name)) {
+        var st = lineText.indexOf(name);
+        var en = st + name.length;
+        if (position.character < st || position.character > en) {
+          return null;
+        }
+        return sceneIdxs.filter(idx => idx >= 0).map(idx => {
+          const sceneLineNumber = doc.properties.sceneLines[idx];
+          return new vscode.Location(
+            document.uri,
+            new vscode.Position(sceneLineNumber, 0)
+          )
+        });
+      }
+    }
+
+    return null;
   }
 }
