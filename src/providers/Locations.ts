@@ -52,10 +52,17 @@ class LocationTreeItem extends vscode.TreeItem {
 
   constructor(label: string, public locations: Location[], public parent: LocationTreeItem) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
-    this.description = `${locations.length} scenes`;
+    var scencNum = new Set();
     for (const location of locations) {
-      this.children.push(new SceneTreeItem(`Scene ${location.scene_number} - ${location.time_of_day}`, location.line, this));
+      var nb = location.scene_number;
+      if(scencNum.has(nb)) {
+        nb = `↑${nb}`;
+      } else {
+        scencNum.add(location.scene_number);
+      }
+      this.children.push(new SceneTreeItem(`Scene ${nb} - ${location.time_of_day}`, location.line, this));
     }
+    this.description = `${scencNum.size} scenes`;
   }
 }
 
@@ -67,12 +74,12 @@ export class LocationDefinitionProvider implements vscode.DefinitionProvider {
     const lineText = document.lineAt(position.line).text;
     for (const [name, locations] of doc.properties.locations) {
       if (lineText.includes(name)) {
-        
-        if(lineText.indexOf('#${')>0) {
-          if(position.character > lineText.indexOf('#${')) {
-            
+
+        if (lineText.indexOf('#${') > 0) {
+          if (position.character > lineText.indexOf('#${')) {
+
             var currentLocation = locations.find(loc => {
-              if(loc.line == position.line) {
+              if (loc.line == position.line) {
                 // 如果当前行是引用行，返回所有引用
                 return true;
               }
@@ -85,10 +92,10 @@ export class LocationDefinitionProvider implements vscode.DefinitionProvider {
             ));
           }
         }
-        
+
         var st = lineText.indexOf(name);
         var en = st + name.length;
-        if(position.character < st || position.character > en) {
+        if (position.character < st || position.character > en) {
           return null;
         }
         return locations.map(loc => new vscode.Location(
@@ -111,11 +118,11 @@ export class LocationReferenceProvider implements vscode.ReferenceProvider {
     // 收集所有引用位置的行
     for (const [name, locations] of doc.properties.locations) {
       if (lineText.includes(name)) {
-        if(lineText.indexOf('#${')>0) {
-          if(position.character > lineText.indexOf('#${')) {
-            
+        if (lineText.indexOf('#${') > 0) {
+          if (position.character > lineText.indexOf('#${')) {
+
             var currentLocation = locations.find(loc => {
-              if(loc.line == position.line) {
+              if (loc.line == position.line) {
                 // 如果当前行是引用行，返回所有引用
                 return true;
               }
@@ -130,8 +137,8 @@ export class LocationReferenceProvider implements vscode.ReferenceProvider {
         }
         var st = lineText.indexOf(name);
         var en = st + name.length;
-        if(position.character < st || position.character > en) {
-          return null;
+        if (position.character < st || position.character > en) {
+          continue;
         }
         // 返回第一个
         return locations.map(loc => new vscode.Location(
@@ -143,4 +150,67 @@ export class LocationReferenceProvider implements vscode.ReferenceProvider {
 
     return null;
   }
+}
+
+export class LocationHoverProvider implements vscode.HoverProvider {
+  provideHover(document: vscode.TextDocument, position: vscode.Position, _token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
+    const doc = activeParsedDocument();
+    if (!doc) return null;
+
+    const lineText = document.lineAt(position.line).text;
+
+    for (const [name, locations] of doc.properties.locations) {
+      if (lineText.includes(name)) {
+
+        if (lineText.indexOf('#${') > 0) {
+          if (position.character > lineText.indexOf('#${')) {
+
+            var currentLocation = locations.find(loc => {
+              if (loc.line == position.line) {
+                // 如果当前行是引用行，返回所有引用
+                return true;
+              }
+              return false;
+            });
+            // 指向相同场号
+            var count = locations.filter(loc => loc.scene_number == currentLocation.scene_number).length
+            var txt = `(Scene ${currentLocation.scene_number}) was split into ${count}`;
+
+            const hoverText = new vscode.MarkdownString(txt);
+            hoverText.isTrusted = true;
+
+            return new vscode.Hover(hoverText, new vscode.Range(position.line, lineText.indexOf('#${'), position.line, lineText.length));
+          }
+        }
+
+        var st = lineText.indexOf(name);
+        var en = st + name.length;
+        if (position.character < st || position.character > en) {
+          continue;
+        }
+
+        locations.map(loc => new vscode.Location(
+          document.uri,
+          new vscode.Range(new vscode.Position(loc.line, document.lineAt(loc.line).text.indexOf(name)), new vscode.Position(loc.line, document.lineAt(loc.line).text.indexOf(name) + name.length))
+        ));
+
+        const sceneList = locations
+          .map(loc => `${loc.scene_number}`)
+          // 去除重复的场号
+          .filter((value, index, self) => self.indexOf(value) === index)
+          .map(tx => `Scene ${tx}`)
+          .join(", ");
+
+        var txt = `**${name}**  \n\nappears in:  \n${sceneList}`;
+
+        const hoverText = new vscode.MarkdownString(txt);
+        hoverText.isTrusted = true;
+
+        return new vscode.Hover(hoverText, new vscode.Range(position.line, st, position.line, en));
+      }
+    }
+
+    return null;
+  }
+
 }

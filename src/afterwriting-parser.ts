@@ -204,12 +204,13 @@ export class screenplayProperties {
     fontLine: number;
     lengthAction: number; //Length of the action character count
     lengthDialogue: number; //Length of the dialogue character count
-    characters: Map<string, number[]>;
+    characters: Map<string, number[]>; //人物，对应出现于场景头的索引
     locations: Map<string, Location[]>;
     structure: StructToken[];
     sceneNumberVars: Set<string>;
     characterLines: Map<number, string>;
-    characterFirstLine: Map<string, number>;
+    characterFirstLine: Map<string, number>; //第一个场景之前，序言页中的人物行
+    characterDescribe: Map<string, string>; //第一个场景之前，序言页中的 对应的人设文档
 }
 export interface parseoutput {
     scriptHtml: string,
@@ -271,6 +272,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 sceneNumberVars: new Set<string>(),
                 characterLines: new Map<number, string>(),
                 characterFirstLine: new Map<string, number>(),
+                characterDescribe: new Map<string, string>(),
             }
         };
     if (!script) {
@@ -1211,8 +1213,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         result.properties.characters.set(character, [sceneIdx]);
                     }
                     result.properties.characterLines.set(thistoken.line, character);
-                    if (!result.properties.characterFirstLine.has(character)) {
+                    if (result.properties.scenes.length < 1 && !result.properties.characterFirstLine.has(character)) {
                         result.properties.characterFirstLine.set(character, thistoken.line);
+                        result.properties.characterDescribe.set(character, text);
                     }
                     last_character_index = result.tokens.length;
 
@@ -1363,6 +1366,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             if (cfg.emitalic_dialog) {
                 thistoken.text = charOfStyleTag.italic_global_begin + thistoken.text + charOfStyleTag.italic_global_end;
             } //根据配置，施加斜体样式，如果可以的话。
+            
+            if (result.properties.scenes.length < 1) {
+                var txt = result.properties.characterDescribe.get(previousCharacter);
+                if (txt) {
+                    txt = txt + "\n" + text;
+                    result.properties.characterDescribe.set(previousCharacter, txt);
+                }
+            }
         }
 
 

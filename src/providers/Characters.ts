@@ -51,30 +51,80 @@ class CharacterTreeItem extends vscode.TreeItem {
 
   constructor(label: string, public scenes: number[], public parent: CharacterTreeItem) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
-    var tot = 0;
+    var scencNum = new Set();
     const doc = activeParsedDocument();
     if (doc) {
       for (const scene of scenes) {
         if (scene < 0) {
           continue;
         }
-        tot += 1;
         const properties = doc.properties;
         const sceneName = properties.sceneNames[scene];
         const sceneLineNumber = properties.sceneLines[scene];
-        this.children.push(new SceneTreeItem(sceneName, sceneLineNumber, this));
+        var nb = doc.properties.scenes[scene].number;
+        if (scencNum.has(nb)) {
+          nb = `↑${nb}`;
+        } else {
+          scencNum.add(nb);
+        }
+        this.children.push(new SceneTreeItem(nb + ' ' + sceneName, sceneLineNumber, this));
       }
     }
-    this.description = `${tot} scenes`;
+    this.description = `${scencNum.size} scenes`;
   }
 }
+export class CharacterHoverProvider implements vscode.HoverProvider {
+  provideHover(document: vscode.TextDocument, position: vscode.Position, _token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
+    const doc = activeParsedDocument();
+    if (!doc) return null;
 
+    if (doc.properties.sceneLines.includes(position.line)) {
+      // 排除场景行中角色名称
+      return null;
+    }
+
+    const lineText = document.lineAt(position.line).text;
+    for (const [name, sceneIdxs] of doc.properties.characters) {
+      if (lineText.includes(name)) {
+        const startIdx = lineText.indexOf(name);
+        const endIdx = startIdx + name.length;
+
+        if (position.character >= startIdx && position.character <= endIdx) {
+          var txt = '';
+          if (doc.properties.characterDescribe.has(name) && position.line !== doc.properties.characterFirstLine.get(name)) {
+            txt = `\`\`\`fountain  \n${doc.properties.characterDescribe.get(name)}  \n\`\`\`  \n\n`;
+          } else {
+            txt = `**${name}**\n\n`;
+          }
+
+          const sceneList = sceneIdxs
+            .filter(idx => idx >= 0)
+            .map(idx => `${doc.properties.scenes[idx].number}`)
+            // 去除重复的场号
+            .filter((value, index, self) => self.indexOf(value) === index)
+            .map(tx => `Scene ${tx}`)
+            .join(", ");
+
+          txt += `appears in:  \n${sceneList}`;
+
+          const hoverText = new vscode.MarkdownString(txt);
+          hoverText.isTrusted = true;
+
+          return new vscode.Hover(hoverText, new vscode.Range(position.line, startIdx, position.line, endIdx));
+        }
+      }
+    }
+
+    return null;
+  }
+}
 export class CharacterDefinitionProvider implements vscode.DefinitionProvider {
   provideDefinition(document: vscode.TextDocument, position: vscode.Position): vscode.Definition {
     const doc = activeParsedDocument();
     if (!doc) return null;
 
-    if(!doc.properties.characterLines.has(position.line)) {
+    if (doc.properties.sceneLines.includes(position.line)) {
+      // 排除场景行中角色名称
       return null;
     }
 
@@ -84,7 +134,7 @@ export class CharacterDefinitionProvider implements vscode.DefinitionProvider {
         var st = lineText.indexOf(name);
         var en = st + name.length;
         if (position.character < st || position.character > en) {
-          return null;
+          continue;
         }
 
         var res = sceneIdxs.filter(idx => idx >= 0).map(idx => {
@@ -97,15 +147,11 @@ export class CharacterDefinitionProvider implements vscode.DefinitionProvider {
         if (doc.properties.characterFirstLine.has(name)) {
           const firstLine = doc.properties.characterFirstLine.get(name);
           if (firstLine !== position.line) {
-            var minidx = Math.min(...sceneIdxs.filter(idx => idx >= 0));
-            var minLine = doc.properties.sceneLines[minidx];
-            if (firstLine < minLine) {
-              // 放在res的前面
-              res.unshift(new vscode.Location(
-                document.uri,
-                new vscode.Position(firstLine, 0)
-              ));
-            }
+            // 放在res的前面
+            res.unshift(new vscode.Location(
+              document.uri,
+              new vscode.Position(firstLine, 0)
+            ));
           }
         }
         return res.length > 0 ? res : null;
@@ -120,7 +166,8 @@ export class CharacterReferenceProvider implements vscode.ReferenceProvider {
     const doc = activeParsedDocument();
     if (!doc) return null;
 
-    if(!doc.properties.characterLines.has(position.line)) {
+    if (doc.properties.sceneLines.includes(position.line)) {
+      // 排除场景行中角色名称
       return null;
     }
 
@@ -131,7 +178,7 @@ export class CharacterReferenceProvider implements vscode.ReferenceProvider {
         var st = lineText.indexOf(name);
         var en = st + name.length;
         if (position.character < st || position.character > en) {
-          return null;
+          continue;
         }
         return sceneIdxs.filter(idx => idx >= 0).map(idx => {
           const sceneLineNumber = doc.properties.sceneLines[idx];

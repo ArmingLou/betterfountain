@@ -13,14 +13,14 @@ import { FountainCommandTreeDataProvider } from "./providers/Commands";
 import { createPreviewPanel, FountainPreviewSerializer, getPreviewsToUpdate } from "./providers/Preview";
 import { createStatisticsPanel, FountainStatsPanelserializer as FountainStatsPanelSerializer, getStatisticsPanels, refreshStatsPanel, updateDocumentVersionStats } from "./providers/Statistics";
 import { FountainOutlineTreeDataProvider } from "./providers/Outline";
-import { CharacterDefinitionProvider, CharacterReferenceProvider, FountainCharacterTreeDataProvider } from "./providers/Characters";
+import { CharacterDefinitionProvider, CharacterHoverProvider, CharacterReferenceProvider, FountainCharacterTreeDataProvider } from "./providers/Characters";
 import { performance } from "perf_hooks";
 import { exportHtml } from "./providers/StaticHtml";
 import { FountainCheatSheetWebviewViewProvider } from "./providers/Cheatsheet";
 import { createPdfPreviewPanel, FountainPdfPanelserializer, getPdfPreviewPanels, refreshPdfPanel, updateDocumentVersionPdfPreview } from "./providers/PdfPreview";
 import { createDocxPreviewPanel, FountainDocxPanelserializer, getDocxPreviewPanels, refreshDocxPanel, updateDocumentVersionDocxPreview } from "./providers/DocxPreview";
 import * as commands from "./commands";
-import { FountainLocationTreeDataProvider, LocationDefinitionProvider, LocationReferenceProvider } from "./providers/Locations";
+import { FountainLocationTreeDataProvider, LocationDefinitionProvider, LocationHoverProvider, LocationReferenceProvider } from "./providers/Locations";
 import { RemoteSyncProvider } from "./providers/RemoteSync";
 
 /**
@@ -172,6 +172,9 @@ export function activate(context: ExtensionContext) {
   
   languages.registerDefinitionProvider({ language: 'fountain' }, new CharacterDefinitionProvider());
   languages.registerReferenceProvider({ language: 'fountain' }, new CharacterReferenceProvider());
+  
+  languages.registerHoverProvider({ language: 'fountain' }, new CharacterHoverProvider());
+  languages.registerHoverProvider({ language: 'fountain' }, new LocationHoverProvider());
 
 
   //parse the document
