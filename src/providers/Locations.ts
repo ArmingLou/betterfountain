@@ -70,6 +70,11 @@ export class LocationDefinitionProvider implements vscode.DefinitionProvider {
   provideDefinition(document: vscode.TextDocument, position: vscode.Position): vscode.Definition {
     const doc = activeParsedDocument();
     if (!doc) return null;
+    
+    if (doc.properties.characterLines.has(position.line)) {
+      // 排除角色行中场景名称
+      return null;
+    }
 
     const lineText = document.lineAt(position.line).text;
     for (const [name, locations] of doc.properties.locations) {
@@ -112,6 +117,11 @@ export class LocationReferenceProvider implements vscode.ReferenceProvider {
   provideReferences(document: vscode.TextDocument, position: vscode.Position, _context: vscode.ReferenceContext): vscode.ProviderResult<vscode.Location[]> {
     const doc = activeParsedDocument();
     if (!doc) return null;
+    
+    if (doc.properties.characterLines.has(position.line)) {
+      // 排除角色行中场景名称
+      return null;
+    }
 
     const lineText = document.lineAt(position.line).text;
 
@@ -156,6 +166,11 @@ export class LocationHoverProvider implements vscode.HoverProvider {
   provideHover(document: vscode.TextDocument, position: vscode.Position, _token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
     const doc = activeParsedDocument();
     if (!doc) return null;
+    
+    if (doc.properties.characterLines.has(position.line)) {
+      // 排除角色行中场景名称
+      return null;
+    }
 
     const lineText = document.lineAt(position.line).text;
 
