@@ -60,7 +60,7 @@ class LocationTreeItem extends vscode.TreeItem {
       } else {
         scencNum.add(location.scene_number);
       }
-      this.children.push(new SceneTreeItem(`Scene ${nb} - ${location.time_of_day}`, location.line, this));
+      this.children.push(new SceneTreeItem(`🎬 ${nb} - ${location.time_of_day}`, location.line, this));
     }
     this.description = `${scencNum.size} scenes`;
   }
@@ -71,8 +71,8 @@ export class LocationDefinitionProvider implements vscode.DefinitionProvider {
     const doc = activeParsedDocument();
     if (!doc) return null;
     
-    if (doc.properties.characterLines.has(position.line)) {
-      // 排除角色行中场景名称
+    if (!doc.properties.sceneLines.includes(position.line)) {
+      // 场景行中
       return null;
     }
 
@@ -118,8 +118,8 @@ export class LocationReferenceProvider implements vscode.ReferenceProvider {
     const doc = activeParsedDocument();
     if (!doc) return null;
     
-    if (doc.properties.characterLines.has(position.line)) {
-      // 排除角色行中场景名称
+    if (!doc.properties.sceneLines.includes(position.line)) {
+      // 场景行中
       return null;
     }
 
@@ -167,8 +167,8 @@ export class LocationHoverProvider implements vscode.HoverProvider {
     const doc = activeParsedDocument();
     if (!doc) return null;
     
-    if (doc.properties.characterLines.has(position.line)) {
-      // 排除角色行中场景名称
+    if (!doc.properties.sceneLines.includes(position.line)) {
+      // 场景行中
       return null;
     }
 
@@ -189,7 +189,7 @@ export class LocationHoverProvider implements vscode.HoverProvider {
             });
             // 指向相同场号
             var count = locations.filter(loc => loc.scene_number == currentLocation.scene_number).length
-            var txt = `(Scene ${currentLocation.scene_number}) was split into ${count}`;
+            var txt = `(🎬 ${currentLocation.scene_number}) was split into ${count}`;
 
             const hoverText = new vscode.MarkdownString(txt);
             hoverText.isTrusted = true;
@@ -213,10 +213,10 @@ export class LocationHoverProvider implements vscode.HoverProvider {
           .map(loc => `${loc.scene_number}`)
           // 去除重复的场号
           .filter((value, index, self) => self.indexOf(value) === index)
-          .map(tx => `Scene ${tx}`)
+          .map(tx => `🎬 ${tx}`)
           .join(", ");
 
-        var txt = `**${name}**  \n\nappears in:  \n${sceneList}`;
+        var txt = `🏠 **${name}**  \n\nappears in:  \n${sceneList}`;
 
         const hoverText = new vscode.MarkdownString(txt);
         hoverText.isTrusted = true;

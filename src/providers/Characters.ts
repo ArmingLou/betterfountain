@@ -94,7 +94,7 @@ export class CharacterHoverProvider implements vscode.HoverProvider {
           if (doc.properties.characterDescribe.has(name) && position.line !== doc.properties.characterFirstLine.get(name)) {
             txt = `\`\`\`fountain  \n${doc.properties.characterDescribe.get(name)}  \n\`\`\`  \n\n`;
           } else {
-            txt = `**${name}**\n\n`;
+            txt = `👤 **${name}**\n\n`;
           }
 
           const sceneList = sceneIdxs
@@ -102,7 +102,7 @@ export class CharacterHoverProvider implements vscode.HoverProvider {
             .map(idx => `${doc.properties.scenes[idx].number}`)
             // 去除重复的场号
             .filter((value, index, self) => self.indexOf(value) === index)
-            .map(tx => `Scene ${tx}`)
+            .map(tx => `🎬 ${tx}`)
             .join(", ");
 
           txt += `appears in:  \n${sceneList}`;
