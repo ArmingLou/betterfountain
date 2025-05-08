@@ -1745,7 +1745,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                 var sty = 'action';
                 var al;
-                if ((text.startsWith('{=') && text.endsWith('=}')) || (text.startsWith('{#') && text.endsWith('#}')) || (text.startsWith('{+') && text.endsWith('+}')) || (text.startsWith('{-') && text.endsWith('-}'))) {
+                if ((text.startsWith('{=') && text.endsWith('=} ↓')) || (text.startsWith('{#') && text.endsWith('#} ↓')) || (text.startsWith('{+') && text.endsWith('+} ↓')) || (text.startsWith('{-') && text.endsWith('-} ↑'))) {
                     // 交切镜头标志
                     text_properties.bold = true;
                     sty = 'shotCut';

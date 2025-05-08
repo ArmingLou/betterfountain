@@ -1088,10 +1088,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     var matchdisplay = text_valid.match(regex.transition)
                     if (matchdisplay && matchdisplay.length > 2 && matchdisplay[2]) {
                         var tx = matchdisplay[2].trim();
-                        if (tx.startsWith('{+') && tx.endsWith('+}')) {
+                        if (tx.startsWith('{+') && tx.endsWith('+} ↓')) {
                             shotCut = 1;
                             shotCutStrctTokens.push({ duration: 0, structs: lastScenStructureToken ? [lastScenStructureToken] : [] });// 默认添加当前所在的 scence
-                        } else if (tx.startsWith('{#') && tx.endsWith('#}')) {
+                        } else if (tx.startsWith('{#') && tx.endsWith('#} ↓')) {
                             shotCut = 2;
                             shotCutStrctTokens.push({ duration: 0, structs: [] });
                             // 包含 前一个，当前，和以后都
@@ -1102,10 +1102,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                                 shotCutStrctTokens[shotCutStrctTokens.length - 1].structs.push(lastScenStructureToken);
                             }
 
-                        } else if (tx.startsWith('{=') && tx.endsWith('=}')) {
+                        } else if (tx.startsWith('{=') && tx.endsWith('=} ↓')) {
                             shotCut = 3;
                             shotCutStrctTokens.push({ duration: 0, structs: [] });
-                        } else if (tx.startsWith('{-') && tx.endsWith('-}')) {
+                        } else if (tx.startsWith('{-') && tx.endsWith('-} ↑')) {
                             shotCut = 0;
                         }
                     }
