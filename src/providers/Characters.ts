@@ -104,8 +104,10 @@ export class CharacterHoverProvider implements vscode.HoverProvider {
             .filter((value, index, self) => self.indexOf(value) === index)
             .map(tx => `🎬 ${tx}`)
             .join(", ");
+            
+          var tot = sceneList.split(", ").length;
 
-          txt += `appears in:  \n${sceneList}`;
+          txt += `appears in (${tot} scenes):  \n${sceneList}`;
 
           const hoverText = new vscode.MarkdownString(txt);
           hoverText.isTrusted = true;

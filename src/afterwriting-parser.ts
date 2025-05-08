@@ -1366,7 +1366,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             if (cfg.emitalic_dialog) {
                 thistoken.text = charOfStyleTag.italic_global_begin + thistoken.text + charOfStyleTag.italic_global_end;
             } //根据配置，施加斜体样式，如果可以的话。
-            
+
             if (result.properties.scenes.length < 1) {
                 var txt = result.properties.characterDescribe.get(previousCharacter);
                 if (txt) {
@@ -1452,6 +1452,26 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     })
 
     result.properties.sceneNumberVars = new Set(dupScenceNuber.keys());
+
+    // 处理完所有的 token 了， 进行最后的处理
+    // 所有 action 里面出现过的 角色，也应该计入在场景中出现过， 但角色的定义，是需要用对话语法，才会被定义为角色。或者可以在前言页中提前用对话语法定义，这里就是借用为人设描述。
+    var last_scene_idx = -1;
+    result.tokens.forEach(it => {
+        if (it.type == "scene_heading") {
+            last_scene_idx++;
+        } else if (last_scene_idx >= 0 && it.type == "action") {
+            if (it.text && it.text.length > 0) {
+                result.properties.characters.forEach((v, k) => {
+                    if (v.indexOf(last_scene_idx) == -1) {
+                        if (it.text.indexOf(k) != -1) {
+                            v.push(last_scene_idx);
+                            result.properties.characters.set(k, v);
+                        }
+                    }
+                })
+            }
+        }
+    })
 
     // tidy up separators
 

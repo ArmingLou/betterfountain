@@ -55,7 +55,7 @@ class LocationTreeItem extends vscode.TreeItem {
     var scencNum = new Set();
     for (const location of locations) {
       var nb = location.scene_number;
-      if(scencNum.has(nb)) {
+      if (scencNum.has(nb)) {
         nb = `↑${nb}`;
       } else {
         scencNum.add(location.scene_number);
@@ -70,7 +70,7 @@ export class LocationDefinitionProvider implements vscode.DefinitionProvider {
   provideDefinition(document: vscode.TextDocument, position: vscode.Position): vscode.Definition {
     const doc = activeParsedDocument();
     if (!doc) return null;
-    
+
     if (!doc.properties.sceneLines.includes(position.line)) {
       // 场景行中
       return null;
@@ -117,7 +117,7 @@ export class LocationReferenceProvider implements vscode.ReferenceProvider {
   provideReferences(document: vscode.TextDocument, position: vscode.Position, _context: vscode.ReferenceContext): vscode.ProviderResult<vscode.Location[]> {
     const doc = activeParsedDocument();
     if (!doc) return null;
-    
+
     if (!doc.properties.sceneLines.includes(position.line)) {
       // 场景行中
       return null;
@@ -166,7 +166,7 @@ export class LocationHoverProvider implements vscode.HoverProvider {
   provideHover(document: vscode.TextDocument, position: vscode.Position, _token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
     const doc = activeParsedDocument();
     if (!doc) return null;
-    
+
     if (!doc.properties.sceneLines.includes(position.line)) {
       // 场景行中
       return null;
@@ -216,7 +216,9 @@ export class LocationHoverProvider implements vscode.HoverProvider {
           .map(tx => `🎬 ${tx}`)
           .join(", ");
 
-        var txt = `🏠 **${name}**  \n\nappears in:  \n${sceneList}`;
+        var tot = sceneList.split(", ").length;
+
+        var txt = `🏠 **${name}**  \n\nappears in (${tot} scenes):  \n${sceneList}`;
 
         const hoverText = new vscode.MarkdownString(txt);
         hoverText.isTrusted = true;
