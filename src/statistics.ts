@@ -238,21 +238,21 @@ const createLocationStatistics = (parsed: parseoutput): locationStatistics => {
             const exterior = references.some(it => it.exterior && !it.interior); // 此地点，有外景
             let interior_exterior = 'unknown'; // 不确定什么景. 只有 地点的表格有 unknown
             let i = 0;
-            if(i_e){
+            if (i_e) {
                 i++;
                 interior_exterior = 'int-ext'
             }
-            if(interior){
+            if (interior) {
                 i++;
                 interior_exterior = 'int'
             }
-            if(exterior){
+            if (exterior) {
                 i++;
                 interior_exterior = 'ext'
             }
-            if (i > 1){
+            if (i > 1) {
                 interior_exterior = 'multiple' // 混合景，存在 多个景
-            } 
+            }
             return {
                 color: rgbToHex(wordToColor(location_slug)),
                 name: location_slug,
@@ -360,35 +360,66 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
 
             if (element.type == "action") {
                 action.push({ line: element.line, length: previousLengthAction, scene: currentScene });
+
+                // 角色线图，加上action的时间反映。只简单地对包含角色名的action行进行粗略统计。
+                if (element.charactersAction && element.charactersAction.length > 0) {
+                    element.charactersAction.forEach((character: string) => {
+                        if (!isNaN(element.time)) {
+                            let time = Number(element.time);
+                            let currentCharacter = characters.get(character);
+                            let dialogueLength = 0;
+                            let wordsLength = 0;
+                            let wordcount = getWordCount(element.text);
+                            if (!currentCharacter) {
+                                characters.set(character, []);
+                            }
+                            else if (currentCharacter.length > 0) {
+                                dialogueLength = currentCharacter[currentCharacter.length - 1].lengthTimeGlobal;
+                                wordsLength = currentCharacter[currentCharacter.length - 1].lengthWordsGlobal;
+                            }
+                            characters.get(character).push({
+                                line: element.line,
+                                lengthTime: element.time,
+                                lengthWords: wordcount,
+                                lengthTimeGlobal: dialogueLength + time,
+                                lengthWordsGlobal: wordsLength + wordcount,
+                                monologue: false,
+                                scene: currentScene,
+                            });
+                        }
+                    })
+                }
             }
             else if (element.type == "dialogue") {
                 dialogue.push({ line: element.line, length: previousLengthDialogue, scene: currentScene });
-                let currentCharacter = characters.get(element.character);
-                let dialogueLength = 0;
-                let wordsLength = 0;
-                let wordcount = getWordCount(element.text); // 写作统计，劳动力，可以用 显示的text
-                let time = Number(element.time);
-                if (!currentCharacter) {
-                    characters.set(element.character, []);
+                if (!isNaN(element.time)) {
+                    let currentCharacter = characters.get(element.character);
+                    let dialogueLength = 0;
+                    let wordsLength = 0;
+                    let wordcount = getWordCount(element.text); // 写作统计，劳动力，可以用 显示的text
+                    let time = Number(element.time);
+                    if (!currentCharacter) {
+                        characters.set(element.character, []);
+                    }
+                    else if (currentCharacter.length > 0) {
+                        dialogueLength = currentCharacter[currentCharacter.length - 1].lengthTimeGlobal;
+                        wordsLength = currentCharacter[currentCharacter.length - 1].lengthWordsGlobal;
+                    }
+                    let monologue = false;
+                    if (isMonologue(time)) {
+                        monologue = true;
+                        monologues++;
+                    }
+                    characters.get(element.character).push({
+                        line: element.line,
+                        lengthTime: element.time,
+                        lengthWords: wordcount,
+                        lengthTimeGlobal: dialogueLength + time,
+                        lengthWordsGlobal: wordsLength + wordcount,
+                        monologue: monologue, //monologue if dialogue is longer than 30 seconds
+                        scene: currentScene,
+                    });
                 }
-                else if (currentCharacter.length > 0) {
-                    dialogueLength = currentCharacter[currentCharacter.length - 1].lengthTimeGlobal;
-                    wordsLength = currentCharacter[currentCharacter.length - 1].lengthWordsGlobal;
-                }
-                let monologue = false;
-                if (isMonologue(time)) {
-                    monologue = true;
-                    monologues++;
-                }
-                characters.get(element.character).push({
-                    line: element.line,
-                    lengthTime: element.time,
-                    lengthWords: wordcount,
-                    lengthTimeGlobal: dialogueLength + time,
-                    lengthWordsGlobal: wordsLength + wordcount,
-                    monologue: monologue, //monologue if dialogue is longer than 30 seconds
-                    scene: currentScene,
-                });
             }
         }
     });
@@ -398,7 +429,7 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
             scenes[scenes.length - 1].endline = scene.line - 1;
         }
         var deconstructedSlug = regex.scene_heading.exec(scene.text);
-        let sceneType: 'int' | 'ext' | 'ie' | 'unknown' ; 
+        let sceneType: 'int' | 'ext' | 'ie' | 'unknown';
         let sceneTime
         if (deconstructedSlug) {
             sceneType = locationtype(deconstructedSlug?.[1]);

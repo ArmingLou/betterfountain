@@ -212,7 +212,6 @@ export class screenplayProperties {
     characterFirstLine: Map<string, number>; //第一个场景之前，序言页中的人物行
     characterDescribe: Map<string, string>; //第一个场景之前，序言页中的 对应的人设文档
     characterSceneNumber: Map<string, Set<string>>; //角色场景号，去除重复分切的场景。
-    characterActionSec: Map<string, Map<number, number>>; //角色粗略的动作时长统计，只对有出现角色名字的action行行进行粗略统计。Map<number, number>: [行数，累计到此行的动作时长]
 }
 export interface parseoutput {
     scriptHtml: string,
@@ -276,7 +275,6 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 characterFirstLine: new Map<string, number>(),
                 characterDescribe: new Map<string, string>(),
                 characterSceneNumber: new Map<string, Set<string>>(),
-                characterActionSec: new Map<string, Map<number, number>>(),
             }
         };
     if (!script) {
@@ -1465,18 +1463,49 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             last_scene_idx++;
         } else if (last_scene_idx >= 0 && it.type == "action") {
             if (it.text && it.text.length > 0) {
-                result.properties.characters.forEach((v, k) => {
-                    if (it.text.indexOf(k) != -1) {
+                var char = new Map<string, number[]>(); // 角色，在行中字符index 的 start 和 end
+                // 先将result.properties.characters 按照角色名的长度排序，长的在前面
+                var sorted = Array.from(result.properties.characters.keys()).sort((a, b) => b.length - a.length);
+                sorted.forEach(k => {
+                    // 需要判断，角色名匹配，不能在同一行中 索引重叠。如果出现长名字包含短名字的情况，优先匹配长名字：
+                    // 例如： 角色名是： "小明" 和 "小明的爸爸"。 如果 action 中出现了 "小明的爸爸"， 那么"小明" 就不算在 action 中出现过。
+                    // 如果有两个角色“小明” 和 “明打” 。那么句子“小明打了他”，那么“小明”优先算在 action 中出现过，但和 “明打” 不算出现过，因为索引重叠了。
+                    var added = false;
+                    var i = 0;
+                    while (i < it.text.length) {
+                        var idx = it.text.indexOf(k, i);
+                        if (idx != -1) {
+                            var start = idx;
+                            var end = start + k.length;
+                            var overlap = false;
+                            char.forEach((v, _k) => {
+                                if (v[0] < end && v[1] > start) {
+                                    overlap = true;
+                                }
+                            })
+                            if (!overlap) {
+                                char.set(k, [start, end]);
+                                added = true;
+                                break;
+                            } else {
+                                i = end; // 继续查找下一个
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if (added) {
+                        var v = result.properties.characters.get(k);
                         // 角色在 action 中出现过， 也算在场景中出现过
                         if (v.indexOf(last_scene_idx) == -1) {
                             v.push(last_scene_idx);
                             result.properties.characters.set(k, v); // 在对话中出现过的，已经在result.properties.characters中了，这里只补充action中出现但没有在对话中出现过的场景。
                         }
-                        // 处理动作时长
-                        if (!result.properties.characterActionSec.has(k)) {
-                            result.properties.characterActionSec.set(k, new Map<number, number>());
+                        if (!it.charactersAction) {
+                            it.charactersAction = [];
                         }
-                        result.properties.characterActionSec.get(k).set(it.line, it.time);
+                        it.charactersAction.push(k); // 已经排除了 序言页
                     }
                 })
             }

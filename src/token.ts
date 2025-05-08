@@ -13,6 +13,7 @@ export function create_token(text?: string, cursor?: number, line?: number, new_
         level:undefined,
         time:undefined,
         character:undefined,
+        charactersAction:undefined,
         index:-1,
         takeNumber:-1,
         is:function(...args:string[]){
@@ -85,4 +86,5 @@ export interface token {
     character:string;
     ignore:boolean;
     index:number;
+    charactersAction:string[]; // action 类型专用，该 action 行 包含哪些 角色
 }
