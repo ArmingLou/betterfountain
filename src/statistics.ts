@@ -28,6 +28,7 @@ type dialogueStatisticPerCharacter = {
     secondsSpoken: number,
     averageComplexity: number,
     monologues: number,
+    number_of_scenes: number,
     color: string
 }
 
@@ -201,6 +202,7 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
             averageComplexity,
             monologues,
             wordsSpoken,
+            number_of_scenes: parsed.properties.characterSceneNumber.get(singledialPerChar).size,
         })
     })
 
@@ -215,7 +217,7 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
     })
 
     return {
-        characters: characterStats,
+        characters: characterStats, // 包含各个角色的统计信息，用在统计面板>角色>底部表格
         complexity: median(speechcomplexityArray),
         characterCount: characterStats.length,
         monologues: monologueCounter

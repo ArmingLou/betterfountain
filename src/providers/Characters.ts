@@ -42,6 +42,16 @@ function buildCharacterTree(): CharacterTreeItem {
       const child = new CharacterTreeItem(FSFormat.nameToNatural(character), scenes, root);
       root.children.push(child);
     }
+    root.children.sort((a, b) => {
+      if ((a as CharacterTreeItem).scenes.length < (b as CharacterTreeItem).scenes.length) {
+        return 1;
+      } else if ((a as CharacterTreeItem).scenes.length > (b as CharacterTreeItem).scenes.length) {
+        return -1;
+      } else {
+        return 0;
+      }
+    }
+    );
   }
   return root;
 }
@@ -84,7 +94,7 @@ export class CharacterHoverProvider implements vscode.HoverProvider {
     }
 
     const lineText = document.lineAt(position.line).text;
-    for (const [name, sceneIdxs] of doc.properties.characters) {
+    for (const [name] of doc.properties.characters) {
       if (lineText.includes(name)) {
         const startIdx = lineText.indexOf(name);
         const endIdx = startIdx + name.length;
@@ -97,15 +107,10 @@ export class CharacterHoverProvider implements vscode.HoverProvider {
             txt = `👤 **${name}**\n\n`;
           }
 
-          const sceneList = sceneIdxs
-            .filter(idx => idx >= 0)
-            .map(idx => `${doc.properties.scenes[idx].number}`)
-            // 去除重复的场号
-            .filter((value, index, self) => self.indexOf(value) === index)
-            .map(tx => `🎬 ${tx}`)
+          const sceneList = Array.from(doc.properties.characterSceneNumber.get(name)).map(tx => `🎬 ${tx}`)
             .join(", ");
-            
-          var tot = sceneList.split(", ").length;
+
+          var tot = doc.properties.characterSceneNumber.get(name).size;
 
           txt += `appears in (${tot} scenes):  \n${sceneList}`;
 

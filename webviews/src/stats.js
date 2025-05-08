@@ -355,7 +355,8 @@ function updateStats() {
         unit: "characters",
         columns: [
             { data: 'name', name: "name", title: "Name", alwaysvisible: true },
-            { data: 'secondsSpoken', name: "duration", title: "Duration", render: renderDuration },
+            { data: 'number_of_scenes', name: "scenes", title: "Scenes", render: renderInvert },
+            { data: 'secondsSpoken', name: "duration", title: "Dialogue Duration", render: renderDuration },
             { data: 'speakingParts', name: "lines", title: "Dialogues", render: renderInvert },
             { data: 'wordsSpoken', name: "chars", title: "Chars", render: renderInvert },
             { data: 'averageComplexity', name: "complexity", title: "Complexity", render: renderComplexity },
@@ -393,7 +394,7 @@ function updateStats() {
         unit: "locations",
         columns: [
             { data: 'name', name: "name", title: "Name" },
-            { data: 'number_of_scenes', name: "number_of_scenes", title: "Number of Scenes", render: renderInteger },
+            { data: 'number_of_scenes', name: "number_of_scenes", title: "Scenes", render: renderInteger },
             { data: 'times_of_day', name: "times_of_day", title: "Time", render: renderTimesOfDay, className: 'location-time' },
             { data: 'interior_exterior', name: "interior_exterior", title: "I or E", render: renderIntExt, className: 'location-type' },
         ],

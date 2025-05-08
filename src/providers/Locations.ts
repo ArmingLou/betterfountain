@@ -44,6 +44,16 @@ function buildLocationTree(): LocationTreeItem {
       root.children.push(child);
     }
   }
+  root.children.sort((a, b) => {
+    if ((a as LocationTreeItem).children.length < (b as LocationTreeItem).children.length) {
+      return 1;
+    } else if ((a as LocationTreeItem).children.length > (b as LocationTreeItem).children.length) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
+  );
   return root;
 }
 

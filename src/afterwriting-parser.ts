@@ -204,13 +204,15 @@ export class screenplayProperties {
     fontLine: number;
     lengthAction: number; //Length of the action character count
     lengthDialogue: number; //Length of the dialogue character count
-    characters: Map<string, number[]>; //人物，对应出现于场景头的索引
+    characters: Map<string, number[]>; //人物，对应出现于场景头的索引，包含重复的分切场景索引
     locations: Map<string, Location[]>;
     structure: StructToken[];
     sceneNumberVars: Set<string>;
     characterLines: Map<number, string>;
     characterFirstLine: Map<string, number>; //第一个场景之前，序言页中的人物行
     characterDescribe: Map<string, string>; //第一个场景之前，序言页中的 对应的人设文档
+    characterSceneNumber: Map<string, Set<string>>; //角色场景号，去除重复分切的场景。
+    characterActionSec: Map<string, Map<number, number>>; //角色粗略的动作时长统计，只对有出现角色名字的action行行进行粗略统计。Map<number, number>: [行数，累计到此行的动作时长]
 }
 export interface parseoutput {
     scriptHtml: string,
@@ -273,6 +275,8 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 characterLines: new Map<number, string>(),
                 characterFirstLine: new Map<string, number>(),
                 characterDescribe: new Map<string, string>(),
+                characterSceneNumber: new Map<string, Set<string>>(),
+                characterActionSec: new Map<string, Map<number, number>>(),
             }
         };
     if (!script) {
@@ -1462,16 +1466,33 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         } else if (last_scene_idx >= 0 && it.type == "action") {
             if (it.text && it.text.length > 0) {
                 result.properties.characters.forEach((v, k) => {
-                    if (v.indexOf(last_scene_idx) == -1) {
-                        if (it.text.indexOf(k) != -1) {
+                    if (it.text.indexOf(k) != -1) {
+                        // 角色在 action 中出现过， 也算在场景中出现过
+                        if (v.indexOf(last_scene_idx) == -1) {
                             v.push(last_scene_idx);
-                            result.properties.characters.set(k, v);
+                            result.properties.characters.set(k, v); // 在对话中出现过的，已经在result.properties.characters中了，这里只补充action中出现但没有在对话中出现过的场景。
                         }
+                        // 处理动作时长
+                        if (!result.properties.characterActionSec.has(k)) {
+                            result.properties.characterActionSec.set(k, new Map<number, number>());
+                        }
+                        result.properties.characterActionSec.get(k).set(it.line, it.time);
                     }
                 })
             }
         }
     })
+    // result.properties.characters 转换成 result.properties.characterSceneNumber
+    result.properties.characters.forEach((v, k) => {
+        var sets = new Set<string>();
+        // sort 按照场景头索引排序
+        // 去掉负数的场景号
+        v.sort((a, b) => a - b).filter(it => it >= 0).forEach(it => {
+            sets.add(result.properties.scenes[it].number);
+        })
+        result.properties.characterSceneNumber.set(k, sets);
+    })
+
 
     // tidy up separators
 
