@@ -40,7 +40,7 @@ export function removeStatisticsPanel(id: Number) {
 
 export async function refreshStatsPanel(statspanel: vscode.WebviewPanel, document: vscode.TextDocument, config: FountainConfig) {
   statspanel.webview.postMessage({ command: "updateversion", version: document.version, loading: true });
-  var parsed = afterparser.parse(document.getText(), config, false);
+  var parsed = afterparser.parse(document.getText(), config, false, true);
   const stats = await retrieveScreenPlayStatistics(document.getText(), parsed, config, undefined);
   statspanel.webview.postMessage({ command: 'updateStats', content: stats, version: document.version });
 }

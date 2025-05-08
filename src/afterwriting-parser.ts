@@ -225,7 +225,7 @@ export interface parseoutput {
     parseTime: number,
     properties: screenplayProperties
 }
-export var parse = function (original_script: string, cfg: any, generate_html: boolean): parseoutput {
+export var parse = function (original_script: string, cfg: any, generate_html: boolean, for_statistics: boolean = false): parseoutput {
     var block_inner = false;
     // var block_dialogue = false;
     // var block_except_dialogue = false;
@@ -669,6 +669,14 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // line_match_type = ''; // 是否 block 首行
         text_display = '';// 视乎打印设置是否打印note，可以包含 note 内容。
         text_valid = '';// 去除 注解 和 note 后的 有效内容， 用来判定文本内容性质。
+        var _line = i;
+        if(for_statistics){
+            if(result.properties.firstSceneLine < 0 ){
+                _line = 0;
+            } else {
+                _line = i - result.properties.firstSceneLine;
+            }
+        }
 
         var beforEmpty = text.trim().length === 0;
         var match_block_end_empty_line = false;
@@ -748,7 +756,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
 
         }
 
-        thistoken = create_token(text_display, current_cursor, i, new_line_length);
+        thistoken = create_token(text_display, current_cursor, _line, new_line_length);
         current_cursor = thistoken.end + 1;
 
 
@@ -1282,7 +1290,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     thistoken.type = "page_break";
                     if (text_valid != text_display) {
                         text_display = text_display.replace(/(?<=(↻)|(^))\s*\=+\s*(?=(இ)|(↺)|($))/g, "");
-                        notetoken = create_token(text_display, current_cursor, i, new_line_length);
+                        notetoken = create_token(text_display, current_cursor, _line, new_line_length);
                         notetoken.type = "action";
                         current_cursor = notetoken.end + 1;
                     }
