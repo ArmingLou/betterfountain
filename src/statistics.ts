@@ -346,6 +346,7 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
     let currentScene = "";
     let monologues = 0;
     let scenepropDurations = new Map<string, number>();
+    
     parsed.tokens.forEach(element => {
         if (element.type == "action" || element.type == "dialogue") {
             let time = Number(element.time);
@@ -376,6 +377,30 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                             else if (currentCharacter.length > 0) {
                                 dialogueLength = currentCharacter[currentCharacter.length - 1].lengthTimeGlobal;
                                 wordsLength = currentCharacter[currentCharacter.length - 1].lengthWordsGlobal;
+                            }
+                            // 判断characters.get(character)的上一个元素的line 和当前 line 相差是否大于10，如果大于10，那么添加不活跃处理，曲线往0走。在他们之间push lengthTimeGlobal 为0的元素。line为中间。
+                            if(characters.get(character) && characters.get(character).length > 0){
+                                let lastLine = characters.get(character)[characters.get(character).length - 1].line;
+                                if (lastLine + 100 < element.line) {
+                                    characters.get(character).push({
+                                        line: lastLine + 1,
+                                        lengthTime: 0,
+                                        lengthWords: 0,
+                                        lengthTimeGlobal: 0,
+                                        lengthWordsGlobal: 0,
+                                        monologue: false,
+                                        scene: currentScene,
+                                    });
+                                    characters.get(character).push({
+                                        line: element.line - 1,
+                                        lengthTime: 0,
+                                        lengthWords: 0,
+                                        lengthTimeGlobal: 0,
+                                        lengthWordsGlobal: 0,
+                                        monologue: false,
+                                        scene: currentScene,
+                                    });
+                                }
                             }
                             characters.get(character).push({
                                 line: element.line,
@@ -410,6 +435,32 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                         monologue = true;
                         monologues++;
                     }
+                    
+                    // 判断characters.get(character)的上一个元素的line 和当前 line 相差是否大于10，如果大于10，那么添加不活跃处理，曲线往0走。在他们之间push lengthTimeGlobal 为0的元素。line为中间。
+                    if(characters.get(element.character) && characters.get(element.character).length > 0){
+                        let lastLine = characters.get(element.character)[characters.get(element.character).length - 1].line;
+                        if (lastLine + 100 < element.line) {
+                            characters.get(element.character).push({
+                                line: lastLine + 1,
+                                lengthTime: 0,
+                                lengthWords: 0,
+                                lengthTimeGlobal: 0,
+                                lengthWordsGlobal: 0,
+                                monologue: false,
+                                scene: currentScene,
+                            });
+                            characters.get(element.character).push({
+                                line: element.line - 1,
+                                lengthTime: 0,
+                                lengthWords: 0,
+                                lengthTimeGlobal: 0,
+                                lengthWordsGlobal: 0,
+                                monologue: false,
+                                scene: currentScene,
+                            });
+                        }
+                    }
+                    
                     characters.get(element.character).push({
                         line: element.line,
                         lengthTime: element.time,

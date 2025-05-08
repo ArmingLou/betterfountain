@@ -201,6 +201,7 @@ export class screenplayProperties {
     sceneNames: string[];
     titleKeys: string[];
     firstTokenLine: number;
+    firstSceneLine: number;
     fontLine: number;
     lengthAction: number; //Length of the action character count
     lengthDialogue: number; //Length of the dialogue character count
@@ -264,6 +265,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 sceneNames: [],
                 titleKeys: [],
                 firstTokenLine: Infinity,
+                firstSceneLine: -1,
                 fontLine: -1,
                 lengthAction: 0,
                 lengthDialogue: 0,
@@ -933,6 +935,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 // 匹配需要前面是空行的情况
                 if (text_valid.match(regex.scene_heading)) {
                     processTitlePageEnd(i);
+                    if(result.properties.firstSceneLine<0){
+                        result.properties.firstSceneLine = i;
+                    }
 
                     let sceneHeadingMatch = text_valid.match(regex.scene_heading);
 
