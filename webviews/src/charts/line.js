@@ -105,6 +105,9 @@ define(function (require) {
                 function appendStructLine(token) {
                     // let tokenline = token.range[0].line;
                     let tokenline = token.playSec;
+                    if(!tokenline){
+                        return
+                    }
                     let opacity = 0.1;
                     let xpos = x(tokenline);
                     let tokentype = "";
