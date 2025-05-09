@@ -351,14 +351,14 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
     let monologues = 0;
     let scenepropDurations = new Map<string, number>();
 
-    let gap = 76;
+    let gap = 60;
     // 动态设置人物线图的 下沉 距离。
     if (parsed.tokens && parsed.tokens.length > 1) {
         // if (parsed.tokens[parsed.tokens.length - 1].line && parsed.tokens[parsed.tokens.length - 1].line > 250) {
         //     gap = parsed.tokens[parsed.tokens.length - 1].line / 25
         // }
         if (parsed.properties.lengthAction + parsed.properties.lengthDialogue > 380) {
-            gap = (parsed.properties.lengthAction + parsed.properties.lengthDialogue) / 5
+            gap = (parsed.properties.lengthAction + parsed.properties.lengthDialogue) / 6
         }
     }
 
@@ -395,10 +395,11 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                                 wordsLength = currentCharacter[currentCharacter.length - 1].lengthWordsGlobal;
                             }
                             // 判断characters.get(character)的上一个元素的line 和当前 line 相差是否大于10，如果大于10，那么添加不活跃处理，曲线往0走。在他们之间push lengthTimeGlobal 为0的元素。line为中间。
+                            let insertPre = false;
                             if (characters.get(character) && characters.get(character).length > 0) {
                                 let lastLine = characters.get(character)[characters.get(character).length - 1].line;
                                 let lastPlayTimeSec = characters.get(character)[characters.get(character).length - 1].playTimeSec;
-                                if (lastPlayTimeSec + gap < element.playTimeSec) {
+                                if (lastPlayTimeSec + gap < element.playTimeSec - element.time) {
                                     characters.get(character).push({
                                         line: lastLine + 1,
                                         playTimeSec: lastPlayTimeSec + 1,
@@ -409,17 +410,33 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                                         monologue: false,
                                         scene: currentScene,
                                     });
-                                    characters.get(character).push({
-                                        line: element.line - 1,
-                                        playTimeSec: element.playTimeSec - 1,
-                                        lengthTime: 0,
-                                        lengthWords: 0,
-                                        lengthTimeGlobal: 0,
-                                        lengthWordsGlobal: 0,
-                                        monologue: false,
-                                        scene: currentScene,
-                                    });
+                                    insertPre = true;
                                 }
+                            } else {
+                                // 第一个元素
+                                insertPre = true;
+                            }
+                            if (insertPre) {
+                                characters.get(character).push({
+                                    line: element.line - 2,
+                                    playTimeSec: element.playTimeSec - element.time - 1,
+                                    lengthTime: 0,
+                                    lengthWords: 0,
+                                    lengthTimeGlobal: 0,
+                                    lengthWordsGlobal: 0,
+                                    monologue: false,
+                                    scene: currentScene,
+                                });
+                                characters.get(character).push({
+                                    line: element.line - 1,
+                                    playTimeSec: element.playTimeSec - element.time,
+                                    lengthTime: 0,
+                                    lengthWords: 0,
+                                    lengthTimeGlobal: dialogueLength,
+                                    lengthWordsGlobal: wordsLength,
+                                    monologue: false,
+                                    scene: currentScene,
+                                });
                             }
                             characters.get(character).push({
                                 line: element.line,
@@ -456,11 +473,12 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                         monologues++;
                     }
 
+                    let insertPre = false;
                     // 判断characters.get(character)的上一个元素的line 和当前 line 相差是否大于10，如果大于10，那么添加不活跃处理，曲线往0走。在他们之间push lengthTimeGlobal 为0的元素。line为中间。
                     if (characters.get(element.character) && characters.get(element.character).length > 0) {
                         let lastLine = characters.get(element.character)[characters.get(element.character).length - 1].line;
                         let lastPlayTimeSec = characters.get(element.character)[characters.get(element.character).length - 1].playTimeSec;
-                        if (lastPlayTimeSec + gap < element.playTimeSec) {
+                        if (lastPlayTimeSec + gap < element.playTimeSec - element.time) {
                             characters.get(element.character).push({
                                 line: lastLine + 1,
                                 playTimeSec: lastPlayTimeSec + 1,
@@ -471,17 +489,33 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                                 monologue: false,
                                 scene: currentScene,
                             });
-                            characters.get(element.character).push({
-                                line: element.line - 1,
-                                playTimeSec: element.playTimeSec - 1,
-                                lengthTime: 0,
-                                lengthWords: 0,
-                                lengthTimeGlobal: 0,
-                                lengthWordsGlobal: 0,
-                                monologue: false,
-                                scene: currentScene,
-                            });
+                            insertPre = true;
                         }
+                    } else {
+                        // 第一个元素
+                        insertPre = true;
+                    }
+                    if (insertPre) {
+                        characters.get(element.character).push({
+                            line: element.line - 2,
+                            playTimeSec: element.playTimeSec - element.time - 1,
+                            lengthTime: 0,
+                            lengthWords: 0,
+                            lengthTimeGlobal: 0,
+                            lengthWordsGlobal: 0,
+                            monologue: false,
+                            scene: currentScene,
+                        });
+                        characters.get(element.character).push({
+                            line: element.line - 1,
+                            playTimeSec: element.playTimeSec - element.time,
+                            lengthTime: 0,
+                            lengthWords: 0,
+                            lengthTimeGlobal: dialogueLength,
+                            lengthWordsGlobal: wordsLength,
+                            monologue: false,
+                            scene: currentScene,
+                        });
                     }
 
                     characters.get(element.character).push({
