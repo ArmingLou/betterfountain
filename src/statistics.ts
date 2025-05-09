@@ -45,6 +45,7 @@ type lengthStatistics = {
     pages: number;
     pagesreal: number;
     scenes: number;
+    lines_first_scene: number;
 }
 
 type lengthchartitem = {
@@ -346,7 +347,16 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
     let currentScene = "";
     let monologues = 0;
     let scenepropDurations = new Map<string, number>();
-    
+
+    let gap = 10;
+    // 动态设置人物线图的 下沉 距离。
+    if (parsed.tokens && parsed.tokens.length > 1) {
+        if (parsed.tokens[parsed.tokens.length - 1].line && parsed.tokens[parsed.tokens.length - 1].line > 250) {
+            gap = parsed.tokens[parsed.tokens.length - 1].line / 25
+        }
+    }
+
+
     parsed.tokens.forEach(element => {
         if (element.type == "action" || element.type == "dialogue") {
             let time = Number(element.time);
@@ -379,9 +389,9 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                                 wordsLength = currentCharacter[currentCharacter.length - 1].lengthWordsGlobal;
                             }
                             // 判断characters.get(character)的上一个元素的line 和当前 line 相差是否大于10，如果大于10，那么添加不活跃处理，曲线往0走。在他们之间push lengthTimeGlobal 为0的元素。line为中间。
-                            if(characters.get(character) && characters.get(character).length > 0){
+                            if (characters.get(character) && characters.get(character).length > 0) {
                                 let lastLine = characters.get(character)[characters.get(character).length - 1].line;
-                                if (lastLine + 100 < element.line) {
+                                if (lastLine + gap < element.line) {
                                     characters.get(character).push({
                                         line: lastLine + 1,
                                         lengthTime: 0,
@@ -435,11 +445,11 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                         monologue = true;
                         monologues++;
                     }
-                    
+
                     // 判断characters.get(character)的上一个元素的line 和当前 line 相差是否大于10，如果大于10，那么添加不活跃处理，曲线往0走。在他们之间push lengthTimeGlobal 为0的元素。line为中间。
-                    if(characters.get(element.character) && characters.get(element.character).length > 0){
+                    if (characters.get(element.character) && characters.get(element.character).length > 0) {
                         let lastLine = characters.get(element.character)[characters.get(element.character).length - 1].line;
-                        if (lastLine + 100 < element.line) {
+                        if (lastLine + gap < element.line) {
                             characters.get(element.character).push({
                                 line: lastLine + 1,
                                 lengthTime: 0,
@@ -460,7 +470,7 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                             });
                         }
                     }
-                    
+
                     characters.get(element.character).push({
                         line: element.line,
                         lengthTime: element.time,
@@ -552,6 +562,12 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
         characterNames.push(key);
         characterDuration.push(value);
     });
+    
+    // const suffLines = parsed.properties.
+    // if(action.length>0){
+    //     // 末尾复制多一个元素插入数组，只是 line+1
+        
+    // }
 
     return { action: action, dialogue: dialogue, durationByProp: mapToObject(scenepropDurations), scenes: scenes, characters: characterDuration, characternames: characterNames, monologues: monologues };
 };
@@ -581,6 +597,7 @@ const createLengthStatistics = (script: string, pdf: pdfstats, parsed: parseoutp
         words: getWordCount(script),
         pagesreal: pdf.pagecountReal,
         pages: pdf.pagecount,
+        lines_first_scene: parsed.properties.firstSceneLine,
         scenes: Array.from(new Set(parsed.properties.scenes
             .map(scene => scene.number)
             .filter(number => number)))

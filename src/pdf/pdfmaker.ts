@@ -2018,8 +2018,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // 或者 满足 页面自动换页
 
             if (lineStructs) {
-                if (line.token.line && !lineStructs.has(line.token.line)) {
-                    lineStructs.set(line.token.line, { page: page, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
+                if ((line.token.line || line.token.line ===0) && !lineStructs.has(line.token.line)) {
+                    const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
+                    lineStructs.set(line.token.line, { page: p, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
                 }
             }
 
@@ -2117,8 +2118,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // height += line_height;
 
             if (lineStructs) {
-                if (line.token.line && !lineStructs.has(line.token.line)) {
-                    lineStructs.set(line.token.line, { page: page, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
+                if ((line.token.line || line.token.line ===0) && !lineStructs.has(line.token.line)) {
+                    const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
+                    lineStructs.set(line.token.line, { page: p, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
                 }
             }
         } else {
@@ -2524,9 +2526,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
             // y++;
             if (lineStructs) {
-                if (line.token.line && !lineStructs.has(line.token.line)) {
+                if ((line.token.line || line.token.line ===0) && !lineStructs.has(line.token.line)) {
                     if (line.token.time) currentDuration += line.token.time;
-                    lineStructs.set(line.token.line, { page: page, scene: currentScene, sections: currentSections.slice(0), cumulativeDuration: currentDuration })
+                    const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
+                    lineStructs.set(line.token.line, { page: p, scene: currentScene, sections: currentSections.slice(0), cumulativeDuration: currentDuration })
                 }
             }
         }

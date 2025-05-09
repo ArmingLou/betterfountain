@@ -33,10 +33,10 @@ define(function (require) {
         var longestData = 0;
         var screenplaylineInfo = [];
         
-        if(config.display == "barcode"){
+        // if(config.display == "barcode"){
             longestData = config.longestData;
-        }
-        else if(config.display == "line"){
+        // }
+        if(config.display == "line"){
             datas.forEach(data => {
                 data.forEach(function (item) {
                     var value = item[config.yvalue];
@@ -46,7 +46,7 @@ define(function (require) {
                     if (value > max) {
                         max = value;
                     }
-                    if (item[config.xvalue] > longestData) longestData = item[config.xvalue];
+                    // if (item[config.xvalue]+2 > longestData) longestData = item[config.xvalue]+2;
                 });
             });
         }

@@ -450,6 +450,7 @@ function updateStats() {
         chart: LineChart.render('#durationStats-lengthchart', [state.stats.durationStats.lengthchart_action, state.stats.durationStats.lengthchart_dialogue], state.uipersistence, {
             yvalue: 'length',
             xvalue: 'line',
+            longestData: state.stats.lengthStats.lines - state.stats.lengthStats.lines_first_scene + 1 + ((state.stats.lengthStats.lines - state.stats.lengthStats.lines_first_scene)/100), //最起码多2行，再根据数据密集程度，按比例增加宽度以免鼠标无法触发末端界限。
             rulerheight: 6,
             display: 'line',
             small: getWidth(),
@@ -486,6 +487,7 @@ function updateStats() {
         chart: LineChart.render('#characterStats-lengthchart', state.stats.durationStats.characters, state.uipersistence, {
             yvalue: 'lengthTimeGlobal',
             xvalue: 'line',
+            longestData: state.stats.lengthStats.lines - state.stats.lengthStats.lines_first_scene + 1 + ((state.stats.lengthStats.lines - state.stats.lengthStats.lines_first_scene)/100), //最起码多2行，再根据数据密集程度，按比例增加宽度以免鼠标无法触发末端界限。
             rulerheight: 6,
             display: 'line',
             pointvalue: 'monologue',
@@ -510,7 +512,7 @@ function updateStats() {
             xvalueend: 'endline',
             display: 'barcode',
             rulerheight: 0,
-            longestData: state.stats.lengthStats.lines,
+            longestData: state.stats.lengthStats.lines - state.stats.lengthStats.lines_first_scene + 1 + ((state.stats.lengthStats.lines - state.stats.lengthStats.lines_first_scene)/100), //最起码多2行，再根据数据密集程度，按比例增加宽度以免鼠标无法触发末端界限。
             small: getWidth(),
             labels: state.stats.durationStats.characternames,
             map: pdfmap,
