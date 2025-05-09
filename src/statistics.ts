@@ -50,12 +50,14 @@ type lengthStatistics = {
 
 type lengthchartitem = {
     line: number,
+    playTimeSec: number,
     scene: string,
     length: number
 }
 
 type dialoguechartitem = {
     line: number,
+    playTimeSec: number,
     scene: string,
     lengthTimeGlobal: number,
     lengthWordsGlobal: number,
@@ -258,7 +260,8 @@ const createLocationStatistics = (parsed: parseoutput): locationStatistics => {
                 color: rgbToHex(wordToColor(location_slug)),
                 name: location_slug,
                 scene_numbers: references.map(reference => reference.scene_number),
-                scene_lines: references.map(reference => reference.line),
+                // scene_lines: references.map(reference => reference.line),
+                scene_lines: references.map(reference => reference.startPlaySec),
                 // number_of_scenes: references.length,
                 number_of_scenes: Array.from(new Set(references
                     .map(scene => scene.scene_number)
@@ -338,8 +341,8 @@ function locationtime(val: string): string {
 }
 
 const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialogue: lengthchartitem[], durationByProp: any, characters: dialoguechartitem[][], scenes: sceneitem[], characternames: string[], monologues: number } => {
-    let action: lengthchartitem[] = [{ line: 0, length: 0, scene: undefined }]
-    let dialogue: lengthchartitem[] = [{ line: 0, length: 0, scene: undefined }]
+    let action: lengthchartitem[] = [{ line: 0, length: 0, scene: undefined, playTimeSec: 0 }]
+    let dialogue: lengthchartitem[] = [{ line: 0, length: 0, scene: undefined, playTimeSec: 0 }]
     let characters = new Map<string, dialoguechartitem[]>();
     let scenes: sceneitem[] = [];
     let previousLengthAction = 0;
@@ -348,11 +351,14 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
     let monologues = 0;
     let scenepropDurations = new Map<string, number>();
 
-    let gap = 10;
+    let gap = 76;
     // 动态设置人物线图的 下沉 距离。
     if (parsed.tokens && parsed.tokens.length > 1) {
-        if (parsed.tokens[parsed.tokens.length - 1].line && parsed.tokens[parsed.tokens.length - 1].line > 250) {
-            gap = parsed.tokens[parsed.tokens.length - 1].line / 25
+        // if (parsed.tokens[parsed.tokens.length - 1].line && parsed.tokens[parsed.tokens.length - 1].line > 250) {
+        //     gap = parsed.tokens[parsed.tokens.length - 1].line / 25
+        // }
+        if (parsed.properties.lengthAction + parsed.properties.lengthDialogue > 380) {
+            gap = (parsed.properties.lengthAction + parsed.properties.lengthDialogue) / 5
         }
     }
 
@@ -370,7 +376,7 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
             }
 
             if (element.type == "action") {
-                action.push({ line: element.line, length: previousLengthAction, scene: currentScene });
+                action.push({ line: element.line, length: previousLengthAction, scene: currentScene, playTimeSec: element.playTimeSec });
 
                 // 角色线图，加上action的时间反映。只简单地对包含角色名的action行进行粗略统计。
                 if (element.charactersAction && element.charactersAction.length > 0) {
@@ -391,9 +397,11 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                             // 判断characters.get(character)的上一个元素的line 和当前 line 相差是否大于10，如果大于10，那么添加不活跃处理，曲线往0走。在他们之间push lengthTimeGlobal 为0的元素。line为中间。
                             if (characters.get(character) && characters.get(character).length > 0) {
                                 let lastLine = characters.get(character)[characters.get(character).length - 1].line;
-                                if (lastLine + gap < element.line) {
+                                let lastPlayTimeSec = characters.get(character)[characters.get(character).length - 1].playTimeSec;
+                                if (lastPlayTimeSec + gap < element.playTimeSec) {
                                     characters.get(character).push({
                                         line: lastLine + 1,
+                                        playTimeSec: lastPlayTimeSec + 1,
                                         lengthTime: 0,
                                         lengthWords: 0,
                                         lengthTimeGlobal: 0,
@@ -403,6 +411,7 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                                     });
                                     characters.get(character).push({
                                         line: element.line - 1,
+                                        playTimeSec: element.playTimeSec - 1,
                                         lengthTime: 0,
                                         lengthWords: 0,
                                         lengthTimeGlobal: 0,
@@ -414,6 +423,7 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                             }
                             characters.get(character).push({
                                 line: element.line,
+                                playTimeSec: element.playTimeSec,
                                 lengthTime: element.time,
                                 lengthWords: wordcount,
                                 lengthTimeGlobal: dialogueLength + time,
@@ -426,7 +436,7 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                 }
             }
             else if (element.type == "dialogue") {
-                dialogue.push({ line: element.line, length: previousLengthDialogue, scene: currentScene });
+                dialogue.push({ line: element.line, length: previousLengthDialogue, scene: currentScene, playTimeSec: element.playTimeSec });
                 if (!isNaN(element.time)) {
                     let currentCharacter = characters.get(element.character);
                     let dialogueLength = 0;
@@ -449,9 +459,11 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                     // 判断characters.get(character)的上一个元素的line 和当前 line 相差是否大于10，如果大于10，那么添加不活跃处理，曲线往0走。在他们之间push lengthTimeGlobal 为0的元素。line为中间。
                     if (characters.get(element.character) && characters.get(element.character).length > 0) {
                         let lastLine = characters.get(element.character)[characters.get(element.character).length - 1].line;
-                        if (lastLine + gap < element.line) {
+                        let lastPlayTimeSec = characters.get(element.character)[characters.get(element.character).length - 1].playTimeSec;
+                        if (lastPlayTimeSec + gap < element.playTimeSec) {
                             characters.get(element.character).push({
                                 line: lastLine + 1,
+                                playTimeSec: lastPlayTimeSec + 1,
                                 lengthTime: 0,
                                 lengthWords: 0,
                                 lengthTimeGlobal: 0,
@@ -461,6 +473,7 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
                             });
                             characters.get(element.character).push({
                                 line: element.line - 1,
+                                playTimeSec: element.playTimeSec - 1,
                                 lengthTime: 0,
                                 lengthWords: 0,
                                 lengthTimeGlobal: 0,
@@ -473,6 +486,7 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
 
                     characters.get(element.character).push({
                         line: element.line,
+                        playTimeSec: element.playTimeSec,
                         lengthTime: element.time,
                         lengthWords: wordcount,
                         lengthTimeGlobal: dialogueLength + time,
@@ -486,9 +500,9 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
     });
     parsed.properties.scenes.forEach(scene => {
         currentScene = scene.text;
-        if (scenes.length > 0) {
-            scenes[scenes.length - 1].endline = scene.line - 1;
-        }
+        // if (scenes.length > 0) {
+        //     scenes[scenes.length - 1].endline = scene.line - 1;
+        // }
         var deconstructedSlug = regex.scene_heading.exec(scene.text);
         let sceneType: 'int' | 'ext' | 'ie' | 'unknown';
         let sceneTime
@@ -546,8 +560,8 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
         // }
         scenes.push({
             type: sceneType,
-            line: scene.line,
-            endline: 65500,
+            line: scene.startPlaySec,
+            endline: scene.endPlaySec,
             time: cs,
             scene: scene.text
         });
@@ -562,11 +576,11 @@ const getLengthChart = (parsed: parseoutput): { action: lengthchartitem[], dialo
         characterNames.push(key);
         characterDuration.push(value);
     });
-    
+
     // const suffLines = parsed.properties.
     // if(action.length>0){
     //     // 末尾复制多一个元素插入数组，只是 line+1
-        
+
     // }
 
     return { action: action, dialogue: dialogue, durationByProp: mapToObject(scenepropDurations), scenes: scenes, characters: characterDuration, characternames: characterNames, monologues: monologues };

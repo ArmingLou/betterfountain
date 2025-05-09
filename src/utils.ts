@@ -643,3 +643,21 @@ export function cleanStlyleChars(text: string): string {
 	let t = text.replace(new RegExp('[' + charOfStyleTag.all + ']', 'g'), '');
 	return t;
 }
+
+
+/**
+ * 将输入值转换为整数
+ * @param value 需要转换的值(可以是字符串、数字等)
+ * @param defaultValue 转换失败时的默认值(默认为0)
+ * @returns 转换后的整数
+ */
+export function toInt(value: unknown, defaultValue = 0): number {
+    if (typeof value === 'number') {
+        return Math.round(value);
+    }
+    if (typeof value === 'string') {
+        const num = parseFloat(value);
+        return isNaN(num) ? defaultValue : Math.round(num);
+    }
+    return defaultValue;
+}

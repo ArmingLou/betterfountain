@@ -537,10 +537,17 @@ define(function (require) {
             });
             if (config.map) {
                 let lineNb = Math.floor(xval).toString();
-                if (config.map.has(lineNb)) {
-                    let lineinfo = config.map.get(lineNb);
+                const keys = Array.from(config.map.keys()).sort((a, b) => parseFloat(a) - parseFloat(b));
+                let targetKey = keys.find(key => parseFloat(key) > parseFloat(lineNb));
+                let tim =Math.floor(xval);
+                if (!targetKey && keys.length > 0) {
+                    targetKey = keys[keys.length - 1]; // 如果没有更大的key，则取最后一个
+                    tim = config.map.get(targetKey).cumulativeDuration
+                }
+                if (targetKey) {
+                    let lineinfo = config.map.get(targetKey);
                     mouseG.select(".pageNumber").text("p." + lineinfo.page);
-                    mouseG.select(".currentTime").text(secondsToString(lineinfo.cumulativeDuration));
+                    mouseG.select(".currentTime").text(secondsToString(tim));
                     mouseG.select(".scene").text(lineinfo.scene);
                     mouseG.select(".breadcrumbs").html(lineinfo.sections.join("<tspan class='chevron' alignment-baseline='middle'>&#xeab6</tspan>"));
                 }

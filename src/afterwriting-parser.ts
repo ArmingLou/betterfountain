@@ -179,6 +179,7 @@ export class Location {
     exterior: boolean;
     time_of_day: string;
     line: number;
+    startPlaySec: number;
 }
 export class StructToken {
     text: string;
@@ -196,7 +197,7 @@ export class StructToken {
     durationSec: number;
 }
 export class screenplayProperties {
-    scenes: { scene: string; text: string, line: number, actionLength: number, dialogueLength: number, number: string }[];
+    scenes: { scene: string; text: string, line: number, actionLength: number, dialogueLength: number, number: string, startPlaySec: number, endPlaySec: number }[];
     sceneLines: number[];
     sceneNames: string[];
     titleKeys: string[];
@@ -225,7 +226,7 @@ export interface parseoutput {
     parseTime: number,
     properties: screenplayProperties
 }
-export var parse = function (original_script: string, cfg: any, generate_html: boolean, for_statistics: boolean = false): parseoutput {
+export var parse = function (original_script: string, cfg: any, generate_html: boolean): parseoutput {
     var block_inner = false;
     // var block_dialogue = false;
     // var block_except_dialogue = false;
@@ -451,6 +452,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         if (result.properties.scenes.length > 0) {
             result.properties.scenes[result.properties.scenes.length - 1].actionLength = action;
             result.properties.scenes[result.properties.scenes.length - 1].dialogueLength = dialogue;
+            result.properties.scenes[result.properties.scenes.length - 1].endPlaySec = _playTimeSec;
         }
     }
 
@@ -574,6 +576,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             //     if (token.text.trim().length == 0) token.ignore = true;
             // }
             result.lengthDialogue += token.time;
+            _playTimeSec += token.time;
+            // _playTimeSec = toInt(_playTimeSec);
+            token.playTimeSec = _playTimeSec;
             if (lastScenStructureToken) {
                 var need = false;
                 if (shotCut > 0) {
@@ -621,6 +626,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             //     if (token.text.trim().length == 0) token.ignore = true;
             // }
             result.lengthAction += token.time;
+            _playTimeSec += token.time;
+            // _playTimeSec = toInt(_playTimeSec);
+            token.playTimeSec = _playTimeSec;
             if (lastScenStructureToken) {
                 // 判断是否需要统计到 镜头交切时长计算
                 var need = false;
@@ -659,6 +667,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
     var text_display = '';// 视乎打印设置是否打印note，可以包含 note 内容。
     var text_valid = '';// 去除 注解 和 note 后的 有效内容， 用来判定文本内容性质。
     var notetoken; // page_break 的 打印注解
+    var _playTimeSec = 0;
     for (var i = 0; i < lines_length; i++) {
         notetoken = null;
         // var is_character_line = false;
@@ -670,13 +679,13 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         text_display = '';// 视乎打印设置是否打印note，可以包含 note 内容。
         text_valid = '';// 去除 注解 和 note 后的 有效内容， 用来判定文本内容性质。
         var _line = i;
-        if(for_statistics){
-            if(result.properties.firstSceneLine < 0 ){
-                _line = 0;
-            } else {
-                _line = i - result.properties.firstSceneLine;
-            }
-        }
+        // if (for_statistics) {
+        //     if (result.properties.firstSceneLine < 0) {
+        //         _line = 0;
+        //     } else {
+        //         _line = i - result.properties.firstSceneLine;
+        //     }
+        // }
 
         var beforEmpty = text.trim().length === 0;
         var match_block_end_empty_line = false;
@@ -758,6 +767,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
 
         thistoken = create_token(text_display, current_cursor, _line, new_line_length);
         current_cursor = thistoken.end + 1;
+        thistoken.playTimeSec = _playTimeSec;
 
 
         if (text_display.trim().length === 0) {
@@ -943,7 +953,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 // 匹配需要前面是空行的情况
                 if (text_valid.match(regex.scene_heading)) {
                     processTitlePageEnd(i);
-                    if(result.properties.firstSceneLine<0){
+                    if (result.properties.firstSceneLine < 0) {
                         result.properties.firstSceneLine = i;
                     }
 
@@ -1045,7 +1055,10 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     }
 
                     updatePreviousSceneLength();
-                    result.properties.scenes.push({ scene: nb, text: textForToken, line: thistoken.line, actionLength: 0, dialogueLength: 0, number: nb });
+                    if(result.properties.scenes.length > 0) {
+                        result.properties.scenes[result.properties.scenes.length - 1].endPlaySec = _playTimeSec;
+                    }
+                    result.properties.scenes.push({ scene: nb, text: textForToken, line: thistoken.line, actionLength: 0, dialogueLength: 0, number: nb, startPlaySec: _playTimeSec, endPlaySec: _playTimeSec });
                     result.properties.sceneLines.push(thistoken.line);
                     result.properties.sceneNames.push(text_valid); //自动完成需要用
 
@@ -1062,6 +1075,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                                     values.push({
                                         scene_number: nb,
                                         line: thistoken.line,
+                                        startPlaySec: _playTimeSec,
                                         ...location,
                                         name: sl
                                     });
@@ -1069,7 +1083,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                                 result.properties.locations.set(sl, values);
                             }
                             else {
-                                result.properties.locations.set(sl, [{ scene_number: nb, line: thistoken.line, ...location, name: sl }]);
+                                result.properties.locations.set(sl, [{ scene_number: nb, line: thistoken.line, startPlaySec: _playTimeSec , ...location, name: sl }]);
                             }
                         })
                     }
@@ -1292,6 +1306,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         text_display = text_display.replace(/(?<=(↻)|(^))\s*\=+\s*(?=(இ)|(↺)|($))/g, "");
                         notetoken = create_token(text_display, current_cursor, _line, new_line_length);
                         notetoken.type = "action";
+                        notetoken.playTimeSec = _playTimeSec;
                         current_cursor = notetoken.end + 1;
                     }
                 }

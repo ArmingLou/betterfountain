@@ -931,7 +931,7 @@ var get_title_page_token = function (parsed: any, type: string): any {
     return result;
 };
 
-async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruct>) {
+async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruct>, timeStructs?: Map<number, lineStruct>) {
     var parsed = opts.parsed,
         cfg = opts.config,
         print = opts.print,
@@ -2024,6 +2024,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
 
+            if (timeStructs) {
+                if ((line.token.playTimeSec || line.token.playTimeSec ===0) ) {
+                    const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
+                    timeStructs.set(line.token.playTimeSec, { page: p, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
+                }
+            }
+
             // 要对比之前左侧的 lashHeight ，谁更低。
             if (last_dual_right_end_pageIdx >= 0) {
                 // lashHeight = last_dual_right_end_height;
@@ -2121,6 +2128,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 if ((line.token.line || line.token.line ===0) && !lineStructs.has(line.token.line)) {
                     const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
                     lineStructs.set(line.token.line, { page: p, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
+                }
+            }
+            if (timeStructs) {
+                if ((line.token.playTimeSec || line.token.playTimeSec ===0) ) {
+                    const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
+                    timeStructs.set(line.token.playTimeSec, { page: p, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
                 }
             }
         } else {
@@ -2532,6 +2545,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     lineStructs.set(line.token.line, { page: p, scene: currentScene, sections: currentSections.slice(0), cumulativeDuration: currentDuration })
                 }
             }
+            if (timeStructs) {
+                if ((line.token.playTimeSec || line.token.playTimeSec ===0) ) {
+                    if (line.token.time) currentDuration += line.token.time;
+                    const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
+                    timeStructs.set(line.token.playTimeSec, { page: p, scene: currentScene, sections: currentSections.slice(0), cumulativeDuration: currentDuration })
+                }
+            }
         }
 
         if (pageStarted) {
@@ -2822,7 +2842,7 @@ export var get_pdf_stats = async function (opts: Options): Promise<pdfstats> {
         stats.pagecountReal++; //打印的页数
     });
 
-    var ph = await generate(doc, opts, stats.linemap);
+    var ph = await generate(doc, opts, null, stats.linemap);
     // // var lines = 0;
     // var he = 0;
     // for (var pIdx in ph) {
