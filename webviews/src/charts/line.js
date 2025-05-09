@@ -103,7 +103,8 @@ define(function (require) {
                 structurePositions = [0]
 
                 function appendStructLine(token) {
-                    let tokenline = token.range[0].line;
+                    // let tokenline = token.range[0].line;
+                    let tokenline = token.playSec;
                     let opacity = 0.1;
                     let xpos = x(tokenline);
                     let tokentype = "";

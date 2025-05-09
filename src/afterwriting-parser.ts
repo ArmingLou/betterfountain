@@ -195,6 +195,7 @@ export class StructToken {
     ischartor: boolean;
     dialogueEndLine: number;
     durationSec: number;
+    playSec: number;
 }
 export class screenplayProperties {
     scenes: { scene: string; text: string, line: number, actionLength: number, dialogueLength: number, number: string, startPlaySec: number, endPlaySec: number }[];
@@ -508,7 +509,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             for (let i = 0; i < current_outline_note_text.length; i++) {
                 if (current_outline_note_text[i] && current_outline_note_text[i].trim().length > 0) {
                     var linenumber = current_outline_note_linenum[i];
-                    result.properties.structure.push({ text: current_outline_note_text[i].trim(), id: '/' + linenumber, isnote: true, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, current_outline_note_text[i].length + 4)), section: false, synopses: [] })
+                    result.properties.structure.push({playSec: _playTimeSec, text: current_outline_note_text[i].trim(), id: '/' + linenumber, isnote: true, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, current_outline_note_text[i].length + 4)), section: false, synopses: [] })
                 }
             }
         }
@@ -1030,6 +1031,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     cobj.children = [];
                     cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, text_valid.length));
                     cobj.isscene = true;
+                    cobj.playSec = _playTimeSec;
 
 
 
@@ -1337,6 +1339,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     cobj.children = [];
                     cobj.range = new Range(new Position(thistoken.line, 0), new Position(thistoken.line, thistoken.text.length));
                     cobj.section = true;
+                    cobj.playSec = _playTimeSec;
 
                     const level = current_depth > 1 && latestSectionOrScene(current_depth, token => token.section && token.level < current_depth)
                     if (current_depth == 1 || !level) {

@@ -6,6 +6,7 @@ import { FountainConfig, getFountainConfig } from "../configloader";
 import { assetsPath, resolveAsUri } from "../utils";
 import * as afterparser from "../afterwriting-parser";
 import { retrieveScreenPlayStatistics } from "../statistics";
+import { activeParsedDocument } from "../extension";
 
 interface statisticsPanel {
   uri: string;
@@ -69,7 +70,7 @@ export function createStatisticsPanel(): vscode.WebviewPanel {
       panelname, // Title of the panel displayed to the user
       vscode.ViewColumn.Two, // Editor column to show the new webview panel in.
       { enableScripts: true, });
-      statspanel.iconPath = getAssetsUri("graph");
+    statspanel.iconPath = getAssetsUri("graph");
   }
   loadWebView(editor.document.uri, statspanel);
   return statspanel;
@@ -142,13 +143,13 @@ async function loadWebView(docuri: vscode.Uri, statspanel: vscode.WebviewPanel) 
       refreshStatsPanel(statspanel, editor.document, getFountainConfig(docuri));
     }
   });
-  
+
   statspanel.onDidDispose(() => {
     removeStatisticsPanel(id);
   })
 
   const editor = getEditor(getActiveFountainDocument());
-  if(!editor) return;
+  if (!editor) return;
   config = getFountainConfig(getActiveFountainDocument())
   refreshStatsPanel(statspanel, editor.document, config);
 }
@@ -171,14 +172,51 @@ vscode.window.onDidChangeTextEditorSelection(change => {
   var selection = change.selections[0];
   statsPanels.forEach(p => {
     if (p.uri == change.textEditor.document.uri.toString()) {
+      
       if (selection.active.line != previousCaretLine) {
+        const parsedDoc = activeParsedDocument();
         previousCaretLine = selection.active.line;
-        p.panel.webview.postMessage({ command: 'updatecaret', content: selection.active.line, linescount: change.textEditor.document.lineCount, source: "click" });
+        // p.panel.webview.postMessage({ command: 'updatecaret', content: selection.active.line, linescount: change.textEditor.document.lineCount, source: "click" });
+        if (parsedDoc) {
+          var currsorSec = 0;
+          // var firstScene = false;
+          parsedDoc.tokens.forEach(tk => {
+            if (tk.line <= selection.active.line) {
+              if (tk.time) {
+                currsorSec += tk.time;
+              }
+            } else {
+              return
+            }
+          })
+          p.panel.webview.postMessage({ command: 'updatecaret', content: currsorSec, linescount: change.textEditor.document.lineCount, source: "click" });
+        }
       }
       if (previousSelectionStart != selection.start.line || previousSelectionEnd != selection.end.line) {
+        const parsedDoc = activeParsedDocument();
         previousSelectionStart = selection.start.line;
         previousSelectionEnd = selection.end.line;
-        p.panel.webview.postMessage({ command: 'updateselection', content: { start: selection.start.line, end: selection.end.line } });
+        // p.panel.webview.postMessage({ command: 'updateselection', content: { start: selection.start.line, end: selection.end.line } });
+        if (parsedDoc) {
+          var currsorSec = 0;
+          var currsorSecEnd = 0;
+          // var firstScene = false;
+          parsedDoc.tokens.forEach(tk => {
+            if (tk.line <= selection.start.line) {
+              if (tk.time) {
+                currsorSec += tk.time;
+              }
+            } 
+            if (tk.line <= selection.end.line) {
+              if (tk.time) {
+                currsorSecEnd += tk.time;
+              }
+            } else {
+              return
+            }
+          })
+          p.panel.webview.postMessage({ command: 'updateselection', content: { start: currsorSec, end: currsorSecEnd } });
+        }
       }
 
     }
