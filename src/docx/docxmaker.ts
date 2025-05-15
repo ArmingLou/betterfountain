@@ -1750,6 +1750,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     text_properties.bold = true;
                     sty = 'shotCut';
                     al = Docx.AlignmentType.LEFT;
+                    text = '(' + text.substring(2, text.length - 4) + text.substring(text.length - 2) + ')';
                 } else {
                     // 一般 转场
                     text = chinaFormat ? '(' + text + ')' : text;

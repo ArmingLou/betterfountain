@@ -2242,6 +2242,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     text_properties.width = actionWidth;
                     text_properties.align = 'left';
                     feed = print.action.feed - (4 * print.font_width);
+                    text = '(' + text.substring(2, text.length - 4) + text.substring(text.length - 2) + ')';  // 去掉 {+ 和 +}
                 } else {
                     text_properties.width = actionWidth;
                     text_properties.align = chinaFormat ? 'left' : 'right'
