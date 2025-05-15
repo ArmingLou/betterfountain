@@ -459,7 +459,7 @@ async function initDoc(opts: Options) {
             catchNotes = true; // 页面底部notes打印模式
             if (doc.currentNote.pageIdx >= 0) {
                 // 如果正在处理notes，并且收集到底部，本行为notes开始内容
-                if (doc.chinaFormat === 1 && text.startsWith('△')) {
+                if ((doc.chinaFormat === 1 || doc.chinaFormat === 3) && text.startsWith('△')) {
                     text = text.substring(1);
                     doc.cacheTriangle = true;
                 }
@@ -467,7 +467,7 @@ async function initDoc(opts: Options) {
                 doc.cacheTriangle = false;
             }
         }
-        if (doc.chinaFormat === 1 && text.startsWith('△') && doc.forceNoteOrig) {
+        if ((doc.chinaFormat === 1 || doc.chinaFormat === 3) && text.startsWith('△') && doc.forceNoteOrig) {
             text = text.substring(1);
         }
 
@@ -2018,14 +2018,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // 或者 满足 页面自动换页
 
             if (lineStructs) {
-                if ((line.token.line || line.token.line ===0) && !lineStructs.has(line.token.line)) {
+                if ((line.token.line || line.token.line === 0) && !lineStructs.has(line.token.line)) {
                     const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
                     lineStructs.set(line.token.line, { page: p, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
                 }
             }
 
             if (timeStructs) {
-                if ((line.token.playTimeSec || line.token.playTimeSec ===0) ) {
+                if ((line.token.playTimeSec || line.token.playTimeSec === 0)) {
                     const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
                     timeStructs.set(line.token.playTimeSec, { page: p, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
                 }
@@ -2125,13 +2125,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // height += line_height;
 
             if (lineStructs) {
-                if ((line.token.line || line.token.line ===0) && !lineStructs.has(line.token.line)) {
+                if ((line.token.line || line.token.line === 0) && !lineStructs.has(line.token.line)) {
                     const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
                     lineStructs.set(line.token.line, { page: p, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
                 }
             }
             if (timeStructs) {
-                if ((line.token.playTimeSec || line.token.playTimeSec ===0) ) {
+                if ((line.token.playTimeSec || line.token.playTimeSec === 0)) {
                     const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
                     timeStructs.set(line.token.playTimeSec, { page: p, scene: currentScene, cumulativeDuration: currentDuration, sections: currentSections.slice(0) })
                 }
@@ -2379,7 +2379,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 var feed_diff = 3 * print.font_width; // 相对 action.feed 再缩进的距离
                 if (line.token && line.token.dual === "right") {
 
-                    if (line.type === "parenthetical" && cacheText === "") {
+                    if (line.type === "parenthetical" && !chinaFormat) {
                         feed = print.left_margin + (innerwidth / 2) + (feed_diff * 1.5);
                         text_properties.width = innerwidth / 2 - (feed_diff * 3.5);
                     }
@@ -2393,9 +2393,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         last_dual_right_end_height = last_dual_left_start_height;
                         feed = print.left_margin + (innerwidth / 2) + (feed_diff * 2.5);
                         text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
-
-                        lastCharacter = text;
-                        lastCharacterFeed = feed
+                        
                     }
                     else if (line.type === "more") {
                         feed = print.left_margin + (innerwidth / 2) + (feed_diff * 2.5);
@@ -2411,14 +2409,19 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     if (line.type === "character") {
                         if (chinaFormat) {
                             if (cacheText) {
-                                finish_china_dial_first(ii, true, true);
-                                ii = ii - 1;
+                                finish_china_dial_first(ii, true, true); //cacheText插到前面作为dialogue，并且在后面插入一个separator
+                                ii = ii - 1; // 重新循环新插入前面的行，并draw它。
                                 continue;
                             }
+                            lastCharacter = text;
+                            lastCharacterFeed = feed
                             text = text + ': ';
                             cacheText = text;
                             cacheDual = "right";
                             draw = false;
+                        } else {
+                            lastCharacter = text;
+                            lastCharacterFeed = feed
                         }
                     }
                     else if (line.type === "dialogue") {
@@ -2426,7 +2429,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             if (cacheText) {
                                 cacheText = cacheText + text;
                                 draw = false;
-                                finish_china_dial_first(ii, false);
+                                if (chinaFormat === 1 || chinaFormat === 2) {
+                                    finish_china_dial_first(ii, false); //cacheText插到后一行，后一个循环会draw
+                                }
                             }
                         }
                     }
@@ -2448,7 +2453,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     }
                 } else {
                     if (line.token && line.token.dual === "left") {
-                        if (line.type === "parenthetical" && cacheText === "") {
+                        if (line.type === "parenthetical" && !chinaFormat) {
                             feed = print.action.feed + (feed_diff * 2);
                             text_properties.width = innerwidth / 2 - (feed_diff * 3.5);
                         }
@@ -2494,7 +2499,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             if (cacheText) {
                                 cacheText = cacheText + text;
                                 draw = false;
-                                finish_china_dial_first(ii, false);
+                                if (chinaFormat === 1 || chinaFormat === 2) {
+                                    finish_china_dial_first(ii, false);
+                                }
                             } else {
                                 if (line.token && line.token.dual !== "left" && line.token.dual !== "right") {
                                     feed = print.action.feed;
@@ -2526,7 +2533,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     }
                     else {
                         // action / lyric
-                        if (chinaFormat === 1 && sceneStarted) { //第一个场景之前的action，不加 △
+                        if ((chinaFormat === 1 || chinaFormat === 3) && sceneStarted) { //第一个场景之前的action，不加 △
                             text = '△' + ' ' + text;
                         }
                     }
@@ -2540,14 +2547,14 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             }
             // y++;
             if (lineStructs) {
-                if ((line.token.line || line.token.line ===0) && !lineStructs.has(line.token.line)) {
+                if ((line.token.line || line.token.line === 0) && !lineStructs.has(line.token.line)) {
                     if (line.token.time) currentDuration += line.token.time;
                     const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
                     lineStructs.set(line.token.line, { page: p, scene: currentScene, sections: currentSections.slice(0), cumulativeDuration: currentDuration })
                 }
             }
             if (timeStructs) {
-                if ((line.token.playTimeSec || line.token.playTimeSec ===0) ) {
+                if ((line.token.playTimeSec || line.token.playTimeSec === 0)) {
                     if (line.token.time) currentDuration += line.token.time;
                     const p = pageNumPrintSub < 0 ? page : page - pageNumPrintSub;
                     timeStructs.set(line.token.playTimeSec, { page: p, scene: currentScene, sections: currentSections.slice(0), cumulativeDuration: currentDuration })

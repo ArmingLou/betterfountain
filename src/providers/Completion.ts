@@ -258,7 +258,7 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 
 [dial_chars_per_minu] - 对白每分钟多少字符，用于粗略预估对白时间【主要用于其他客户端软件使用】。
 
-[chinaFormat] - print in china format (dialogue is aligned to the left). 0: don't print in china format; 1: print in china format with △; 2: china format without △ .
+[chinaFormat] - print in china format (dialogue is aligned to the left). 0: don't print in china format; Otherwise : print in china format. ([1 or 3] : action begin with △) ([2 or 4] : action begin without △) ([3 or 4] : dialogue auto join together without break line) .
 
 [embedFonts] - If embed fonts. (available in docx only)
 

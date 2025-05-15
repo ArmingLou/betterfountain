@@ -360,7 +360,7 @@ async function initDoc(opts: Options) {
             catchNotes = true; // 页面底部notes打印模式
             if (doc.currentNote.pageIdx >= 0) {
                 // 如果正在处理notes，并且收集到底部，本行为notes开始内容
-                if (doc.chinaFormat === 1 && text.startsWith('△')) {
+                if ((doc.chinaFormat === 1 || doc.chinaFormat === 3) && text.startsWith('△')) {
                     text = text.substring(1);
                     doc.cacheTriangle = true;
                 }
@@ -369,7 +369,7 @@ async function initDoc(opts: Options) {
             }
         }
 
-        if (doc.chinaFormat === 1 && text.startsWith('△') && doc.forceNoteOrig) {
+        if ((doc.chinaFormat === 1 || doc.chinaFormat === 3) && text.startsWith('△') && doc.forceNoteOrig) {
             text = text.substring(1);
         }
 
@@ -2025,10 +2025,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         if (chinaFormat) {
                             if (lastDialGrLeft) {
                                 lastDialGrLeft.children.push(...runs);
-                                lastDialTableLeft.push(
-                                    new Docx.Paragraph(lastDialGrLeft)
-                                );
-                                lastDialGrLeft = null;
+
+                                if (chinaFormat === 1 || chinaFormat === 2) {
+                                    lastDialTableLeft.push(
+                                        new Docx.Paragraph(lastDialGrLeft)
+                                    );
+                                    lastDialGrLeft = null;
+                                }
                             } else {
                                 lastDialTableLeft.push(
                                     new Docx.Paragraph({
@@ -2059,10 +2062,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         if (chinaFormat) {
                             if (lastDialGrRight) {
                                 lastDialGrRight.children.push(...runs);
-                                lastDialTableRight.push(
-                                    new Docx.Paragraph(lastDialGrRight)
-                                );
-                                lastDialGrRight = null;
+                                if (chinaFormat === 1 || chinaFormat === 2) {
+                                    lastDialTableRight.push(
+                                        new Docx.Paragraph(lastDialGrRight)
+                                    );
+                                    lastDialGrRight = null;
+                                }
                             } else {
                                 lastDialTableRight.push(
                                     new Docx.Paragraph({
@@ -2092,10 +2097,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         if (chinaFormat) {
                             if (lastDialGr) {
                                 lastDialGr.children.push(...runs);
-                                getSectionMain().children.push(
-                                    new Docx.Paragraph(lastDialGr)
-                                );
-                                lastDialGr = null;
+                                if (chinaFormat === 1 || chinaFormat === 2) {
+                                    getSectionMain().children.push(
+                                        new Docx.Paragraph(lastDialGr)
+                                    );
+                                    lastDialGr = null;
+                                }
                             } else {
                                 getSectionMain().children.push(new Docx.Paragraph({
                                     style: "action",
@@ -2157,7 +2164,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
                 else {
                     // action / lyric
-                    if (chinaFormat === 1 && sceneStarted) {
+                    if ((chinaFormat === 1 || chinaFormat === 3) && sceneStarted) {
                         text = '△' + ' ' + text;
                     }
                     getSectionMain().children.push(new Docx.Paragraph({
