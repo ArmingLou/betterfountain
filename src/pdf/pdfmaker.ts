@@ -150,10 +150,14 @@ async function initDoc(opts: Options) {
     }
     var doc = new PDFDocument(options);
 
+    doc.rmBliankLine = 0;
     doc.chinaFormat = 0;
-    if (opts.metadata) {
-        if (opts.metadata.chinaFormat) {
-            doc.chinaFormat = opts.metadata.chinaFormat;
+    if (opts.metadata && opts.metadata.print) {
+        if (opts.metadata.print.chinaFormat) {
+            doc.chinaFormat = opts.metadata.print.chinaFormat;
+        }
+        if (opts.metadata.print.rmBliankLine) {
+            doc.rmBliankLine = opts.metadata.print.rmBliankLine;
         }
     }
 
@@ -1302,7 +1306,51 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         doc.format_text(lastCharacter + ' ' + CONTD, lastCharacterFeed, (print.top_margin - line_height));
     }
 
-
+    var currType = '';
+    function shouldDelBlankLine(idx: number): boolean {
+        if (doc.rmBliankLine == 0) {
+            return false;
+        }
+        var curr = lines[idx];
+        var preType = currType;
+        if (curr.type === "page_break" || curr.type === "page_switch" || curr.type === "redraw") {
+            if (curr.token && curr.token.type) {//redraw
+                currType = curr.token.type;
+            }
+            return false;
+        }
+        currType = curr.type;
+        if (curr.token && curr.token.type) {//redraw
+            currType = curr.token.type;
+        }
+        if (!isBlankLineAfterStlyle(curr.text)) {
+            return false;
+        }
+        var next = lines[idx + 1];
+        if (next) {
+            var nextType = next.type;
+            if (next.token && next.token.type) {//redraw
+                nextType = next.token.type;
+            }
+            if (isBlankLineAfterStlyle(next.text) && nextType !== "page_break" && nextType !== "page_switch" && nextType !== "redraw") {
+                currType = preType;
+                return true;
+            }
+            if (nextType === "scene_heading") {
+                return false;
+            }
+            if (doc.rmBliankLine == 2) {
+                if (nextType === "character") {
+                    return false;
+                }
+                if (nextType !== "parenthetical" && nextType !== "dialogue" && (preType == "character" || preType == "parenthetical" || preType == "dialogue")) {
+                    return false;
+                }
+            }
+        }
+        currType = preType;
+        return true;
+    }
 
     let notesPage: { [key: number]: any } = {};
     let currentLineNotes: any[] = [];
@@ -1375,6 +1423,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 text: cacheText,
                 start: 0,
                 end: 0,
+                joinDual: true,
                 // scene_split: false, 
             });
             if (before && separator) {
@@ -1415,7 +1464,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     // 结束右侧对话的处理
     function if_dual_right_end(idx: number): boolean {
-        if (lines[idx].type === "page_break" || lines[idx].type === "page_switch" || (lines[idx].token && lines[idx].token.dual === "right")
+        if (cacheText || lines[idx].type === "page_break" || lines[idx].type === "page_switch" || (lines[idx].token && lines[idx].token.dual === "right")
             // ||lines[idx].type === "redraw"
         ) {
             return false;
@@ -1814,6 +1863,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
 
         if (lastLines) {
+            var joinDual = line.joinDual;
+            if (lastLines.breakIdx > 0) {
+                joinDual = false;
+            }
             lines.splice(idx + 1, 0, {
                 type: "redraw",
                 // line: line,
@@ -1821,6 +1874,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 token: line.token,
                 lastLines: lastLines,
                 notes: notesNext,
+                joinDual: joinDual,
             });
         }
 
@@ -1849,6 +1903,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     var lastPdfOutlineWasSection = true;
 
     for (var ii = 0; ii < lines.length; ii++) {
+        var shouldDel = shouldDelBlankLine(ii);
         // lines.forEach(function (line: any) {
         if (pageNumPrintSub == -2 && lines[ii].token && (lines[ii].token.type === "scene_heading" || lines[ii].token.type === "section" || lines[ii].token.type === "transition")) { //redraw 也可能进入
 
@@ -1869,6 +1924,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // 不打印 print_preface_page 的配置情况下，第一个场景/转场/section前的页面 也都不打印。 
                 continue;
             }
+        }
+
+        if (shouldDel) {
+            // 只绘制样式，再跳过
+            doc.text2(lines[ii].text, 0, 0, 0, 0, 0, 0, 0, false);
+            continue;
         }
 
         // 去除页面前面的空行
@@ -1925,7 +1986,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             print_watermark();
             print_header_and_footer();
 
-            if (lines[ii].token && (lines[ii].token.type === "dialogue" || lines[ii].token.type === "parenthetical")) {
+            if (lines[ii].token && !lines[ii].joinDual && (lines[ii].token.type === "dialogue" || lines[ii].token.type === "parenthetical")) {
                 doc.switchToPage(pageIdx - 1);
                 if (last_dual_right_end_pageIdx >= 0) {
                     print_dialogue_split_more(lashHeightRight);
@@ -2258,8 +2319,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // }
             } else {
                 var feed: number = (print[line.type] || {}).feed || print.action.feed;
-                text_properties.width = innerwidth - indent - indent;
                 var indent = feed - print.left_margin
+                text_properties.width = innerwidth - indent - indent;
                 // if (line.type === "transition") {
                 //     feed = print.action.feed + print.action.max * print.font_width - get_text_display_len(line.text) * print.font_width;
                 // }
@@ -2379,29 +2440,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 var feed_diff = 3 * print.font_width; // 相对 action.feed 再缩进的距离
                 if (line.token && line.token.dual === "right") {
 
-                    if (line.type === "parenthetical" && !chinaFormat) {
-                        feed = print.left_margin + (innerwidth / 2) + (feed_diff * 1.5);
-                        text_properties.width = innerwidth / 2 - (feed_diff * 3.5);
-                    }
-                    else if (line.type === "character") {
-                        last_dual_left_end_pageIdx = pageIdx
-                        last_dual_left_end_height = height
-                        if (last_dual_left_start_pageIdx < pageIdx) {
-                            doc.switchToPage(last_dual_left_start_pageIdx);
-                        }
-                        last_dual_right_end_pageIdx = last_dual_left_start_pageIdx;
-                        last_dual_right_end_height = last_dual_left_start_height;
-                        feed = print.left_margin + (innerwidth / 2) + (feed_diff * 2.5);
-                        text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
-                        
-                    }
-                    else if (line.type === "more") {
-                        feed = print.left_margin + (innerwidth / 2) + (feed_diff * 2.5);
-                        text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
-                    } else {
-                        feed = print.left_margin + (innerwidth / 2) + (0.5 * feed_diff);
-                        text_properties.width = innerwidth / 2 - (feed_diff * 1.5);
-                    }
+                    var oldText = text;
 
                     text = ifResetFormat(text, line);
 
@@ -2413,15 +2452,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                                 ii = ii - 1; // 重新循环新插入前面的行，并draw它。
                                 continue;
                             }
-                            lastCharacter = text;
-                            lastCharacterFeed = feed
                             text = text + ': ';
                             cacheText = text;
                             cacheDual = "right";
                             draw = false;
-                        } else {
-                            lastCharacter = text;
-                            lastCharacterFeed = feed
                         }
                     }
                     else if (line.type === "dialogue") {
@@ -2443,6 +2477,32 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             }
                         }
                     }
+                    
+                    if (line.type === "parenthetical" && !chinaFormat) {
+                        feed = print.left_margin + (innerwidth / 2) + (feed_diff * 1.5);
+                        text_properties.width = innerwidth / 2 - (feed_diff * 3.5);
+                    }
+                    else if (line.type === "character") {
+                        last_dual_left_end_pageIdx = pageIdx
+                        last_dual_left_end_height = height
+                        if (last_dual_left_start_pageIdx < pageIdx) {
+                            doc.switchToPage(last_dual_left_start_pageIdx);
+                        }
+                        last_dual_right_end_pageIdx = last_dual_left_start_pageIdx;
+                        last_dual_right_end_height = last_dual_left_start_height;
+                        feed = print.left_margin + (innerwidth / 2) + (feed_diff * 2.5);
+                        text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
+
+                        lastCharacter = oldText;
+                        lastCharacterFeed = feed
+                    }
+                    else if (line.type === "more") {
+                        feed = print.left_margin + (innerwidth / 2) + (feed_diff * 2.5);
+                        text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
+                    } else {
+                        feed = print.left_margin + (innerwidth / 2) + (0.5 * feed_diff);
+                        text_properties.width = innerwidth / 2 - (feed_diff * 1.5);
+                    }
 
                     if (draw) {
                         text2Result = doc.text2(text, feed, print.top_margin + last_dual_right_end_height, print.top_margin,
@@ -2452,32 +2512,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             text_properties, bottom_notes ? currentLineNotes : null, notesPage, last_dual_right_end_pageIdx);
                     }
                 } else {
-                    if (line.token && line.token.dual === "left") {
-                        if (line.type === "parenthetical" && !chinaFormat) {
-                            feed = print.action.feed + (feed_diff * 2);
-                            text_properties.width = innerwidth / 2 - (feed_diff * 3.5);
-                        }
-                        else if (line.type === "character") {
-                            last_dual_left_start_pageIdx = pageIdx;
-                            last_dual_left_start_height = height;
-                            feed = print.action.feed + (feed_diff * 3);
-                            text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
-
-                            lastCharacter = text;
-                            lastCharacterFeed = feed;
-                        } else if (line.type === "more") {
-                            feed = print.action.feed + (feed_diff * 3);
-                            text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
-                        } else {
-                            feed = print.action.feed + feed_diff;
-                            text_properties.width = innerwidth / 2 - (feed_diff * 1.5);
-                        }
-                    } else if (line.type === "character") {
-                        lastCharacter = text;
-                        lastCharacterFeed = feed
-                    }
+                    
+                    var oldText = text;
+                    
                     text = ifResetFormat(text, line);
-
                     // 除去 对话右侧的 绘制：
 
                     var draw = true;
@@ -2537,6 +2575,32 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             text = '△' + ' ' + text;
                         }
                     }
+                    
+                    if (line.token && line.token.dual === "left") {
+                        if (line.type === "parenthetical" && !chinaFormat) {
+                            feed = print.action.feed + (feed_diff * 2);
+                            text_properties.width = innerwidth / 2 - (feed_diff * 3.5);
+                        }
+                        else if (line.type === "character") {
+                            last_dual_left_start_pageIdx = pageIdx;
+                            last_dual_left_start_height = height;
+                            feed = print.action.feed + (feed_diff * 3);
+                            text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
+
+                            lastCharacter = oldText;
+                            lastCharacterFeed = feed;
+                        } else if (line.type === "more") {
+                            feed = print.action.feed + (feed_diff * 3);
+                            text_properties.width = innerwidth / 2 - (feed_diff * 5.5);
+                        } else {
+                            feed = print.action.feed + feed_diff;
+                            text_properties.width = innerwidth / 2 - (feed_diff * 1.5);
+                        }
+                    } else if (line.type === "character") {
+                        lastCharacter = oldText;
+                        lastCharacterFeed = feed
+                    }
+                    
                     //======
                     if (draw) {
                         text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin,

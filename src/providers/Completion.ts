@@ -234,9 +234,10 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
     },
 	"chars_per_minu": 243.22,
 	"dial_chars_per_minu": 171,
-	"chinaFormat": 0,
 	"embedFonts": false,
 	"print": {
+		"chinaFormat": 3,
+		"rmBliankLine": 0,
 		"paper_size": "a4",
 		"font_size": 12,
 		"character_spacing": 1,
@@ -258,7 +259,9 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 
 [dial_chars_per_minu] - 对白每分钟多少字符，用于粗略预估对白时间【主要用于其他客户端软件使用】。
 
-[chinaFormat] - print in china format (dialogue is aligned to the left). 0: don't print in china format; Otherwise : print in china format. ([1 or 3] : action begin with △) ([2 or 4] : action begin without △) ([3 or 4] : dialogue auto join together without break line) .
+[print.chinaFormat] - print in china format (dialogue is aligned to the left). 0: don't print in china format; Otherwise : print in china format. ([1 or 3] : action begin with △) ([2 or 4] : action begin without △) ([3 or 4] : dialogue auto join together without break line) .
+
+[print.rmBliankLine] - 打印时删除空行. 0，不删除空行；1，删除空行（但场景前加空行）;2，删除空行（但场景前加空行，对话前与后加空行）
 
 [embedFonts] - If embed fonts. (available in docx only)
 
@@ -375,9 +378,10 @@ When both passwords are provided, users with user password are able to decrypt t
     },
 	"chars_per_minu": 243.22,
 	"dial_chars_per_minu": 171,
-	"chinaFormat": 0,
 	"embedFonts": false,
 	"print": {
+		"chinaFormat": 3,
+		"rmBliankLine": 0,
 		"paper_size": "a4",
 		"font_size": 12,
 		"character_spacing": 1,

@@ -241,10 +241,14 @@ async function initDoc(opts: Options) {
 
     var doc: any = { options: options, fontNames: fontsNames };
 
+    doc.rmBliankLine = 0;
     doc.chinaFormat = 0;
-    if (opts.metadata) {
-        if (opts.metadata.chinaFormat) {
-            doc.chinaFormat = opts.metadata.chinaFormat;
+    if (opts.metadata && opts.metadata.print) {
+        if (opts.metadata.print.chinaFormat) {
+            doc.chinaFormat = opts.metadata.print.chinaFormat;
+        }
+        if (opts.metadata.print.rmBliankLine) {
+            doc.rmBliankLine = opts.metadata.print.rmBliankLine;
         }
     }
 
@@ -879,9 +883,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     // var pageIdx = 0;
     var line_height = opts.line_height;
 
-    if (opts.metadata) {
-        if (opts.metadata.chinaFormat) {
-            chinaFormat = opts.metadata.chinaFormat;
+    if (opts.metadata && opts.metadata.print) {
+        if (opts.metadata.print.chinaFormat) {
+            chinaFormat = opts.metadata.print.chinaFormat;
         }
     }
     // console.log(chinaFormat)
@@ -1450,6 +1454,52 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             lastDialTableRight = [];
         }
     }
+    
+    var currType = '';
+    function shouldDelBlankLine(idx: number): boolean {
+        if (doc.rmBliankLine == 0) {
+            return false;
+        }
+        var curr = lines[idx];
+        var preType = currType;
+        if (curr.type === "page_break" || curr.type === "page_switch" || curr.type === "redraw") {
+            if (curr.token && curr.token.type) {//redraw
+                currType = curr.token.type;
+            }
+            return false;
+        }
+        currType = curr.type;
+        if (curr.token && curr.token.type) {//redraw
+            currType = curr.token.type;
+        }
+        if (!isBlankLineAfterStlyle(curr.text)) {
+            return false;
+        }
+        var next = lines[idx + 1];
+        if (next) {
+            var nextType = next.type;
+            if (next.token && next.token.type) {//redraw
+                nextType = next.token.type;
+            }
+            if (isBlankLineAfterStlyle(next.text) && nextType !== "page_break" && nextType !== "page_switch" && nextType !== "redraw") {
+                currType = preType;
+                return true;
+            }
+            if (nextType === "scene_heading") {
+                return false;
+            }
+            if (doc.rmBliankLine == 2) {
+                if (nextType === "character") {
+                    return false;
+                }
+                if (nextType !== "parenthetical" && nextType !== "dialogue" && (preType == "character" || preType == "parenthetical" || preType == "dialogue")) {
+                    return false;
+                }
+            }
+        }
+        currType = preType;
+        return true;
+    }
 
     var sectionMainNoPageNum = {
         properties: sesctionProps,
@@ -1533,6 +1583,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         after_section = false; // helpful to determine synopsis indentation
 
     for (var ii = 0; ii < lines.length; ii++) {
+        
+        if(shouldDelBlankLine(ii)) {
+            // 只绘制样式，再跳过
+            doc.text2(lines[ii].text);
+            continue;
+        }
+        
         var doOutline = -1;
         // 去除页面前面的空行
         if (!pageStarted) {
