@@ -150,14 +150,14 @@ async function initDoc(opts: Options) {
     }
     var doc = new PDFDocument(options);
 
-    doc.rmBliankLine = 0;
+    doc.rmBlankLine = 0;
     doc.chinaFormat = 0;
     if (opts.metadata && opts.metadata.print) {
         if (opts.metadata.print.chinaFormat) {
             doc.chinaFormat = opts.metadata.print.chinaFormat;
         }
-        if (opts.metadata.print.rmBliankLine) {
-            doc.rmBliankLine = opts.metadata.print.rmBliankLine;
+        if (opts.metadata.print.rmBlankLine) {
+            doc.rmBlankLine = opts.metadata.print.rmBlankLine;
         }
     }
 
@@ -1308,7 +1308,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     var currType = '';
     function shouldDelBlankLine(idx: number): boolean {
-        if (doc.rmBliankLine == 0) {
+        if (doc.rmBlankLine == 0) {
             return false;
         }
         var curr = lines[idx];
@@ -1339,7 +1339,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             if (nextType === "scene_heading") {
                 return false;
             }
-            if (doc.rmBliankLine == 2) {
+            if (doc.rmBlankLine == 2) {
                 if (nextType === "character") {
                     return false;
                 }
