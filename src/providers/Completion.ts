@@ -279,19 +279,19 @@ To set access privileges for the PDF file, you need to provide an owner password
 
 Following settings are allowed in permissions object:
 
-[printing] - whether printing is allowed. Specify "lowResolution" to allow degraded printing, or "highResolution" to allow printing with high resolution
+[permissions]-[printing] - whether printing is allowed. Specify "lowResolution" to allow degraded printing, or "highResolution" to allow printing with high resolution
 
-[modifying] - whether modifying the file is allowed. Specify true to allow modifying document content
+[permissions]-[modifying] - whether modifying the file is allowed. Specify true to allow modifying document content
 
-[copying] - whether copying text or graphics is allowed. Specify true to allow copying
+[permissions]-[copying] - whether copying text or graphics is allowed. Specify true to allow copying
 
-[annotating] - whether annotating, form filling is allowed. Specify true to allow annotating and form filling
+[permissions]-[annotating] - whether annotating, form filling is allowed. Specify true to allow annotating and form filling
 
-[fillingForms] - whether form filling and signing is allowed. Specify true to allow filling in form fields and signing
+[permissions]-[fillingForms] - whether form filling and signing is allowed. Specify true to allow filling in form fields and signing
 
-[contentAccessibility] - whether copying text for accessibility is allowed. Specify true to allow copying for accessibility
+[permissions]-[contentAccessibility] - whether copying text for accessibility is allowed. Specify true to allow copying for accessibility
 
-[documentAssembly] - whether assembling document is allowed. Specify true to allow document assembly
+[permissions]-[documentAssembly] - whether assembling document is allowed. Specify true to allow document assembly
 
 
 You can specify either [userPassword], [ownerPassword] or both passwords. Behavior differs according to passwords you provides:
