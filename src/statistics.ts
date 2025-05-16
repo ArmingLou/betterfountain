@@ -177,7 +177,7 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
         let monologues = 0;
         let combinedSentences = "";
         const allDialogueCombined = dialoguePerCharacter[singledialPerChar].reduce((prev, curr) => {
-            let time = calculateDialogueDuration(curr);
+            let time = calculateDialogueDuration(curr, parsed.dial_sec_per_char, parsed.dial_sec_per_punc_short, parsed.dial_sec_per_punc_long);
             secondsSpoken += time;
             combinedSentences += "." + curr;
             if (isMonologue(time)) monologues++;

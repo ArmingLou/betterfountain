@@ -29,7 +29,7 @@ const fountainConfig: FountainConfig  = {
     calculate_duration_short: 1,
     calculate_duration_action: 1,
     refresh_stats_on_save: false,
-    number_scenes_on_save:  false,
+    number_scenes_on_save: false,
     embolden_scene_headers: false,
     embolden_character_names: false,
     emitalic_dialog: false,
@@ -58,14 +58,19 @@ const fountainConfig: FountainConfig  = {
     create_bookmarks: false,
     invisible_section_bookmarks: false,
     synchronized_markup_and_preview: false,
-    preview_theme:undefined as unknown as string,
+    preview_theme: undefined as unknown as string,
     preview_texture: false,
-    text_more:undefined as unknown as string,
-    text_contd:undefined as unknown as string,
+    text_more: undefined as unknown as string,
+    text_contd: undefined as unknown as string,
     text_scene_continued: undefined as unknown as string,
     scene_continuation_top: false,
     scene_continuation_bottom: false,
     parenthetical_newline_helper: false,
+    dialogue_foldable: false,
+    refresh_pdfpreview_on_save: false,
+    print_preface_page: false,
+    remote_server_configs: [],
+    remote_last_server_index: 0
 }
 
 const bigFishAssertions = async(script: string) => {

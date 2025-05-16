@@ -225,7 +225,12 @@ export interface parseoutput {
     lengthAction: number,
     lengthDialogue: number,
     parseTime: number,
-    properties: screenplayProperties
+    properties: screenplayProperties,
+    dial_sec_per_char: number,
+    dial_sec_per_punc_short: number,
+    dial_sec_per_punc_long: number,
+    action_sec_per_char: number,
+
 }
 export var parse = function (original_script: string, cfg: any, generate_html: boolean): parseoutput {
     var block_inner = false;
@@ -279,7 +284,11 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 characterFirstLine: new Map<string, number>(),
                 characterDescribe: new Map<string, string>(),
                 characterSceneNumber: new Map<string, Set<string>>(),
-            }
+            },
+            dial_sec_per_char: cfg.calculate_duration,
+            dial_sec_per_punc_short: cfg.calculate_duration_short,
+            dial_sec_per_punc_long: cfg.calculate_duration_long,
+            action_sec_per_char: cfg.calculate_duration_action,
         };
     if (!script) {
         return result;
@@ -509,7 +518,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             for (let i = 0; i < current_outline_note_text.length; i++) {
                 if (current_outline_note_text[i] && current_outline_note_text[i].trim().length > 0) {
                     var linenumber = current_outline_note_linenum[i];
-                    result.properties.structure.push({playSec: _playTimeSec, text: current_outline_note_text[i].trim(), id: '/' + linenumber, isnote: true, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, current_outline_note_text[i].length + 4)), section: false, synopses: [] })
+                    result.properties.structure.push({ playSec: _playTimeSec, text: current_outline_note_text[i].trim(), id: '/' + linenumber, isnote: true, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, current_outline_note_text[i].length + 4)), section: false, synopses: [] })
                 }
             }
         }
@@ -571,7 +580,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             // } else {
             // textWithoutNotes = token.text;
             // }
-            token.time = calculateDialogueDuration(textWithoutNotes);
+            token.time = calculateDialogueDuration(textWithoutNotes, result.dial_sec_per_char, result.dial_sec_per_punc_short, result.dial_sec_per_punc_long);
             // if (!cfg.print_notes) {
             //     token.text = textWithoutNotes;
             //     if (token.text.trim().length == 0) token.ignore = true;
@@ -621,7 +630,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             // } else {
             // textWithoutNotes = token.text;
             // }
-            token.time = calculateActionDuration(textWithoutNotes);
+            token.time = calculateActionDuration(textWithoutNotes, result.action_sec_per_char);
             // if (!cfg.print_notes) {
             //     token.text = token.text.replace(regex.note_inline, "");
             //     if (token.text.trim().length == 0) token.ignore = true;
@@ -956,6 +965,33 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     processTitlePageEnd(i);
                     if (result.properties.firstSceneLine < 0) {
                         result.properties.firstSceneLine = i;
+                        // 从metadat里更新用户配置时间预估参数
+                        for (let index = 0; index < result.title_page['hidden'].length; index++) {
+                            if (result.title_page['hidden'][index].type == "metadata") {
+                                var metadataString = result.title_page['hidden'][index].text;
+                                if (metadataString) {
+                                    try {
+                                        var metadata = JSON.parse(metadataString);
+                                        if (metadata) {
+                                            if (metadata.dial_sec_per_char) {
+                                                result.dial_sec_per_char = metadata.dial_sec_per_char;
+                                            }
+                                            if (metadata.dial_sec_per_punc_short) {
+                                                result.dial_sec_per_punc_short = metadata.dial_sec_per_punc_short;
+                                            }
+                                            if (metadata.dial_sec_per_punc_long) {
+                                                result.dial_sec_per_punc_long = metadata.dial_sec_per_punc_long;
+                                            }
+                                            if (metadata.action_sec_per_char) {
+                                                result.action_sec_per_char = metadata.action_sec_per_char;
+                                            }
+                                        }
+                                    } catch (e) {
+                                    }
+                                }
+                                break;
+                            }
+                        }
                     }
 
                     let sceneHeadingMatch = text_valid.match(regex.scene_heading);
@@ -1057,7 +1093,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                     }
 
                     updatePreviousSceneLength();
-                    if(result.properties.scenes.length > 0) {
+                    if (result.properties.scenes.length > 0) {
                         result.properties.scenes[result.properties.scenes.length - 1].endPlaySec = _playTimeSec;
                     }
                     result.properties.scenes.push({ scene: nb, text: textForToken, line: thistoken.line, actionLength: 0, dialogueLength: 0, number: nb, startPlaySec: _playTimeSec, endPlaySec: _playTimeSec });
@@ -1085,7 +1121,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                                 result.properties.locations.set(sl, values);
                             }
                             else {
-                                result.properties.locations.set(sl, [{ scene_number: nb, line: thistoken.line, startPlaySec: _playTimeSec , ...location, name: sl }]);
+                                result.properties.locations.set(sl, [{ scene_number: nb, line: thistoken.line, startPlaySec: _playTimeSec, ...location, name: sl }]);
                             }
                         })
                     }

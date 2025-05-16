@@ -234,6 +234,10 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
     },
 	"chars_per_minu": 243.22,
 	"dial_chars_per_minu": 171,
+	"dial_sec_per_char": 0.3,
+	"dial_sec_per_punc_short": 0.3,
+	"dial_sec_per_punc_long": 0.75,
+	"action_sec_per_char": 0.4,
 	"embedFonts": false,
 	"print": {
 		"chinaFormat": 3,
@@ -255,9 +259,17 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 	}
 }
 
-[chars_per_minu] - 每分钟多少字符（针对全文，不区分对白），用于粗略预估剧本时间【主要用于其他客户端软件使用】。
+[chars_per_minu] - 每分钟多少字符（针对全文，不区分对白），用于粗略预估剧本时间【主要用于其他客户端软件使用,如APP端】。
 
-[dial_chars_per_minu] - 对白每分钟多少字符，用于粗略预估对白时间【主要用于其他客户端软件使用】。
+[dial_chars_per_minu] - 对白每分钟多少字符，用于粗略预估对白时间【主要用于其他客户端软件使用,如APP端】。
+
+[dial_sec_per_char] - 对白中每字符耗时预估(不含标点)。
+
+[dial_sec_per_punc_short] - 对白中每个短标点耗时预估(逗号顿号等)。
+
+[dial_sec_per_punc_long] - 对白中每个长标点耗时预估(句号问号等)。
+
+[action_sec_per_char] - action文本中每字符转化成影片时长预估(不含标点)。
 
 [print]-[chinaFormat] - print in china format (dialogue is aligned to the left). 0: don't print in china format; Otherwise : print in china format. ([1 or 3] : action begin with △) ([2 or 4] : action begin without △) ([3 or 4] : dialogue auto join together without break line) .
 
@@ -378,6 +390,10 @@ When both passwords are provided, users with user password are able to decrypt t
     },
 	"chars_per_minu": 243.22,
 	"dial_chars_per_minu": 171,
+	"dial_sec_per_char": 0.3,
+	"dial_sec_per_punc_short": 0.3,
+	"dial_sec_per_punc_long": 0.75,
+	"action_sec_per_char": 0.4,
 	"embedFonts": false,
 	"print": {
 		"chinaFormat": 3,

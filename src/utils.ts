@@ -203,13 +203,17 @@ export const calculateChars = (text: string): string => {
 	return text.replace(/\s|\p{P}|\p{S}/giu, '');
 }
 
-export const calculateActionDuration = (actionText: string): number => {
+export const calculateActionDuration = (actionText: string, action_sec_per_char: number = 0): number => {
 	var duration = 0;
 
-	const config = getFountainConfig(getActiveFountainDocument());
 	var x = 0.15;
-	if (config.calculate_duration_action) {
-		x = config.calculate_duration_action
+	if (action_sec_per_char) {
+		x = action_sec_per_char
+	} else {
+		const config = getFountainConfig(getActiveFountainDocument());
+		if (config.calculate_duration_action) {
+			x = config.calculate_duration_action
+		}
 	}
 	// var sanitized = actionText.replace(new RegExp(regex.note_inline, 'g'), '');
 	var sanitized = calculateChars(actionText);
@@ -219,21 +223,29 @@ export const calculateActionDuration = (actionText: string): number => {
 /**
  * Calculate an approximation of how long a line of dialogue would take to say
  */
-export const calculateDialogueDuration = (dialogue: string): number => {
+export const calculateDialogueDuration = (dialogue: string, dial_sec_per_char: number = 0, dial_sec_per_punc_short: number = 0, dial_sec_per_punc_long: number = 0): number => {
 	var duration = 0;
 
 	const config = getFountainConfig(getActiveFountainDocument());
 	var x = 0.1945548;
 	var long = 0.75;
 	var short = 0.3;
-	if (config.calculate_duration) {
+	if (dial_sec_per_char) {
+		x = dial_sec_per_char
+	} else if (config.calculate_duration) {
 		x = config.calculate_duration
 	}
-	if (config.calculate_duration_long) {
-		long = config.calculate_duration_long
-	}
-	if (config.calculate_duration_short) {
+
+	if (dial_sec_per_punc_short) {
+		short = dial_sec_per_punc_short
+	} else if (config.calculate_duration_short) {
 		short = config.calculate_duration_short
+	}
+
+	if (dial_sec_per_punc_long) {
+		long = dial_sec_per_punc_long
+	} else if (config.calculate_duration_long) {
+		long = config.calculate_duration_long
 	}
 
 	//According to this paper: http://www.office.usp.ac.jp/~klinger.w/2010-An-Analysis-of-Articulation-Rates-in-Movies.pdf
@@ -652,12 +664,12 @@ export function cleanStlyleChars(text: string): string {
  * @returns 转换后的整数
  */
 export function toInt(value: unknown, defaultValue = 0): number {
-    if (typeof value === 'number') {
-        return Math.round(value);
-    }
-    if (typeof value === 'string') {
-        const num = parseFloat(value);
-        return isNaN(num) ? defaultValue : Math.round(num);
-    }
-    return defaultValue;
+	if (typeof value === 'number') {
+		return Math.round(value);
+	}
+	if (typeof value === 'string') {
+		const num = parseFloat(value);
+		return isNaN(num) ? defaultValue : Math.round(num);
+	}
+	return defaultValue;
 }
