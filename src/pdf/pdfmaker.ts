@@ -945,6 +945,21 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     var chinaFormat = doc.chinaFormat;
     var line_height = opts.line_height;
     var bottom_notes = cfg.note_position_bottom
+    
+    var print_title_page = cfg.print_title_page;
+    var print_preface_page = cfg.print_preface_page;
+    var scenes_numbers = cfg.scenes_numbers;
+    if (opts.metadata && opts.metadata.print) {
+        if (opts.metadata.print.print_title_page !== undefined) {
+            print_title_page = opts.metadata.print.print_title_page;
+        }
+        if (opts.metadata.print.print_preface_page !== undefined) {
+            print_preface_page = opts.metadata.print.print_preface_page;
+        }
+        if (opts.metadata.print.scenes_numbers !== undefined) {
+            scenes_numbers = opts.metadata.print.scenes_numbers;
+        }
+    }
 
     const innerwidth = print.page_width - print.left_margin - print.right_margin;
     const actionIndent = print.action.feed - print.left_margin;
@@ -997,7 +1012,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
     };*/
 
-    if (cfg.print_title_page && parsed.title_page) {
+    if (print_title_page && parsed.title_page) {
 
         if (parsed.title_page['tl'].length > 0 || parsed.title_page['tc'].length > 0 || parsed.title_page['tr'].length > 0 ||
             parsed.title_page['bl'].length > 0 || parsed.title_page['cc'].length > 0 || parsed.title_page['br'].length > 0
@@ -1281,7 +1296,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // scene_continuations[sceneNumber] = scene_continuations[sceneNumber] || 0;
             // scene_continuations[sceneNumber]++;//scene_number
 
-            var scene_continued = (cfg.scenes_numbers !== 'none' && sceneNumber ? sceneNumber + ' ' : '') + (cfg.text_scene_continued || 'CONTINUED') + ':';
+            var scene_continued = (scenes_numbers !== 'none' && sceneNumber ? sceneNumber + ' ' : '') + (cfg.text_scene_continued || 'CONTINUED') + ':';
             scene_continued += count > 1 ? ' (' + count + ')' : '';
 
             scene_continued = clearFormatting(scene_continued);
@@ -1760,12 +1775,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                     var shift_scene_number;
 
-                    if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'left') {
+                    if (scenes_numbers === 'both' || scenes_numbers === 'left') {
                         shift_scene_number = (scene_text_length + 4) * print.font_width;
                         doc.text2(scene_number, print.action.feed - shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
                     }
 
-                    if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'right') {
+                    if (scenes_numbers === 'both' || scenes_numbers === 'right') {
                         // shift_scene_number = (print.scene_heading.max + 1) * print.font_width;
                         // doc.text2(scene_number, feed + shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
                         shift_scene_number = (scene_text_length + 4) * print.font_width;
@@ -1807,12 +1822,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             //             var shift_scene_number;
 
-            //             if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'left') {
+            //             if (scenes_numbers === 'both' || scenes_numbers === 'left') {
             //                 shift_scene_number = (scene_text_length + 4) * print.font_width;
             //                 doc.text2(scene_number, feed - shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
             //             }
 
-            //             if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'right') {
+            //             if (scenes_numbers === 'both' || scenes_numbers === 'right') {
             //                 shift_scene_number = (print.scene_heading.max + 1) * print.font_width;
             //                 doc.text2(scene_number, feed + shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, false, text_properties);
             //             }
@@ -1920,7 +1935,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             ii--;
             continue
         } else {
-            if (pageNumPrintSub == -2 && !cfg.print_preface_page) {
+            if (pageNumPrintSub == -2 && !print_preface_page) {
                 // 不打印 print_preface_page 的配置情况下，第一个场景/转场/section前的页面 也都不打印。 
                 continue;
             }
@@ -2426,12 +2441,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                 //     var shift_scene_number;
 
-                //     if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'left') {
+                //     if (scenes_numbers === 'both' || scenes_numbers === 'left') {
                 //         shift_scene_number = (scene_text_length + 4) * print.font_width;
                 //         doc.text2(scene_number, feed - shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, text_properties);
                 //     }
 
-                //     if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'right') {
+                //     if (scenes_numbers === 'both' || scenes_numbers === 'right') {
                 //         shift_scene_number = (print.scene_heading.max + 1) * print.font_width;
                 //         doc.text2(scene_number, feed + shift_scene_number, print.top_margin + height, 0, 0, 0, 0, 0, text_properties);
                 //     }

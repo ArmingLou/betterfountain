@@ -882,10 +882,22 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         chinaFormat = 0; //是否国内剧本格式; 0,国际剧本格式；1，国内剧本，带△ ；2，国内剧本，不带 △ 。 （区别于好莱坞剧本格式）
     // var pageIdx = 0;
     var line_height = opts.line_height;
+    var print_title_page = cfg.print_title_page;
+    var print_preface_page = cfg.print_preface_page;
+    var scenes_numbers = cfg.scenes_numbers;
 
     if (opts.metadata && opts.metadata.print) {
         if (opts.metadata.print.chinaFormat) {
             chinaFormat = opts.metadata.print.chinaFormat;
+        }
+        if (opts.metadata.print.print_title_page !== undefined) {
+            print_title_page = opts.metadata.print.print_title_page;
+        }
+        if (opts.metadata.print.print_preface_page !== undefined) {
+            print_preface_page = opts.metadata.print.print_preface_page;
+        }
+        if (opts.metadata.print.scenes_numbers !== undefined) {
+            scenes_numbers = opts.metadata.print.scenes_numbers;
         }
     }
     // console.log(chinaFormat)
@@ -938,10 +950,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     var innerWidth = Docx.convertInchesToTwip(print.page_width) - Docx.convertInchesToTwip(print.left_margin) - Docx.convertInchesToTwip(print.right_margin);
 
     // 缩进：
-    // var shift_scene_number = (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'left') ? 6 * print.font_width : 0; // 场景号缩进
+    // var shift_scene_number = (scenes_numbers === 'both' || scenes_numbers === 'left') ? 6 * print.font_width : 0; // 场景号缩进
     // var sceneIndent = Docx.convertInchesToTwip(print.scene_heading.feed - print.left_margin - shift_scene_number); // 场景
 
-    var shift_scene_number = Docx.convertInchesToTwip((cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'left') ? 7 * print.font_width : 0); // 场景号缩进
+    var shift_scene_number = Docx.convertInchesToTwip((scenes_numbers === 'both' || scenes_numbers === 'left') ? 7 * print.font_width : 0); // 场景号缩进
     var sceneIndent = Docx.convertInchesToTwip(print.scene_heading.feed - print.left_margin) - shift_scene_number; // 场景
 
     // var sectionIndent = Docx.convertInchesToTwip(print.section.feed - print.left_margin); // 章节
@@ -1207,7 +1219,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     // title page
     var sectionTitlePage = null;
-    if (cfg.print_title_page && parsed.title_page) {
+    if (print_title_page && parsed.title_page) {
 
         if (parsed.title_page['tl'].length > 0 || parsed.title_page['tc'].length > 0 || parsed.title_page['tr'].length > 0 ||
             parsed.title_page['bl'].length > 0 || parsed.title_page['cc'].length > 0 || parsed.title_page['br'].length > 0
@@ -1887,7 +1899,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
                     if (line.number) {
 
-                        if (cfg.scenes_numbers === 'both' || cfg.scenes_numbers === 'left') {
+                        if (scenes_numbers === 'both' || scenes_numbers === 'left') {
                             var scene_number = String(line.number);
                             var scene_text_length = scene_number.length;
 
@@ -2302,7 +2314,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     if (sectionTitlePage) {
         doc.options.sections.push(sectionTitlePage)
     }
-    if (sectionMainNoPageNum.children.length > 0 && cfg.print_preface_page) {
+    if (sectionMainNoPageNum.children.length > 0 && print_preface_page) {
         // 不打印 print_preface_page 的配置情况下，第一个场景/转场/section前的页面 也都不打印。
         doc.options.sections.push(sectionMainNoPageNum)
     }

@@ -242,6 +242,9 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 	"print": {
 		"chinaFormat": 3,
 		"rmBlankLine": 0,
+		"print_title_page": 1,
+		"print_preface_page": 1,
+		"scenes_numbers": "both",
 		"paper_size": "a4",
 		"font_size": 12,
 		"character_spacing": 1,
@@ -274,6 +277,12 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 [print]-[chinaFormat] - print in china format (dialogue is aligned to the left). 0: don't print in china format; Otherwise : print in china format. ([1 or 3] : action begin with △) ([2 or 4] : action begin without △) ([3 or 4] : dialogue auto join together without break line) .
 
 [print]-[rmBlankLine] - 打印时删除空行. 0，不删除空行；1，删除空行（但场景前加空行）;2，删除空行（但场景前加空行，对话前与后加空行）
+
+[print]-[print_title_page] - 是否打印封底页. 0，不打印；1，打印
+						
+[print]-[print_preface_page] - 是否打印前言页. 0，不打印；1，打印
+						
+[print]-[scenes_numbers] - 场景号显示位置. left，显示在左边；right，显示在右边；both，显示在左右两边 。其他值，不显示场景号。
 
 [embedFonts] - If embed fonts. (available in docx only)
 
@@ -398,6 +407,9 @@ When both passwords are provided, users with user password are able to decrypt t
 	"print": {
 		"chinaFormat": 3,
 		"rmBlankLine": 0,
+		"print_title_page": 1,
+		"print_preface_page": 1,
+		"scenes_numbers": "both",
 		"paper_size": "a4",
 		"font_size": 12,
 		"character_spacing": 1,
