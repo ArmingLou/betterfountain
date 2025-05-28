@@ -47,6 +47,14 @@ export var GenerateDocx = async function (outputpath: string, config: FountainCo
         }
     }
     var current_index = 0, previous_type: string = null;
+    
+    if (metadata && metadata.print && metadata.print.print_sections !== undefined) {
+        config.print_sections = metadata.print.print_sections;
+    }
+    
+    if (metadata && metadata.print && metadata.print.print_synopsis !== undefined) {
+        config.print_synopsis = metadata.print.print_synopsis;
+    }
 
     // tidy up separators
     let invisibleSections = [];

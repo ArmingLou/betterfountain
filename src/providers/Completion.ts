@@ -244,6 +244,8 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 		"rmBlankLine": 0,
 		"print_title_page": 1,
 		"print_preface_page": 1,
+		"print_sections": 0,
+        "print_synopsis": 1,
 		"scenes_numbers": "both",
 		"paper_size": "a4",
 		"font_size": 12,
@@ -281,6 +283,10 @@ export class FountainCompletionProvider implements vscode.CompletionItemProvider
 [print]-[print_title_page] - 是否打印封底页. 0，不打印；1，打印
 						
 [print]-[print_preface_page] - 是否打印前言页. 0，不打印；1，打印
+
+[print]-[print_sections] - 是否打印章节标题（#开头的行）. 0，不打印；1，打印
+
+[print]-[print_synopsis] - 是否打印梗概（=开头的行）. 0，不打印；1，打印
 						
 [print]-[scenes_numbers] - 场景号显示位置. left，显示在左边；right，显示在右边；both，显示在左右两边 。其他值，不显示场景号。
 
@@ -409,6 +415,8 @@ When both passwords are provided, users with user password are able to decrypt t
 		"rmBlankLine": 0,
 		"print_title_page": 1,
 		"print_preface_page": 1,
+		"print_sections": 0,
+        "print_synopsis": 1,
 		"scenes_numbers": "both",
 		"paper_size": "a4",
 		"font_size": 12,
