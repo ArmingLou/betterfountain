@@ -1433,6 +1433,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         size: actionIndent,
                         type: Docx.WidthType.DXA
                     },
+                    columnWidths: [dial_double_tab_colume_width,dial_double_tab_colume_width],
                     borders: bordersNone,
                     rows: [
                         new Docx.TableRow({
