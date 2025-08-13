@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "7.7.1",
+	"version": "7.7.2",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -34,7 +34,7 @@
 		"pdf"
 	],
 	"engines": {
-		"vscode": "^1.62.0"
+		"vscode": "^1.103.0"
 	},
 	"activationEvents": [
 		"onLanguage:fountain",
@@ -247,7 +247,10 @@
 									"description": "连接密码"
 								}
 							},
-							"required": ["ip", "port"]
+							"required": [
+								"ip",
+								"port"
+							]
 						},
 						"default": [
 							{
@@ -659,9 +662,9 @@
 		"@types/jest": "^24.9.1",
 		"@types/jquery": "^3.5.6",
 		"@types/mocha": "^5.2.7",
-		"@types/node": "^8.10.66",
+		"@types/node": "^22.17.0",
 		"@types/username": "^3.0.0",
-		"@types/vscode": "^1.62.0",
+		"@types/vscode": "^1.102.0",
 		"@types/ws": "^8.18.1",
 		"@vscode/test-web": "*",
 		"copyfiles": "^2.4.1",
@@ -682,7 +685,7 @@
 	"dependencies": {
 		"@vscode/codicons": "^0.0.32",
 		"base64-stream": "^1.0.0",
-		"blob": "0.1.0",
+		"blob-util": "^2.0.2",
 		"diff": "^5.0.0",
 		"docx": "^9.1.0",
 		"docx-preview": "^0.3.3",
