@@ -1941,6 +1941,21 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     }
 
     var lastPdfOutlineWasSection = true;
+    
+    if (lines.length>0){
+        if (lines[lines.length-1].type === "character" || lines[lines.length-1].type === "parenthetical" || lines[lines.length-1].type === "dialogue") {
+            // 对话块结束，额外处理 (国内剧本对话)
+            //手动加空行结尾，以令 cacheText 可以最后被绘制。（需要通过空行识别成对话块结束之后，才绘制缓存的对话内容）
+            lines.splice(lines.length, 0, {
+                type: "separator",
+                token: "",
+                text: " ",
+                start: 0,
+                end: 0,
+                // scene_split: false, 
+            });
+        }
+    }
 
     for (var ii = 0; ii < lines.length; ii++) {
         var shouldDel = shouldDelBlankLine(ii);
@@ -2062,7 +2077,6 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         if (!sceneStarted && lines[ii].token && lines[ii].token.type === "scene_heading") { //redraw 也可能进入
             sceneStarted = true;
         }
-
 
 
         if (lines[ii].type === "character" || lines[ii].type === "parenthetical" || lines[ii].type === "dialogue") {
