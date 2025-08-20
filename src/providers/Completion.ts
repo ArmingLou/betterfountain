@@ -605,6 +605,7 @@ When both passwords are provided, users with user password are able to decrypt t
 
 		if (currentline.substring(position.character - 1, position.character) == '【') {
 			completes.push({ label: "[[ ]] 插入note", range: new vscode.Range(position.translate(0, -1), position), filterText: '【【】】', insertText: new vscode.SnippetString('[[$1]]'), documentation: "插入note", sortText: "0B" });
+			completes.push({ label: "[[| ]] 插入note(强制原位)", range: new vscode.Range(position.translate(0, -1), position), filterText: '【【】】', insertText: new vscode.SnippetString('[[|$1]]'), documentation: "插入note(强制原位)", sortText: "0C" });
 		} else if (currentline.substring(position.character - 1, position.character) == '（') {
 			// 判断角色，补全 画中画，旁白 的自动补全。
 			var its = this.provideCharDesCompletionItems('（', currentline, position);
@@ -617,7 +618,8 @@ When both passwords are provided, users with user password are able to decrypt t
 				}
 				completes.push({ label: "() 插入英文括号", range: new vscode.Range(position.translate(0, -1), position), filterText: '（）', insertText: new vscode.SnippetString('($1)'), documentation: "插入英文括号", sortText: "3B" });
 			}
-
+		} else if (currentline.substring(position.character - 1, position.character) == '｜') {
+			completes.push({ label: "|  转为英文符号", range: new vscode.Range(position.translate(0, -1), position), filterText: '｜', insertText: '|', documentation: "转为英文符号", sortText: "2B" });
 		} else if (currentline.substring(position.character - 1, position.character) == '(' && currentlineTrim !== '.(' && currentlineTrim !== '。(') {
 			// 判断角色，补全 画中画，旁白 的自动补全。
 			var its = this.provideCharDesCompletionItems('(', currentline, position);

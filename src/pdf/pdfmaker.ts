@@ -1,5 +1,7 @@
 // TODO: Extract pdfmaker to a separate library (+++++)
 
+/// <reference lib="dom" />
+
 import * as fountainconfig from "../configloader";
 import * as print from "./print";
 import * as path from 'path';
@@ -46,9 +48,9 @@ export class StyleStash {
     italic_dynamic: boolean;
 }
 
-var PDFDocument = require('pdfkit'),
-    //helper = require('../helpers'),
-    Blob = require('blob');
+var PDFDocument = require('pdfkit')
+    //helper = require('../helpers');
+    // Blob = require('blob');
 
 // const textbox_width_error = 0;
 
@@ -111,9 +113,32 @@ var create_simplestream = function (filepath: string) {
                 });
 
             } else {
-                simplestream.blob = new Blob(simplestream.chunks, {
-                    type: "application/pdf"
-                });
+                // 在现代环境中，我们可以直接使用原生的Blob对象
+                // 如果在Node.js环境中，我们需要使用Buffer来创建Blob
+                if (typeof Blob !== 'undefined') {
+                    // 浏览器环境
+                    simplestream.blob = new Blob(simplestream.chunks, {
+                        type: "application/pdf"
+                    });
+                } else {
+                    // Node.js环境，使用Buffer
+                    const buffer = Buffer.concat(simplestream.chunks.map((chunk: any) => 
+                        Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+                    ));
+                    // 创建一个模拟的Blob对象
+                    simplestream.blob = {
+                        size: buffer.length,
+                        type: "application/pdf",
+                        arrayBuffer: () => Promise.resolve(buffer),
+                        stream: () => {
+                            const readable = require('stream').Readable;
+                            const stream = new readable();
+                            stream.push(buffer);
+                            stream.push(null);
+                            return stream;
+                        }
+                    };
+                }
                 // simplestream.url = blobUtil.createObjectURL(this.blob);
                 this.callback(simplestream);
             }

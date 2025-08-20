@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"aiKey": "0c2689ab-4ce9-416d-a585-c9765b7f4c88",
 	"icon": "icon.png",
-	"version": "7.7.1",
+	"version": "7.7.8",
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -682,7 +682,7 @@
 	"dependencies": {
 		"@vscode/codicons": "^0.0.32",
 		"base64-stream": "^1.0.0",
-		"blob": "0.1.0",
+		"blob-util": "^2.0.2",
 		"diff": "^5.0.0",
 		"docx": "^9.1.0",
 		"docx-preview": "^0.3.3",
