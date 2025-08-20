@@ -511,7 +511,24 @@ async function initDoc(opts: Options) {
                         // 每个token有几个note
                         for (let k = 0; k < notes[i][j].text.length; k++) {
                             // 每个note的行
-                            l++;
+                            //
+                            var tt2 = addTextbox([ {
+                                    text:notes[i][j].text[k],
+                                    font:'ScriptNormal',
+                                  }
+                                ], doc,print.left_margin *72, print.top_margin * 72, 
+                                (print.page_width - print.action.feed - print.action.feed) * 72,
+                                 print.top_margin * 72, (print.lines_per_page * line_height) * 72, 
+                                 (print.lines_per_page * line_height) * 72, 0, 0, true,
+                                { // 组件bug,text显示宽度比实际配置的width值要大
+                                    lineHeight: print.note_line_height*72,
+                                    lineBreak: false,
+                                    align: "left",
+                                    baseline: 'bottom',
+                                    fontSize: print.note_font_size || 12,
+                                    characterSpacing: print.character_spacing,
+                                })
+                            l+=tt2.lines.length;
                         }
                     }
                 }
@@ -1405,7 +1422,23 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     // 每个token有几个note
                     for (let k = 0; k < notes[i][j].text.length; k++) {
                         // 每个note的行
-                        l++;
+                        var tt2 = addTextbox([ {
+                                    text:notes[i][j].text[k],
+                                    font:'ScriptNormal',
+                                  }
+                                ], doc,print.left_margin *72, print.top_margin * 72, 
+                                (print.page_width - print.action.feed - print.action.feed) * 72,
+                                 print.top_margin * 72, (print.lines_per_page * line_height) * 72, 
+                                 (print.lines_per_page * line_height) * 72, 0, 0, true,
+                                { // 组件bug,text显示宽度比实际配置的width值要大
+                                    lineHeight: print.note_line_height*72,
+                                    lineBreak: false,
+                                    align: "left",
+                                    baseline: 'bottom',
+                                    fontSize: print.note_font_size || 12,
+                                    characterSpacing: print.character_spacing,
+                                })
+                            l+=tt2.lines.length;
                     }
                 }
             }
@@ -2810,7 +2843,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
         doc.switchToPage(pIdx);
         // var yPosBottom = print.page_height - print.page_number_top_margin - lineHeight * 0.5;
-        var yPosBottom = print.page_height - print.bottom_margin + line_height * 2;
+        var yPosBottom = print.page_height - print.bottom_margin + line_height ;
         var yPos = yPosBottom;
         // var drawLeftEver = false;
         var drawRightLatestPosy = 0;
@@ -2839,7 +2872,24 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
 
                 for (var k = token[j].text.length - 1; k >= 0; k--) {
-                    yPos = yPos - lineHeight;
+                    var tt2 = addTextbox([ {
+                                    text:token[j].text[k],
+                                    font:'ScriptNormal',
+                                  }
+                                ], doc,print.left_margin *72, print.top_margin * 72, 
+                                (print.page_width - print.action.feed - print.action.feed) * 72,
+                                 print.top_margin * 72, (print.lines_per_page * line_height) * 72, 
+                                 (print.lines_per_page * line_height) * 72, 0, 0, true,
+                                { // 组件bug,text显示宽度比实际配置的width值要大
+                                    lineHeight: print.note_line_height*72,
+                                    lineBreak: false,
+                                    align: "left",
+                                    baseline: 'bottom',
+                                    fontSize: print.note_font_size || 12,
+                                    characterSpacing: print.character_spacing,
+                                })
+                    
+                    yPos = yPos - (lineHeight * tt2.lines.length);
                     var text = token[j].text[k];
                     if (k == 0) {
                         //去掉第一个字符
@@ -2866,7 +2916,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         width: width_note,
                         align: 'left',
                         fontSize: noteFontSize,
-                        lineHeight: lineHeight
+                        lineHeight: lineHeight * 72
                     });
                 }
                 doc.format_text('[' + token[j].no + ']', drawRight ? feed_note_no_right : feed_note_no, yPos, {
@@ -2875,7 +2925,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     width: width_note,
                     align: 'left',
                     fontSize: noteFontSize,
-                    lineHeight: lineHeight
+                    lineHeight: lineHeight * 72
                 });
 
                 if (drawRight) {
@@ -2889,16 +2939,16 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         if (notes.length > 0) {
             var innerwidth_half = (print.page_width - print.action.feed - print.action.feed) / 3
             if (drawLatestPosy) {
-                doc.format_text(cfg.text_note || 'NOTE:', 0, drawLatestPosy, {
+                doc.format_text(cfg.text_note || 'NOTE:', 0, drawLatestPosy- line_height*0.5, {
                     color: '#000000',
                     line_break: false,
                     width: feed_note_no - 0.5 * lineHeight,
                     align: 'right',
                     fontSize: print.font_size,
-                    lineHeight: line_height
+                    lineHeight: line_height * 72
                 });
-                doc.moveTo(print.action.feed * 72, (drawLatestPosy - line_height) * 72)
-                    .lineTo((print.action.feed + innerwidth_half) * 72, (drawLatestPosy - line_height) * 72)
+                doc.moveTo(print.action.feed * 72, (drawLatestPosy - line_height*0.5) * 72)
+                    .lineTo((print.action.feed + innerwidth_half) * 72, (drawLatestPosy - line_height*0.5) * 72)
                     .stroke();
                 // 统计高度，加上注解高度
                 pagesHeight[pIdx] += yPosBottom - drawLatestPosy;
@@ -2914,8 +2964,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // });
                 // doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - lineHeight - line_height) * 72)
                 // .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - lineHeight - line_height) * 72)
-                doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - line_height) * 72)
-                    .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - line_height) * 72)
+                doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - line_height*0.5) * 72)
+                    .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - line_height*0.5) * 72)
                     .stroke();
             }
         }
