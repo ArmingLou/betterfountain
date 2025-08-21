@@ -1978,22 +1978,18 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     var lastPdfOutlineWasSection = true;
     
-    if (lines.length>0){
-        if (lines[lines.length-1].type === "character" || lines[lines.length-1].type === "parenthetical" || lines[lines.length-1].type === "dialogue") {
-            // 对话块结束，额外处理 (国内剧本对话)
-            //手动加空行结尾，以令 cacheText 可以最后被绘制。（需要通过空行识别成对话块结束之后，才绘制缓存的对话内容）
-            lines.splice(lines.length, 0, {
-                type: "separator",
-                token: "",
-                text: " ",
-                start: 0,
-                end: 0,
-                // scene_split: false, 
-            });
-        }
-    }
-
     for (var ii = 0; ii < lines.length; ii++) {
+        if (lines[ii].type === "character" || lines[ii].type === "parenthetical" || lines[ii].type === "dialogue") {
+        } else {
+            // 对话块结束，额外处理 (国内剧本对话)
+            if (cacheText) {
+                var sp = lines[ii].type === "separator" || lines[ii].type === "page_break"
+                finish_china_dial_first(ii, true, !sp);
+                ii = ii - 1;
+                continue;
+            }
+        }
+        
         var shouldDel = shouldDelBlankLine(ii);
         // lines.forEach(function (line: any) {
         if (pageNumPrintSub == -2 && lines[ii].token && (lines[ii].token.type === "scene_heading" || lines[ii].token.type === "section" || lines[ii].token.type === "transition")) { //redraw 也可能进入
@@ -2112,18 +2108,6 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
         if (!sceneStarted && lines[ii].token && lines[ii].token.type === "scene_heading") { //redraw 也可能进入
             sceneStarted = true;
-        }
-
-
-        if (lines[ii].type === "character" || lines[ii].type === "parenthetical" || lines[ii].type === "dialogue") {
-        } else {
-            // 对话块结束，额外处理 (国内剧本对话)
-            if (cacheText) {
-                var sp = lines[ii].type === "separator" || lines[ii].type === "page_break"
-                finish_china_dial_first(ii, true, !sp);
-                ii = ii - 1;
-                continue;
-            }
         }
 
         if_dual_right_end(ii);
@@ -2553,7 +2537,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             if (cacheText) {
                                 cacheText = cacheText + text;
                                 draw = false;
-                                if (chinaFormat === 1 || chinaFormat === 2) {
+                                if (chinaFormat === 1 || chinaFormat === 2 || ii === lines.length-1) {
                                     finish_china_dial_first(ii, false); //cacheText插到后一行，后一个循环会draw
                                 }
                             }
@@ -2627,7 +2611,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             if (cacheText) {
                                 cacheText = cacheText + text;
                                 draw = false;
-                                if (chinaFormat === 1 || chinaFormat === 2) {
+                                if (chinaFormat === 1 || chinaFormat === 2 || ii === lines.length-1) {
                                     finish_china_dial_first(ii, false);
                                 }
                             } else {
@@ -2773,6 +2757,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
 
     }
+    
+    
     var lh = height;
     if (last_dual_right_end_pageIdx === pageIdx && last_dual_right_end_height > height) {
         lh = last_dual_right_end_height

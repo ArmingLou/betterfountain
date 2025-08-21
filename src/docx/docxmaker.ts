@@ -1595,22 +1595,25 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         text,
         after_section = false; // helpful to determine synopsis indentation
         
-    if (lines.length>0){
-        if (lines[lines.length-1].type === "character" || lines[lines.length-1].type === "parenthetical" || lines[lines.length-1].type === "dialogue") {
-            // 对话块结束，额外处理 (国内剧本对话)
-            //手动加空行结尾，以令 cacheText 可以最后被绘制。（需要通过空行识别成对话块结束之后，才绘制缓存的对话内容）
-            lines.splice(lines.length, 0, {
-                type: "separator",
-                token: "",
-                text: " ",
-                start: 0,
-                end: 0,
-                // scene_split: false, 
-            });
-        }
-    }
-
     for (var ii = 0; ii < lines.length; ii++) {
+        
+        if (lines[ii].type === "character" || lines[ii].type === "parenthetical" || lines[ii].type === "dialogue") {
+            if (lines[ii].type === "character") {
+                if (lines[ii].token && lines[ii].token.dual !== "right") {
+                    // left 或者 sigle
+                    finish_double_dial();
+                }
+            }
+        } else {
+            // 对话块结束，额外处理 (双对话 /  国内剧本对话)
+            finish_china_dial_first();
+
+            if (lastDialTableRight.length > 0) {
+                finish_double_dial();
+            } else if (lines[ii].type !== "separator") {
+                finish_double_dial();
+            }
+        }
         
         if(shouldDelBlankLine(ii)) {
             // 只绘制样式，再跳过
@@ -1658,26 +1661,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
         }
 
-
         currentLineNotes = [];
-
-        if (lines[ii].type === "character" || lines[ii].type === "parenthetical" || lines[ii].type === "dialogue") {
-            if (lines[ii].type === "character") {
-                if (lines[ii].token && lines[ii].token.dual !== "right") {
-                    // left 或者 sigle
-                    finish_double_dial();
-                }
-            }
-        } else {
-            // 对话块结束，额外处理 (双对话 /  国内剧本对话)
-            finish_china_dial_first();
-
-            if (lastDialTableRight.length > 0) {
-                finish_double_dial();
-            } else if (lines[ii].type !== "separator") {
-                finish_double_dial();
-            }
-        }
 
         let line = lines[ii];
         if (line.type === "page_break") {
@@ -2278,6 +2262,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
 
     }
+    
+    // 对话块结束，额外处理 (双对话 /  国内剧本对话)
+    finish_china_dial_first();
+    finish_double_dial();
 
     if (notesPage[0] && notesPage[0].length > 0) {
         var footnotes: any = {};
