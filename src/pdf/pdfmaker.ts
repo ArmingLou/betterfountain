@@ -889,7 +889,7 @@ async function initDoc(opts: Options) {
 
         var firstBreakHeight = firstBreakHeight * 72;
         if (catchNotes) {
-            firstBreakHeight = firstBreakHeight - (note_lines(pageIdx) * line_height * 72);
+            firstBreakHeight = firstBreakHeight - (note_lines(pageIdx) * print.note_line_height * 72);
         }
 
         return addTextbox(textobjects, doc, x * 72, y * 72, width * 72, posTop * 72, firstBreakHeight, breakHeight * 72, switchPageFrom, switchPageTo, onlyGetLines,
@@ -1411,6 +1411,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     let notesPage: { [key: number]: any } = {};
     let currentLineNotes: any[] = [];
+    
+    // 假设减去脚注高度后，剩余的可用正文页面高度
     function left_lines(pageIdx: any) {
         var l = 0;
         var notes = notesPage[pageIdx];
@@ -1443,10 +1445,11 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
         }
+        
         if (l > 0) {
-            return print.lines_per_page - l - 1; // -1 ，预留多一行间隔
+            return print.lines_per_page  * line_height - ((l + 1) * print.note_line_height); // l+1 ，预留多一行间隔
         } else {
-            return print.lines_per_page;
+            return print.lines_per_page * line_height;
         }
         // return print.lines_per_page - l;
     }
@@ -1783,7 +1786,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             //     brk = true;
             // }
             if (!brk) {
-                if (last_dual_right_end_height >= (left_lines(last_dual_right_end_pageIdx) - 1) * line_height) {
+                if (last_dual_right_end_height >= left_lines(last_dual_right_end_pageIdx) - line_height) {
                     // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
                     if (nextLine && nextLine.type === "character") {
@@ -1901,7 +1904,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             // }
             // TODO Arming (2024-09-28) : 提前分页的情况
             if (!brk) {
-                if (height >= (left_lines(pageIdx) - 4) * line_height) {
+                if (height >= left_lines(pageIdx) - (4 * line_height)) {
                     // 每页最后 4 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
                     if (nextLine && (nextLine.type === "scene_heading" || nextLine.type === "section")) {
@@ -1911,7 +1914,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
             if (!brk) {
-                if (height >= (left_lines(pageIdx) - 1) * line_height) {
+                if (height >= left_lines(pageIdx) - line_height ) {
                     // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
                     if (nextLine && nextLine.type === "character") {
@@ -2809,16 +2812,16 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         var rightLines = 0
 
         var leftLines = left_lines(pIdx)
-        if (notes.length > 0) {
-            leftLines += 1 //正文预留了多一行间隔，注解预期行数补一行
-        }
+        // if (notes.length > 0) {
+        //     leftLines += line_height //正文预留了多一行间隔，注解预期行数补一行
+        // }
 
         if (leftLines < 0 && notes.length == 1) {
             //单个超多行note（超过页面行数了）
             //避免使用右侧注解
         } else {
 
-            var expH = leftLines * line_height //预期高度，按照本页的注解条数（不预留多一行间隔）
+            var expH = leftLines //预期高度，按照本页的注解条数（不预留多一行间隔）
 
             if (expH + 0.0001 < pagesHeight[pIdx]) { //实际高度比预期高度大，原因是
                 // if (expH < pagesHeight[pIdx]) {
@@ -2827,8 +2830,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2
                 feed_note_right = feed_note_no_right + (1.5 * lineHeight);
 
-                var diffLines = Math.round((pagesHeight[pIdx] - expH) / line_height);
-                var l_lines = print.lines_per_page - Math.round(pagesHeight[pIdx] / line_height);
+                var diffLines = Math.round((pagesHeight[pIdx] - expH) / print.note_line_height);
+                var l_lines = (print.lines_per_page * line_height - Math.round(pagesHeight[pIdx]) / print.note_line_height);
 
                 if (l_lines <= diffLines + 1) {
                     rightLines = diffLines
@@ -2877,7 +2880,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                                     font:'ScriptNormal',
                                   }
                                 ], doc,print.left_margin *72, print.top_margin * 72, 
-                                (print.page_width - print.action.feed - print.action.feed) * 72,
+                                width_note * 72,
                                  print.top_margin * 72, (print.lines_per_page * line_height) * 72, 
                                  (print.lines_per_page * line_height) * 72, 0, 0, true,
                                 { // 组件bug,text显示宽度比实际配置的width值要大
@@ -2905,7 +2908,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     if (drawRight) {
                         drawRightLatestPosy = yPos;
                         x = feed_note_right;
-                        rightLines--;
+                        rightLines-=tt2.lines.length;
                     } else {
                         // drawLeftEver = true;
                         drawLatestPosy = yPos;
