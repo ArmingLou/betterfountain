@@ -2811,37 +2811,39 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
         var rightLines = 0
 
-        var leftLines = left_lines(pIdx)
-        // if (notes.length > 0) {
-        //     leftLines += line_height //正文预留了多一行间隔，注解预期行数补一行
+        
+        // 不再使用双行脚注的布局了：---------------
+        // var leftLines = left_lines(pIdx)
+        // // if (notes.length > 0) {
+        // //     leftLines += line_height //正文预留了多一行间隔，注解预期行数补一行
+        // // }
+
+        // if (leftLines < 0 && notes.length == 1) {
+        //     //单个超多行note（超过页面行数了）
+        //     //避免使用右侧注解
+        // } else {
+
+        //     var expH = leftLines //预期高度，按照本页的注解条数（不预留多一行间隔）
+
+        //     if (expH + 0.0001 < pagesHeight[pIdx]) { //实际高度比预期高度大，原因是
+        //         // if (expH < pagesHeight[pIdx]) {
+        //         useDoubleColumn = true;
+        //         width_note = (width_note - (1.5 * lineHeight)) / 2 - 0.2;
+        //         feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2
+        //         feed_note_right = feed_note_no_right + (1.5 * lineHeight);
+
+        //         var diffLines = Math.round((pagesHeight[pIdx] - expH) / print.note_line_height);
+        //         var l_lines = (print.lines_per_page * line_height - Math.round(pagesHeight[pIdx]) / print.note_line_height);
+
+        //         if (l_lines <= diffLines + 1) {
+        //             rightLines = diffLines
+        //         } else {
+        //             rightLines = diffLines + Math.floor((l_lines - diffLines) / 2);
+        //         }
+
+        //     }
         // }
-
-        if (leftLines < 0 && notes.length == 1) {
-            //单个超多行note（超过页面行数了）
-            //避免使用右侧注解
-        } else {
-
-            var expH = leftLines //预期高度，按照本页的注解条数（不预留多一行间隔）
-
-            if (expH + 0.0001 < pagesHeight[pIdx]) { //实际高度比预期高度大，原因是
-                // if (expH < pagesHeight[pIdx]) {
-                useDoubleColumn = true;
-                width_note = (width_note - (1.5 * lineHeight)) / 2 - 0.2;
-                feed_note_no_right = innerwidth / 2 + print.action.feed + 0.2
-                feed_note_right = feed_note_no_right + (1.5 * lineHeight);
-
-                var diffLines = Math.round((pagesHeight[pIdx] - expH) / print.note_line_height);
-                var l_lines = (print.lines_per_page * line_height - Math.round(pagesHeight[pIdx]) / print.note_line_height);
-
-                if (l_lines <= diffLines + 1) {
-                    rightLines = diffLines
-                } else {
-                    rightLines = diffLines + Math.floor((l_lines - diffLines) / 2);
-                }
-
-            }
-        }
-
+        // 不再使用双行脚注的布局了 ---------------
 
 
         doc.switchToPage(pIdx);
