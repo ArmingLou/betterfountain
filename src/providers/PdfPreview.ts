@@ -7,7 +7,7 @@ import { assetsPath, getAssetsUri, mapToObject, resolveAsUri } from "../utils";
 import * as afterparser from "../afterwriting-parser";
 import { GeneratePdf } from "../pdf/pdf";
 import { PdfAsBase64 } from "../pdf/pdfmaker";
-import { createStatisticsPanel } from "./Statistics";
+// import { createStatisticsPanel } from "./Statistics";
 
 interface pdfpreviewPanel {
   uri: string;
@@ -159,7 +159,7 @@ async function loadWebView(docuri: vscode.Uri, pdfpanel: vscode.WebviewPanel) {
       refreshPdfPanel(pdfpanel, editor.document, getFountainConfig(docuri));
     }
     if (message.command = "openstats") {
-      createStatisticsPanel();
+      // createStatisticsPanel();
     }
   });
   pdfpanel.onDidDispose(() => {

@@ -91,7 +91,10 @@ async function loadWebView(docuri: vscode.Uri, docxpanel: vscode.WebviewPanel) {
   let id = Date.now() + Math.floor((Math.random() * 1000));
   docxPanels.push({ uri: docuri.toString(), panel: docxpanel, id: id });
   docxpanel.webview.html = loadDocxPreviewHtml().replace("$HEADLINKS$",
-    `<script src="${resolveAsUri(docxpanel, 'out', 'webviews', 'docx-preview', 'dist', 'docx-preview.js')}"></script>`);
+    `
+    <link rel="stylesheet" href="${resolveAsUri(docxpanel, 'out', 'webviews', 'common.css')}">
+    <link rel="stylesheet" href="${resolveAsUri(docxpanel, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css')}">
+    <script src="${resolveAsUri(docxpanel, 'out', 'webviews', 'docx-preview', 'dist', 'docx-preview.js')}"></script>`);
 
   let config = getFountainConfig(docuri);
   docxpanel.webview.postMessage({ command: 'setstate', uri: docuri.toString() });

@@ -6,35 +6,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
   <title>DOCX.js viewer</title>
-  
-   <!--dependencies-->
-   <script crossorigin src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
-   <!--library-->
-   <!-- <script src="dist/docx-preview.js"></script> -->
-   $HEADLINKS$
-  
+
+  <!--dependencies-->
+  <script crossorigin src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
+  <!--library-->
+  <!-- <script src="dist/docx-preview.js"></script> -->
+  $HEADLINKS$
+
 </head>
 <style>
   body {
     padding: 0;
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  #outerContainer {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  #mainContainer {
+    flex: 1;
+    overflow: auto;
+    padding-bottom: 22px; /* 为 statusbar 留出空间 */
+  }
+  
+  #printContainer {
+    padding: 10px;
   }
 </style>
 
 
 
-<body >
-  
-  <div class="statusbar" class="loading" style="border: 1px solid #ccc;cursor: pointer;">
-    <div id="versionIndicator">
-      <span class="codicon codicon-sync"></span>
-      <span class="btntitle">Loading</span>
-      <span class="details">Please wait...</span>
+<body>
+  <div id="outerContainer">
+    <div id="mainContainer">
+      <div id="printContainer"></div>
     </div>
-    <div id="pageCounter"></div>
+    <div class="statusbar" class="loading" style="border: 1px solid #ccc;cursor: pointer;">
+      <div id="versionIndicator">
+        <span class="codicon codicon-sync"></span>
+        <span class="btntitle">Loading</span>
+        <span class="details">Please wait...</span>
+      </div>
+      <div id="pageCounter"></div>
+    </div>
   </div>
-  <div id="printContainer"></div>
 
-  
+
   <script>
     loading = false;
     function versionIndicator() {
@@ -42,10 +64,10 @@
       console.log("Latest version is " + state.latestversion);
       console.log("loading: " + loading);
       //version indicator stuff
-      // document.querySelector(".statusbar").classList.remove("loading");
-      // document.querySelector(".statusbar").classList.remove("stale");
+      document.querySelector(".statusbar").classList.remove("loading");
+      document.querySelector(".statusbar").classList.remove("stale");
       if (loading) {
-        // document.querySelector(".statusbar").classList.add("loading");
+        document.querySelector(".statusbar").classList.add("loading");
         document.querySelector("#versionIndicator .btntitle").textContent = "Loading";
         document.querySelector("#versionIndicator .details").textContent = "Please wait...";
         document.querySelector("#pageCounter").textContent = "";
@@ -56,7 +78,7 @@
         document.querySelector("#pageCounter").textContent = state.pagecount;
       }
       else {
-        // document.querySelector(".statusbar").classList.add("stale");
+        document.querySelector(".statusbar").classList.add("stale");
         document.querySelector("#versionIndicator .btntitle").textContent = "Refresh";
         document.querySelector("#versionIndicator .details").textContent = "The screenplay has been edited";
         document.querySelector("#pageCounter").textContent = "";
@@ -104,13 +126,13 @@
           return -1
       }
     }
-    
+
     async function loadDocx() {
       var docxData = state.docxAsBase64;
       //base64ToUint8Array(state.docxAsBase64);
 
       docx.renderAsync(base64ToUint8Array(docxData), document.getElementById("printContainer"))
-          .then(x => console.log("docx: finished"));
+        .then(x => console.log("docx: finished"));
 
     }
 
