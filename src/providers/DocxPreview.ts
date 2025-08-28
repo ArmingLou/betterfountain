@@ -1,13 +1,13 @@
 import * as vscode from "vscode";
 import * as path from 'path';
 import * as fs from "fs";
-import { getEditor, getActiveFountainDocument } from "../utils";
-import { FountainConfig, getFountainConfig } from "../configloader";
+import { getEditor, getOrShowEditor, getActiveFountainDocument } from "../utils";
+import { getFountainConfig } from "../configloader";
 import { assetsPath, getAssetsUri, mapToObject, resolveAsUri } from "../utils";
 import * as afterparser from "../afterwriting-parser";
 import { GenerateDocx } from "../docx/docx";
 import { DocxAsBase64 } from "../docx/docxmaker";
-// import { createStatisticsPanel } from "./Statistics";
+import { createStatisticsPanel } from "./Statistics";
 
 interface docxpreviewPanel {
   uri: string;
@@ -40,14 +40,18 @@ export function removeDocxPreviewPanel(id: Number) {
   }
 }
 
-export async function refreshDocxPanel(docxpanel: vscode.WebviewPanel, document: vscode.TextDocument, config: FountainConfig) {
-  docxpanel.webview.postMessage({ command: "updateversion", version: document.version, loading: true, uri: document.uri.toString() });
-  var parsed = afterparser.parse(document.getText(), config, false);
+export async function refreshDocxPanel(docxpanel: vscode.WebviewPanel, docuri: vscode.Uri) {
+  const editor = await getOrShowEditor(docuri);
+  if(!editor) return;
+  const config = getFountainConfig(docuri);
+  
+  docxpanel.webview.postMessage({ command: "updateversion", version: editor.document.version, loading: true, uri: editor.document.uri.toString() });
+  var parsed = afterparser.parse(editor.document.getText(), config, false);
   //Create PDF
   let docxAsBase64: DocxAsBase64 = await GenerateDocx("$PREVIEW$", config, undefined, parsed, undefined);
   let linemap = JSON.stringify(mapToObject(docxAsBase64.stats.linemap));
   let pagecount = docxAsBase64.stats.pagecount;
-  docxpanel.webview.postMessage({ command: "updatedocx", version: document.version, content: docxAsBase64.data, linemap: linemap, pagecount: pagecount })
+  docxpanel.webview.postMessage({ command: "updatedocx", version: editor.document.version, content: docxAsBase64.data, linemap: linemap, pagecount: pagecount })
   //Post Update to panel
 }
 
@@ -141,22 +145,21 @@ async function loadWebView(docuri: vscode.Uri, docxpanel: vscode.WebviewPanel) {
       //save ui persistence
     }
     if (message.command == "refresh") {
-      const editor = getEditor(getActiveFountainDocument());
-      if(!editor) return;
-      refreshDocxPanel(docxpanel, editor.document, getFountainConfig(docuri));
+      refreshDocxPanel(docxpanel, docuri);
     }
-    if (message.command = "openstats") {
-      // createStatisticsPanel();
+    if (message.command == "openstats") {
+      createStatisticsPanel(docuri);
     }
   });
+   docxpanel.onDidChangeViewState(() => {
+      if (docxpanel.active) {
+        refreshDocxPanel(docxpanel, docuri);
+      }
+    });
   docxpanel.onDidDispose(() => {
     removeDocxPreviewPanel(id);
   })
-
-  const editor = getEditor(getActiveFountainDocument());
-  if(!editor) return;
-  config = getFountainConfig(getActiveFountainDocument());
-  refreshDocxPanel(docxpanel, editor.document, config);
+  refreshDocxPanel(docxpanel, docuri);
 }
 
 vscode.workspace.onDidChangeConfiguration(change => {

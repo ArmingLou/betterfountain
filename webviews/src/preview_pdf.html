@@ -479,7 +479,7 @@
     });
 
     document.getElementById("pageCounter").addEventListener('click', () => {
-      // vscode.postMessage({ command: 'openstats', uri: state.docuri });
+      vscode.postMessage({ command: 'openstats', uri: state.docuri });
     });
 
     function cursorTools(name) {

@@ -93,7 +93,7 @@
 
     document.getElementById("pageCounter").addEventListener('click', () => {
       console.log("pageCounter click -> openstats");
-      // vscode.postMessage({ command: 'openstats', uri: state.docuri });
+      vscode.postMessage({ command: 'openstats', uri: state.docuri });
     });
 
     function cursorTools(name) {

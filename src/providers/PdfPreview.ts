@@ -1,13 +1,13 @@
 import * as vscode from "vscode";
 import * as path from 'path';
 import * as fs from "fs";
-import { getEditor, getActiveFountainDocument } from "../utils";
-import { FountainConfig, getFountainConfig } from "../configloader";
+import { getEditor, getOrShowEditor, getActiveFountainDocument } from "../utils";
+import { getFountainConfig } from "../configloader";
 import { assetsPath, getAssetsUri, mapToObject, resolveAsUri } from "../utils";
 import * as afterparser from "../afterwriting-parser";
 import { GeneratePdf } from "../pdf/pdf";
 import { PdfAsBase64 } from "../pdf/pdfmaker";
-// import { createStatisticsPanel } from "./Statistics";
+import { createStatisticsPanel } from "./Statistics";
 
 interface pdfpreviewPanel {
   uri: string;
@@ -40,14 +40,18 @@ export function removePdfPreviewPanel(id: Number) {
   }
 }
 
-export async function refreshPdfPanel(pdfpanel: vscode.WebviewPanel, document: vscode.TextDocument, config: FountainConfig) {
-  pdfpanel.webview.postMessage({ command: "updateversion", version: document.version, loading: true, uri: document.uri.toString() });
-  var parsed = afterparser.parse(document.getText(), config, false);
+export async function refreshPdfPanel(pdfpanel: vscode.WebviewPanel, docuri: vscode.Uri) {
+  const editor = await getOrShowEditor(docuri);
+  if(!editor) return;
+  const config = getFountainConfig(docuri);
+  
+  pdfpanel.webview.postMessage({ command: "updateversion", version: editor.document.version, loading: true, uri: editor.document.uri.toString() });
+  var parsed = afterparser.parse(editor.document.getText(), config, false);
   //Create PDF
   let pdfAsBase64: PdfAsBase64 = await GeneratePdf("$PREVIEW$", config, undefined, parsed, undefined);
   let linemap = JSON.stringify(mapToObject(pdfAsBase64.stats.linemap));
   let pagecount = pdfAsBase64.stats.pagecount;
-  pdfpanel.webview.postMessage({ command: "updatepdf", version: document.version, content: pdfAsBase64.data, linemap: linemap, pagecount: pagecount })
+  pdfpanel.webview.postMessage({ command: "updatepdf", version: editor.document.version, content: pdfAsBase64.data, linemap: linemap, pagecount: pagecount })
   //Post Update to panel
 }
 
@@ -154,22 +158,22 @@ async function loadWebView(docuri: vscode.Uri, pdfpanel: vscode.WebviewPanel) {
       //save ui persistence
     }
     if (message.command == "refresh") {
-      const editor = getEditor(getActiveFountainDocument());
-      if(!editor) return;
-      refreshPdfPanel(pdfpanel, editor.document, getFountainConfig(docuri));
+      refreshPdfPanel(pdfpanel, docuri);
     }
-    if (message.command = "openstats") {
-      // createStatisticsPanel();
+    if (message.command == "openstats") {
+      createStatisticsPanel(docuri);
+    }
+  });
+  pdfpanel.onDidChangeViewState(() => {
+    if (pdfpanel.active) {
+      refreshPdfPanel(pdfpanel, docuri);
     }
   });
   pdfpanel.onDidDispose(() => {
     removePdfPreviewPanel(id);
   })
 
-  const editor = getEditor(getActiveFountainDocument());
-  if(!editor) return;
-  config = getFountainConfig(getActiveFountainDocument());
-  refreshPdfPanel(pdfpanel, editor.document, config);
+  refreshPdfPanel(pdfpanel, docuri);
 }
 
 vscode.workspace.onDidChangeConfiguration(change => {

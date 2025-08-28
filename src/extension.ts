@@ -409,18 +409,18 @@ vscode.workspace.onDidSaveTextDocument(e => {
   if (config.refresh_stats_on_save) {
     let statsPanel = getStatisticsPanels(e.uri);
     for (const sp of statsPanel) {
-      refreshStatsPanel(sp.panel, e, config);
+      refreshStatsPanel(sp.panel, e.uri);
     }
   }
   if (config.refresh_pdfpreview_on_save) {
     let pdfPanels = getPdfPreviewPanels(e.uri);
     for (const pp of pdfPanels) {
-      refreshPdfPanel(pp.panel, e, config);
+      refreshPdfPanel(pp.panel, e.uri);
     }
 
     let docxPanels = getDocxPreviewPanels(e.uri);
     for (const pp of docxPanels) {
-      refreshDocxPanel(pp.panel, e, config);
+      refreshDocxPanel(pp.panel, e.uri);
     }
   }
 });

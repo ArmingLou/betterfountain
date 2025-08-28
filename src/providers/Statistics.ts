@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import * as path from 'path';
 import * as fs from "fs";
-import { getEditor, getActiveFountainDocument, getAssetsUri } from "../utils";
-import { FountainConfig, getFountainConfig } from "../configloader";
+import { getEditor,getOrShowEditor, getActiveFountainDocument, getAssetsUri } from "../utils";
+import { getFountainConfig } from "../configloader";
 import { assetsPath, resolveAsUri } from "../utils";
 import * as afterparser from "../afterwriting-parser";
 import { retrieveScreenPlayStatistics } from "../statistics";
@@ -39,15 +39,22 @@ export function removeStatisticsPanel(id: Number) {
   }
 }
 
-export async function refreshStatsPanel(statspanel: vscode.WebviewPanel, document: vscode.TextDocument, config: FountainConfig) {
-  statspanel.webview.postMessage({ command: "updateversion", version: document.version, loading: true });
-  var parsed = afterparser.parse(document.getText(), config, false);
-  const stats = await retrieveScreenPlayStatistics(document.getText(), parsed, config, undefined);
-  statspanel.webview.postMessage({ command: 'updateStats', content: stats, version: document.version });
+export async function refreshStatsPanel(statspanel: vscode.WebviewPanel, docuri: vscode.Uri) {
+  const editor = await getOrShowEditor(docuri);
+  if(!editor) return;
+  const config = getFountainConfig(docuri);
+  
+  statspanel.webview.postMessage({ command: "updateversion", version: editor.document.version, loading: true });
+  var parsed = afterparser.parse(editor.document.getText(), config, false);
+  const stats = await retrieveScreenPlayStatistics(editor.document.getText(), parsed, config, undefined);
+  statspanel.webview.postMessage({ command: 'updateStats', content: stats, version: editor.document.version });
 }
 
-export function createStatisticsPanel(): vscode.WebviewPanel {
-  let editor = getEditor(getActiveFountainDocument());
+export async function createStatisticsPanel(uri: vscode.Uri | undefined | null): Promise<vscode.WebviewPanel> {
+  if (!uri) {
+    uri = getActiveFountainDocument();
+  }
+  let editor = await getOrShowEditor(uri);
   if (!editor || editor.document.languageId != "fountain") {
     vscode.window.showErrorMessage("You can only view statistics of Fountain documents!");
     return undefined;
@@ -138,20 +145,19 @@ async function loadWebView(docuri: vscode.Uri, statspanel: vscode.WebviewPanel) 
       //save ui persistence
     }
     if (message.command == "refresh") {
-      const editor = getEditor(getActiveFountainDocument());
-      if (!editor) return;
-      refreshStatsPanel(statspanel, editor.document, getFountainConfig(docuri));
+      refreshStatsPanel(statspanel, docuri);
     }
   });
 
   statspanel.onDidDispose(() => {
     removeStatisticsPanel(id);
   })
-
-  const editor = getEditor(getActiveFountainDocument());
-  if (!editor) return;
-  config = getFountainConfig(getActiveFountainDocument())
-  refreshStatsPanel(statspanel, editor.document, config);
+  statspanel.onDidChangeViewState(() => {
+    if (statspanel.active) {
+      refreshStatsPanel(statspanel, docuri);
+    }
+  });
+  refreshStatsPanel(statspanel, docuri);
 }
 
 vscode.workspace.onDidChangeConfiguration(change => {

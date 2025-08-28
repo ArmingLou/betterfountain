@@ -46,6 +46,15 @@ export function getEditor(uri: vscode.Uri): vscode.TextEditor {
 	return undefined;
 }
 
+export async function getOrShowEditor(uri: vscode.Uri): Promise<vscode.TextEditor> {
+    let editor = getEditor(uri);
+    if (!editor) {
+        const doc = await vscode.workspace.openTextDocument(uri);
+        editor = await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.One,preview: false });
+    }
+    return editor;
+}
+
 //var syllable = require('syllable');
 
 export function slugify(text: string): string {
