@@ -1035,7 +1035,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 basedOn: "Normal",
                 run: {
                     font: doc.fontNames.get('normal'),
-                    size: print.font_size * 2 * 1.45,
+                    size: print.font_size * 2 * 1.35,
                     characterSpacing: 0,
                     superScript: true,
                 },
