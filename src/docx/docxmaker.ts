@@ -1029,6 +1029,17 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     spacing: spacing,
                 },
             },
+            footnoteReference: {
+                id: "FootnoteReference",
+                name: "FootnoteReference",
+                basedOn: "Normal",
+                run: {
+                    font: doc.fontNames.get('normal'),
+                    size: print.font_size * 2 * 1.45,
+                    characterSpacing: 0,
+                    superScript: true,
+                },
+            },
         },
         paragraphStyles: [
             {
