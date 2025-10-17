@@ -275,10 +275,11 @@ async function initDoc(opts: Options) {
         italic: false,
     }
 
-    var fontSize_ = print.note_font_size || 9
+    // var fontSize_ = print.note_font_size || 9
+    var fontSize_ = print.font_size || 12 //增大脚注编号的字体大小。
     fontSize_ = fontSize_ * 2 // docx bug ？ must double
     doc.runNotes = {
-        color: print.note.color,
+        // color: print.note.color,
         font: doc.fontNames.get('normal'),
         size: fontSize_,
         characterSpacing: 0,
@@ -1166,7 +1167,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     },
                     spacing: {
                         line: Docx.convertInchesToTwip(print.note_line_height), //docx bug? must -3
-                        lineRule: Docx.LineRuleType.EXACT,
+                        lineRule: Docx.LineRuleType.AT_LEAST, //至少单倍行高
                     }
                 },
             },
@@ -2283,7 +2284,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     if (k == 0) {
                         //去掉第一个字符
                         text = text.substring(1);
-
+                        text = " " + text // 第一行 加一个
                     }
                     if (k == token[j].text.length - 1) {
                         //去掉最后一个字符
