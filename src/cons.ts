@@ -1,5 +1,6 @@
 
 export const charOfStyleTag: { [index: string]: string } = {
+    dial_cache_break: "⛡",
     note_begin_ext: "இ",
     note_begin: "↺",
     note_end: "↻",
@@ -20,7 +21,7 @@ export const charOfStyleTag: { [index: string]: string } = {
     style_global_clean: "⇜",
     italic_global_begin: "↾",
     italic_global_end: "↿",
-    all: "☄☈↭↯↺↻↬↫☍☋↷↶↾↿↝↜⇀𓆡⇜இ",
+    all: "☄☈↭↯↺↻↬↫☍☋↷↶↾↿↝↜⇀𓆡⇜இ⛡",
 }
 
 export const blockRegex: { [index: string]: RegExp } = {

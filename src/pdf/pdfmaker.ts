@@ -740,6 +740,15 @@ async function initDoc(opts: Options) {
                 // 强制在原位置打印 note 
                 doc.format_state.override_color = (print.note && print.note.color) || '#000000';
                 doc.forceNoteOrig = true;
+            } else if (elem === charOfStyleTag.dial_cache_break) {
+                if (catchNotes && doc.currentNote.pageIdx > -1) {
+                    if (!pushed) {
+                        doc.currentNote.note.text.push('\n');
+                        pushed = true;
+                    } else {
+                        doc.currentNote.note.text[doc.currentNote.note.text.length - 1] += '\n';
+                    }
+                }
             } else {
                 // 特殊标示 note_begin 以及 正常字符，进入。
                 if (elem === charOfStyleTag.note_begin) {
@@ -2535,7 +2544,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     else if (line.type === "dialogue") {
                         if (chinaFormat) {
                             if (cacheText) {
-                                cacheText = cacheText + text;
+                                cacheText = cacheText + charOfStyleTag.dial_cache_break + text;
                                 draw = false;
                                 if (chinaFormat === 1 || chinaFormat === 2 || ii === lines.length-1) {
                                     finish_china_dial_first(ii, false); //cacheText插到后一行，后一个循环会draw
@@ -2546,7 +2555,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     else if (line.type === "parenthetical") {
                         if (chinaFormat) {
                             if (cacheText) {
-                                cacheText = cacheText + text;
+                                cacheText = cacheText + charOfStyleTag.dial_cache_break + text;
                                 draw = false;
                             }
                         }
@@ -2609,7 +2618,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     else if (line.type === "dialogue") {
                         if (chinaFormat) {
                             if (cacheText) {
-                                cacheText = cacheText + text;
+                                cacheText = cacheText + charOfStyleTag.dial_cache_break + text;
                                 draw = false;
                                 if (chinaFormat === 1 || chinaFormat === 2 || ii === lines.length-1) {
                                     finish_china_dial_first(ii, false);
@@ -2626,7 +2635,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     else if (line.type === "parenthetical") {
                         if (chinaFormat) {
                             if (cacheText) {
-                                cacheText = cacheText + text;
+                                cacheText = cacheText + charOfStyleTag.dial_cache_break + text;
                                 draw = false;
                             } else {
                                 if (line.token && line.token.dual !== "left" && line.token.dual !== "right") {
