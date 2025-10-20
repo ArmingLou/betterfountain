@@ -280,7 +280,8 @@ async function initDoc(opts: Options) {
     fontSize_ = fontSize_ * 2 // docx bug ？ must double
     doc.runNotes = {
         // color: print.note.color,
-        font: doc.fontNames.get('normal'),
+        // font: doc.fontNames.get('normal'),
+        font: "Calibri",
         size: fontSize_,
         characterSpacing: 0,
     }
@@ -1033,9 +1034,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 id: "FootnoteReference",
                 name: "FootnoteReference",
                 basedOn: "Normal",
+                next: "Normal",
                 run: {
-                    font: doc.fontNames.get('normal'),
-                    size: print.font_size * 2 * 1.35,
+                    font: "Calibri",
+                    size: print.font_size * 2 * 1.45,
                     characterSpacing: 0,
                     superScript: true,
                 },
@@ -1166,6 +1168,26 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             {
                 id: "notes",
                 name: "Notes",
+                basedOn: "Normal",
+                next: "Normal",
+                run: {
+                    ...doc.runNotes
+                },
+                paragraph: {
+                    indent: {
+                        left: actionIndent,
+                        right: actionIndent,
+                        firstLine: Docx.convertInchesToTwip(2 * print.font_width),
+                    },
+                    spacing: {
+                        line: Docx.convertInchesToTwip(print.note_line_height), //docx bug? must -3
+                        lineRule: Docx.LineRuleType.AT_LEAST, //至少单倍行高
+                    }
+                },
+            },
+            {
+                id: "notes2",
+                name: "Notes2",
                 basedOn: "Normal",
                 next: "Normal",
                 run: {
@@ -1445,7 +1467,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         size: actionIndent,
                         type: Docx.WidthType.DXA
                     },
-                    columnWidths: [dial_double_tab_colume_width,dial_double_tab_colume_width],
+                    columnWidths: [dial_double_tab_colume_width, dial_double_tab_colume_width],
                     borders: bordersNone,
                     rows: [
                         new Docx.TableRow({
@@ -1479,7 +1501,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
             lastDialTableRight = [];
         }
     }
-    
+
     var currType = '';
     function shouldDelBlankLine(idx: number): boolean {
         if (doc.rmBlankLine == 0) {
@@ -1606,9 +1628,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         section_number = helpers.version_generator(),
         text,
         after_section = false; // helpful to determine synopsis indentation
-        
+
     for (var ii = 0; ii < lines.length; ii++) {
-        
+
         if (lines[ii].type === "character" || lines[ii].type === "parenthetical" || lines[ii].type === "dialogue") {
             if (lines[ii].type === "character") {
                 if (lines[ii].token && lines[ii].token.dual !== "right") {
@@ -1626,13 +1648,13 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 finish_double_dial();
             }
         }
-        
-        if(shouldDelBlankLine(ii)) {
+
+        if (shouldDelBlankLine(ii)) {
             // 只绘制样式，再跳过
             doc.text2(lines[ii].text);
             continue;
         }
-        
+
         var doOutline = -1;
         // 去除页面前面的空行
         if (!pageStarted) {
@@ -2274,7 +2296,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
 
     }
-    
+
     // 对话块结束，额外处理 (双对话 /  国内剧本对话)
     finish_china_dial_first();
     finish_double_dial();
@@ -2314,7 +2336,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     // });
 
                     children.push(new Docx.Paragraph({
-                        style: "notes",
+                        style: k === 0 ? "notes" : "notes2",
                         children: doc.format_text(text, { color: '#868686', fontSize: print.note_font_size || 9, characterSpacing: 0 })
                     }));
                 }
