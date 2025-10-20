@@ -367,7 +367,7 @@ async function initDoc(opts: Options) {
             if (doc.currentNote.pageIdx >= 0) {
                 // 如果正在处理notes，并且收集到底部，本行为notes开始内容
                 if ((doc.chinaFormat === 1 || doc.chinaFormat === 3) && text.startsWith('△')) {
-                    text = text.substring(1);
+                    text = text.substring(2); // 去掉开头的△和一个空格
                     doc.cacheTriangle = true;
                 }
             } else {
@@ -376,7 +376,7 @@ async function initDoc(opts: Options) {
         }
 
         if ((doc.chinaFormat === 1 || doc.chinaFormat === 3) && text.startsWith('△') && doc.forceNoteOrig) {
-            text = text.substring(1);
+            text = text.substring(2); // 去掉开头的△和一个空格
         }
 
         // function note_lines() {
@@ -653,7 +653,7 @@ async function initDoc(opts: Options) {
                             } else {
                                 // onlyNoteContent = false;
                                 if (doc.cacheTriangle) {
-                                    elem = '△' + elem;
+                                    elem = '△' + ' ' + elem;
                                     doc.cacheTriangle = false;
                                 }
                             }
@@ -1823,9 +1823,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
             var text_properties = get_text_properties();
 
-            if (line.type == "parenthetical" && !text.startsWith("(")) {
-                text = " " + text;
-            }
+            // if (line.type == "parenthetical" && !text.startsWith("(")) {
+            //     text = " " + text;
+            // }
 
             if (line.type === 'centered') {
                 text = ifResetFormat(text, line);
