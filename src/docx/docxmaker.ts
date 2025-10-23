@@ -1175,9 +1175,10 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 },
                 paragraph: {
                     indent: {
-                        left: actionIndent,
+                        left: actionIndent+Docx.convertInchesToTwip(2 * print.font_width),
                         right: actionIndent,
-                        firstLine: Docx.convertInchesToTwip(2 * print.font_width),
+                        // firstLine: Docx.convertInchesToTwip(2 * print.font_width),
+                        hanging: Docx.convertInchesToTwip(2 * print.font_width),
                     },
                     spacing: {
                         line: Docx.convertInchesToTwip(print.note_line_height), //docx bug? must -3
@@ -1195,7 +1196,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 },
                 paragraph: {
                     indent: {
-                        left: actionIndent,
+                        left: actionIndent+Docx.convertInchesToTwip(2 * print.font_width),
                         right: actionIndent,
                     },
                     spacing: {
