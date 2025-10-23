@@ -49,8 +49,8 @@ export class StyleStash {
 }
 
 var PDFDocument = require('pdfkit')
-    //helper = require('../helpers');
-    // Blob = require('blob');
+//helper = require('../helpers');
+// Blob = require('blob');
 
 // const textbox_width_error = 0;
 
@@ -122,7 +122,7 @@ var create_simplestream = function (filepath: string) {
                     });
                 } else {
                     // Node.js环境，使用Buffer
-                    const buffer = Buffer.concat(simplestream.chunks.map((chunk: any) => 
+                    const buffer = Buffer.concat(simplestream.chunks.map((chunk: any) =>
                         Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
                     ));
                     // 创建一个模拟的Blob对象
@@ -488,15 +488,15 @@ async function initDoc(opts: Options) {
             catchNotes = true; // 页面底部notes打印模式
             if (doc.currentNote.pageIdx >= 0) {
                 // 如果正在处理notes，并且收集到底部，本行为notes开始内容
-                if ((doc.chinaFormat === 1 || doc.chinaFormat === 3) && text.startsWith('△')) {
+                if (text.startsWith('△') || text.startsWith('♪')) {
+                    doc.cacheTriangle = text.startsWith('△') ? '△' : '♪'; // 1,△ ;2,♪  
                     text = text.substring(2); // 去掉开头的△和一个空格
-                    doc.cacheTriangle = true;
                 }
             } else {
-                doc.cacheTriangle = false;
+                doc.cacheTriangle = '';
             }
         }
-        if ((doc.chinaFormat === 1 || doc.chinaFormat === 3) && text.startsWith('△') && doc.forceNoteOrig) {
+        if ((text.startsWith('△') || text.startsWith('♪')) && doc.forceNoteOrig) {
             text = text.substring(2); // 去掉开头的△和一个空格
         }
 
@@ -512,23 +512,23 @@ async function initDoc(opts: Options) {
                         for (let k = 0; k < notes[i][j].text.length; k++) {
                             // 每个note的行
                             //
-                            var tt2 = addTextbox([ {
-                                    text:notes[i][j].text[k],
-                                    font:'ScriptNormal',
-                                  }
-                                ], doc,print.left_margin *72, print.top_margin * 72, 
+                            var tt2 = addTextbox([{
+                                text: notes[i][j].text[k],
+                                font: 'ScriptNormal',
+                            }
+                            ], doc, print.left_margin * 72, print.top_margin * 72,
                                 (print.page_width - print.action.feed - print.action.feed) * 72,
-                                 print.top_margin * 72, (print.lines_per_page * line_height) * 72, 
-                                 (print.lines_per_page * line_height) * 72, 0, 0, true,
+                                print.top_margin * 72, (print.lines_per_page * line_height) * 72,
+                                (print.lines_per_page * line_height) * 72, 0, 0, true,
                                 { // 组件bug,text显示宽度比实际配置的width值要大
-                                    lineHeight: print.note_line_height*72,
+                                    lineHeight: print.note_line_height * 72,
                                     lineBreak: false,
                                     align: "left",
                                     baseline: 'bottom',
                                     fontSize: print.note_font_size || 12,
                                     characterSpacing: print.character_spacing,
                                 })
-                            l+=tt2.lines.length;
+                            l += tt2.lines.length;
                         }
                     }
                 }
@@ -800,8 +800,8 @@ async function initDoc(opts: Options) {
                             } else {
                                 onlyNoteContent = false;
                                 if (doc.cacheTriangle) { //note结束后   ，对正式内容开头补上△
-                                    elem = '△' + ' ' + elem;
-                                    doc.cacheTriangle = false;
+                                    elem = doc.cacheTriangle + ' ' + elem;
+                                    doc.cacheTriangle = '';
                                 }
                             }
                         }
@@ -996,7 +996,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     var chinaFormat = doc.chinaFormat;
     var line_height = opts.line_height;
     var bottom_notes = cfg.note_position_bottom
-    
+
     var print_title_page = cfg.print_title_page;
     var print_preface_page = cfg.print_preface_page;
     var scenes_numbers = cfg.scenes_numbers;
@@ -1420,7 +1420,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
     let notesPage: { [key: number]: any } = {};
     let currentLineNotes: any[] = [];
-    
+
     // 假设减去脚注高度后，剩余的可用正文页面高度
     function left_lines(pageIdx: any) {
         var l = 0;
@@ -1433,30 +1433,30 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     // 每个token有几个note
                     for (let k = 0; k < notes[i][j].text.length; k++) {
                         // 每个note的行
-                        var tt2 = addTextbox([ {
-                                    text:notes[i][j].text[k],
-                                    font:'ScriptNormal',
-                                  }
-                                ], doc,print.left_margin *72, print.top_margin * 72, 
-                                (print.page_width - print.action.feed - print.action.feed) * 72,
-                                 print.top_margin * 72, (print.lines_per_page * line_height) * 72, 
-                                 (print.lines_per_page * line_height) * 72, 0, 0, true,
-                                { // 组件bug,text显示宽度比实际配置的width值要大
-                                    lineHeight: print.note_line_height*72,
-                                    lineBreak: false,
-                                    align: "left",
-                                    baseline: 'bottom',
-                                    fontSize: print.note_font_size || 12,
-                                    characterSpacing: print.character_spacing,
-                                })
-                            l+=tt2.lines.length;
+                        var tt2 = addTextbox([{
+                            text: notes[i][j].text[k],
+                            font: 'ScriptNormal',
+                        }
+                        ], doc, print.left_margin * 72, print.top_margin * 72,
+                            (print.page_width - print.action.feed - print.action.feed) * 72,
+                            print.top_margin * 72, (print.lines_per_page * line_height) * 72,
+                            (print.lines_per_page * line_height) * 72, 0, 0, true,
+                            { // 组件bug,text显示宽度比实际配置的width值要大
+                                lineHeight: print.note_line_height * 72,
+                                lineBreak: false,
+                                align: "left",
+                                baseline: 'bottom',
+                                fontSize: print.note_font_size || 12,
+                                characterSpacing: print.character_spacing,
+                            })
+                        l += tt2.lines.length;
                     }
                 }
             }
         }
-        
+
         if (l > 0) {
-            return print.lines_per_page  * line_height - ((l + 1) * print.note_line_height); // l+1 ，预留多一行间隔
+            return print.lines_per_page * line_height - ((l + 1) * print.note_line_height); // l+1 ，预留多一行间隔
         } else {
             return print.lines_per_page * line_height;
         }
@@ -1923,7 +1923,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
             }
             if (!brk) {
-                if (height >= left_lines(pageIdx) - line_height ) {
+                if (height >= left_lines(pageIdx) - line_height) {
                     // 每页最后 1 行，遇到下一行 是以下情况，直接提前分页
                     var nextLine = lines[idx + 1];
                     if (nextLine && nextLine.type === "character") {
@@ -1986,7 +1986,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
     }
 
     var lastPdfOutlineWasSection = true;
-    
+
     for (var ii = 0; ii < lines.length; ii++) {
         if (lines[ii].type === "character" || lines[ii].type === "parenthetical" || lines[ii].type === "dialogue") {
         } else {
@@ -1998,7 +1998,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 continue;
             }
         }
-        
+
         var shouldDel = shouldDelBlankLine(ii);
         // lines.forEach(function (line: any) {
         if (pageNumPrintSub == -2 && lines[ii].token && (lines[ii].token.type === "scene_heading" || lines[ii].token.type === "section" || lines[ii].token.type === "transition")) { //redraw 也可能进入
@@ -2546,7 +2546,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             if (cacheText) {
                                 cacheText = cacheText + charOfStyleTag.dial_cache_break + text;
                                 draw = false;
-                                if (chinaFormat === 1 || chinaFormat === 2 || ii === lines.length-1) {
+                                if (chinaFormat === 1 || chinaFormat === 2 || ii === lines.length - 1) {
                                     finish_china_dial_first(ii, false); //cacheText插到后一行，后一个循环会draw
                                 }
                             }
@@ -2560,7 +2560,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             }
                         }
                     }
-                    
+
                     if (line.type === "parenthetical" && !chinaFormat) {
                         feed = print.left_margin + (innerwidth / 2) + (feed_diff * 1.5);
                         text_properties.width = innerwidth / 2 - (feed_diff * 3.5);
@@ -2595,9 +2595,9 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             text_properties, bottom_notes ? currentLineNotes : null, notesPage, last_dual_right_end_pageIdx);
                     }
                 } else {
-                    
+
                     var oldText = text;
-                    
+
                     text = ifResetFormat(text, line);
                     // 除去 对话右侧的 绘制：
 
@@ -2620,7 +2620,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                             if (cacheText) {
                                 cacheText = cacheText + charOfStyleTag.dial_cache_break + text;
                                 draw = false;
-                                if (chinaFormat === 1 || chinaFormat === 2 || ii === lines.length-1) {
+                                if (chinaFormat === 1 || chinaFormat === 2 || ii === lines.length - 1) {
                                     finish_china_dial_first(ii, false);
                                 }
                             } else {
@@ -2652,13 +2652,16 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     }
                     else if (line.type === "synopsis") {
                     }
+                    else if (line.type === "lyric") {
+                        text = '♪' + ' ' + text;
+                    }
                     else {
                         // action / lyric
                         if ((chinaFormat === 1 || chinaFormat === 3) && sceneStarted) { //第一个场景之前的action，不加 △
                             text = '△' + ' ' + text;
                         }
                     }
-                    
+
                     if (line.token && line.token.dual === "left") {
                         if (line.type === "parenthetical" && !chinaFormat) {
                             feed = print.action.feed + (feed_diff * 2);
@@ -2683,7 +2686,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                         lastCharacter = oldText;
                         lastCharacterFeed = feed
                     }
-                    
+
                     //======
                     if (draw) {
                         text2Result = doc.text2(text, feed, print.top_margin + height, print.top_margin,
@@ -2766,8 +2769,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         }
 
     }
-    
-    
+
+
     var lh = height;
     if (last_dual_right_end_pageIdx === pageIdx && last_dual_right_end_height > height) {
         lh = last_dual_right_end_height
@@ -2806,7 +2809,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
         var rightLines = 0
 
-        
+
         // 不再使用双行脚注的布局了：---------------
         // var leftLines = left_lines(pIdx)
         // // if (notes.length > 0) {
@@ -2843,7 +2846,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
         doc.switchToPage(pIdx);
         // var yPosBottom = print.page_height - print.page_number_top_margin - lineHeight * 0.5;
-        var yPosBottom = print.page_height - print.bottom_margin + line_height ;
+        var yPosBottom = print.page_height - print.bottom_margin + line_height;
         var yPos = yPosBottom;
         // var drawLeftEver = false;
         var drawRightLatestPosy = 0;
@@ -2872,23 +2875,23 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
 
 
                 for (var k = token[j].text.length - 1; k >= 0; k--) {
-                    var tt2 = addTextbox([ {
-                                    text:token[j].text[k],
-                                    font:'ScriptNormal',
-                                  }
-                                ], doc,print.left_margin *72, print.top_margin * 72, 
-                                width_note * 72,
-                                 print.top_margin * 72, (print.lines_per_page * line_height) * 72, 
-                                 (print.lines_per_page * line_height) * 72, 0, 0, true,
-                                { // 组件bug,text显示宽度比实际配置的width值要大
-                                    lineHeight: print.note_line_height*72,
-                                    lineBreak: false,
-                                    align: "left",
-                                    baseline: 'bottom',
-                                    fontSize: print.note_font_size || 12,
-                                    characterSpacing: print.character_spacing,
-                                })
-                    
+                    var tt2 = addTextbox([{
+                        text: token[j].text[k],
+                        font: 'ScriptNormal',
+                    }
+                    ], doc, print.left_margin * 72, print.top_margin * 72,
+                        width_note * 72,
+                        print.top_margin * 72, (print.lines_per_page * line_height) * 72,
+                        (print.lines_per_page * line_height) * 72, 0, 0, true,
+                        { // 组件bug,text显示宽度比实际配置的width值要大
+                            lineHeight: print.note_line_height * 72,
+                            lineBreak: false,
+                            align: "left",
+                            baseline: 'bottom',
+                            fontSize: print.note_font_size || 12,
+                            characterSpacing: print.character_spacing,
+                        })
+
                     yPos = yPos - (lineHeight * tt2.lines.length);
                     var text = token[j].text[k];
                     if (k == 0) {
@@ -2905,7 +2908,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     if (drawRight) {
                         drawRightLatestPosy = yPos;
                         x = feed_note_right;
-                        rightLines-=tt2.lines.length;
+                        rightLines -= tt2.lines.length;
                     } else {
                         // drawLeftEver = true;
                         drawLatestPosy = yPos;
@@ -2939,7 +2942,7 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
         if (notes.length > 0) {
             var innerwidth_half = (print.page_width - print.action.feed - print.action.feed) / 3
             if (drawLatestPosy) {
-                doc.format_text(cfg.text_note || 'NOTE:', 0, drawLatestPosy- line_height*0.5, {
+                doc.format_text(cfg.text_note || 'NOTE:', 0, drawLatestPosy - line_height * 0.5, {
                     color: '#000000',
                     line_break: false,
                     width: feed_note_no - 0.5 * lineHeight,
@@ -2947,8 +2950,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                     fontSize: print.font_size,
                     lineHeight: line_height * 72
                 });
-                doc.moveTo(print.action.feed * 72, (drawLatestPosy - line_height*0.5) * 72)
-                    .lineTo((print.action.feed + innerwidth_half) * 72, (drawLatestPosy - line_height*0.5) * 72)
+                doc.moveTo(print.action.feed * 72, (drawLatestPosy - line_height * 0.5) * 72)
+                    .lineTo((print.action.feed + innerwidth_half) * 72, (drawLatestPosy - line_height * 0.5) * 72)
                     .stroke();
                 // 统计高度，加上注解高度
                 pagesHeight[pIdx] += yPosBottom - drawLatestPosy;
@@ -2964,8 +2967,8 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 // });
                 // doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - lineHeight - line_height) * 72)
                 // .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - lineHeight - line_height) * 72)
-                doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - line_height*0.5) * 72)
-                    .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - line_height*0.5) * 72)
+                doc.moveTo(feed_note_no_right * 72, (drawRightLatestPosy - line_height * 0.5) * 72)
+                    .lineTo((feed_note_no_right + innerwidth_half) * 72, (drawRightLatestPosy - line_height * 0.5) * 72)
                     .stroke();
             }
         }

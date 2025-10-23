@@ -366,16 +366,16 @@ async function initDoc(opts: Options) {
             catchNotes = true; // 页面底部notes打印模式
             if (doc.currentNote.pageIdx >= 0) {
                 // 如果正在处理notes，并且收集到底部，本行为notes开始内容
-                if ((doc.chinaFormat === 1 || doc.chinaFormat === 3) && text.startsWith('△')) {
+                if (text.startsWith('△') || text.startsWith('♪')) {
+                    doc.cacheTriangle = text.startsWith('△') ? '△' : '♪';
                     text = text.substring(2); // 去掉开头的△和一个空格
-                    doc.cacheTriangle = true;
                 }
             } else {
-                doc.cacheTriangle = false;
+                doc.cacheTriangle = '';
             }
         }
 
-        if ((doc.chinaFormat === 1 || doc.chinaFormat === 3) && text.startsWith('△') && doc.forceNoteOrig) {
+        if ((text.startsWith('△') || text.startsWith('♪')) && doc.forceNoteOrig) {
             text = text.substring(2); // 去掉开头的△和一个空格
         }
 
@@ -653,8 +653,8 @@ async function initDoc(opts: Options) {
                             } else {
                                 // onlyNoteContent = false;
                                 if (doc.cacheTriangle) {
-                                    elem = '△' + ' ' + elem;
-                                    doc.cacheTriangle = false;
+                                    elem = doc.cacheTriangle + ' ' + elem;
+                                    doc.cacheTriangle = '';
                                 }
                             }
                         }
@@ -2267,8 +2267,12 @@ async function generate(doc: any, opts: any, lineStructs?: Map<number, lineStruc
                 }
                 else {
                     // action / lyric
-                    if ((chinaFormat === 1 || chinaFormat === 3) && sceneStarted) {
-                        text = '△' + ' ' + text;
+                    if (line.type === "lyric") {
+                        text = '♪' + ' ' + text;
+                    } else {
+                        if ((chinaFormat === 1 || chinaFormat === 3) && sceneStarted) {
+                            text = '△' + ' ' + text;
+                        }
                     }
                     getSectionMain().children.push(new Docx.Paragraph({
                         style: "action",
