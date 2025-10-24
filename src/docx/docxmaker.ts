@@ -5,7 +5,7 @@ import * as print from "../pdf/print";
 import * as path from 'path';
 import * as vscode from 'vscode';
 import helpers from "../helpers";
-import { cleanStlyleChars, isBlankLineAfterStlyle, wordToColor } from "../utils";
+import { cleanStlyleChars, isBlankLineAfterStlyle, wordToColor, openFile, revealFile } from "../utils";
 // import { cleanStlyleChars } from "../utils";
 import * as he from 'he';
 // import { addTextbox, drawTextLinesOnDocx, measureTextWidth } from 'textbox-for-docxkit';
@@ -854,8 +854,32 @@ function inline(text: string) {
 function finishDoc(doc: any, filepath: string) {
 
     Docx.Packer.toBuffer(doc).then((buffer) => {
-        fs.writeFileSync(filepath, buffer);
+        try {
+            fs.writeFileSync(filepath, buffer);
+            
+            // 添加成功处理逻辑，类似于 PDF 导出
+            let open = "Open";
+            let reveal = "Reveal in File Explorer";
+            if (process.platform == "darwin") reveal = "Reveal in Finder"
+            vscode.window.showInformationMessage("Exported DOCX Successfully!", open, reveal).then(val => {
+                switch (val) {
+                    case open: {
+                        openFile(filepath);
+                        break;
+                    }
+                    case reveal: {
+                        revealFile(filepath);
+                        break;
+                    }
+                }
+            })
+        } catch (error) {
+            vscode.window.showErrorMessage("Failed to export DOCX: " + error.message);
+        }
+    }).catch((error) => {
+        vscode.window.showErrorMessage("Failed to create DOCX: " + error.message);
     });
+    
 }
 
 
