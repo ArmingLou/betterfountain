@@ -18,6 +18,7 @@ const window = {
   onDidChangeActiveTextEditor: jest.fn(),
   onDidChangeTextEditorVisibleRanges: jest.fn(),
   onDidChangeTextEditorSelection: jest.fn(),
+  onDidChangeTextEditorOptions: jest.fn(),
   showInformationMessage: jest.fn(),
 }
 
@@ -96,6 +97,12 @@ const commands = {
   registerCommand: jest.fn(),
 }
 
+const extensions = {
+  getExtension: jest.fn().mockReturnValue({
+    extensionPath: "/mock/extension/path"
+  })
+}
+
 const CodeLens = function CodeLens() {}
 class Position {
   constructor (public readonly line: number, public readonly character: number) {}
@@ -122,5 +129,6 @@ export {
   DiagnosticSeverity,
   debug,
   commands,
+  extensions, // 添加这一行
   EventEmitter,
 }

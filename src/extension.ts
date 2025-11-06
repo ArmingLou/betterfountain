@@ -84,6 +84,11 @@ vscode.window.onDidChangeTextEditorSelection(() => {
   }
 });
 
+// 添加对 onDidChangeTextEditorOptions 事件的处理
+vscode.window.onDidChangeTextEditorOptions(() => {
+  // 空实现，防止事件未处理导致的错误
+});
+
 var durationStatus: vscode.StatusBarItem;
 export const outlineViewProvider: FountainOutlineTreeDataProvider = new FountainOutlineTreeDataProvider();
 const charactersViewProvider: FountainCharacterTreeDataProvider = new FountainCharacterTreeDataProvider();
