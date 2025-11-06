@@ -8,6 +8,7 @@ const StatusBarAlignment = { Left: 1, Right: 2 }
 const window = {
   createStatusBarItem: jest.fn(() => ({
     show: jest.fn(),
+    hide: jest.fn(),
     tooltip: jest.fn(),
   })),
   showErrorMessage: jest.fn(),
@@ -19,53 +20,66 @@ const window = {
   onDidChangeTextEditorVisibleRanges: jest.fn(),
   onDidChangeTextEditorSelection: jest.fn(),
   onDidChangeTextEditorOptions: jest.fn(),
+  visibleTextEditors: [] as any[],
   showInformationMessage: jest.fn(),
 }
 
 const workspace = {
   workspaceFolders: [] as string[],
-  getConfiguration: jest.fn().mockReturnValue({
-    generalConfig: {
-      numberScenesOnSave: false,
-      refreshStatisticsOnSave: false,
-      synchronizedMarkupAndPreview: true,
-      previewTheme: "paper",
-      previewTexture: true,
-      parentheticalNewLineHelper: true,
-    },
-    pdfConfig: {
-      emboldenSceneHeaders: true,
-      emboldenCharacterNames: false,
-      emitalicDialog: false,
-      showPageNumbers: true,
-      splitDialog: true,
-      printTitlePage: true,
-      printProfile: "a4",
-      doubleSpaceBetweenScenes: false,
-      printSections: false,
-      printSynopsis: false,
-      printActions: true,
-      printHeaders: true,
-      printDialogues: true,
-      numberSections: false,
-      useDualDialogue: true,
-      printNotes: false,
-      pageHeader: "",
-      pageFooter: "",
-      watermark: "",
-      sceneNumbers: "none",
-      eachSceneOnNewPage: false,
-      mergeEmptyLines: true,
-      showDialogueNumbers: false,
-      createBookmarks: true,
-      invisibleSectionBookmarks: true,
-      textMORE: "(MORE)",
-      textCONTD: "(CONT'D)",
-      textSceneContinued: "CONTINUED",
-      sceneContinuationTop: false,
-      sceneContinuationBottom: false,
-    }
-}),
+  getConfiguration: jest.fn().mockImplementation(() => {
+    const config: any = {
+      generalConfig: {
+        numberScenesOnSave: false,
+        refreshStatisticsOnSave: false,
+        synchronizedMarkupAndPreview: true,
+        previewTheme: "paper",
+        previewTexture: true,
+        parentheticalNewLineHelper: true,
+      },
+      pdfConfig: {
+        emboldenSceneHeaders: true,
+        emboldenCharacterNames: false,
+        emitalicDialog: false,
+        showPageNumbers: true,
+        splitDialog: true,
+        printTitlePage: true,
+        printProfile: "a4",
+        doubleSpaceBetweenScenes: false,
+        printSections: false,
+        printSynopsis: false,
+        printActions: true,
+        printHeaders: true,
+        printDialogues: true,
+        numberSections: false,
+        useDualDialogue: true,
+        printNotes: false,
+        pageHeader: "",
+        pageFooter: "",
+        watermark: "",
+        sceneNumbers: "none",
+        eachSceneOnNewPage: false,
+        mergeEmptyLines: true,
+        showDialogueNumbers: false,
+        createBookmarks: true,
+        invisibleSectionBookmarks: true,
+        textMORE: "(MORE)",
+        textCONTD: "(CONT'D)",
+        textSceneContinued: "CONTINUED",
+        sceneContinuationTop: false,
+        sceneContinuationBottom: false,
+      }
+    };
+    config.get = jest.fn((key: string) => {
+      if (config.pdfConfig && key in config.pdfConfig) {
+        return config.pdfConfig[key];
+      }
+      if (config.generalConfig && key in config.generalConfig) {
+        return config.generalConfig[key];
+      }
+      return undefined;
+    });
+    return config;
+  }),
   getWorkspaceFolder: jest.fn(),
   onDidChangeConfiguration: jest.fn(),
   onDidChangeTextDocument: jest.fn(),

@@ -16,20 +16,23 @@ export class FountainSymbolProvider implements vscode.DocumentSymbolProvider {
 			if (token.ischartor) {
 				hierarchyend = token.dialogueEndLine + 1;
 			}
-			var end : vscode.Position;
-			var details = undefined;
-			if (hierarchyend == start.line) {
-				end = document.lineAt(hierarchyend).range.end;
-				hierarchyend = hierarchyend+1;
-			} else {
-				end = new vscode.Position(hierarchyend, 0);
-				// end = document.lineAt(hierarchyend-1).range.end;
-			}
-			
+			const lastDocumentLine = Math.max(document.lineCount - 1, 0);
+			const rangeEndForLine = (targetLine: number): vscode.Position => {
+				const boundedLine = Math.min(Math.max(targetLine, start.line), lastDocumentLine);
+				return document.lineAt(boundedLine).range.end;
+			};
+
 			if (nexttoken != undefined && !token.ischartor) {
 				hierarchyend = nexttoken.range.start.line;
-				end = new vscode.Position(hierarchyend, 0);
-				// end = document.lineAt(hierarchyend-1).range.end;
+			}
+
+			var end: vscode.Position;
+			var details = undefined;
+			if (hierarchyend <= start.line) {
+				end = document.lineAt(start.line).range.end;
+				hierarchyend = start.line + 1;
+			} else {
+				end = rangeEndForLine(hierarchyend - 1);
 			}
 
 			if (token.isscene || token.ischartor) {

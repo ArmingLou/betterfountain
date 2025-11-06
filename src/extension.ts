@@ -36,6 +36,9 @@ function updateStatus(checkUri: string): void {
       return
     }
   }
+  if (!durationStatus) {
+    return;
+  }
   const parsedDoc = activeParsedDocument();
   if (parsedDoc) {
     if (durationStatus != undefined) {
