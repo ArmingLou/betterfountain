@@ -21,13 +21,20 @@ var userfullname: string;
 	}
 })();
 
-function TimeofDayCompletion(input: string, addspace: boolean, sort: string): vscode.CompletionItem {
+function TimeofDayCompletion(input: string, currentline: string,position: vscode.Position, sort: string): vscode.CompletionItem {
+	let idx = currentline.lastIndexOf('-');
+	let preS = ""
+	if (currentline.substring(idx - 1, idx) != ' ') {
+		preS = " "
+	}
+	let len = position.character - idx;
 	return {
 		label: " - " + input,
-		kind: vscode.CompletionItemKind.Constant,
-		filterText: "- " + input,
+		range: new vscode.Range(position.translate(0, -len), position),
+		// kind: vscode.CompletionItemKind.Constant,
+		filterText: "-                          ",
 		sortText: sort,
-		insertText: (addspace ? " " : "") + input + "\n\n"
+		insertText: new vscode.SnippetString(preS + '- '+ input +'\n\n') ,
 	};
 }
 interface TitlePageKeyComplete {
@@ -544,17 +551,17 @@ When both passwords are provided, users with user password are able to decrypt t
 			//Time of day
 			var mt = currentline.match(/^[^-–—−]+?[-–—−]\s*$/g);
 			if (mt) {
-				var addspace = !currentline.endsWith(" ");
-				completes.push(TimeofDayCompletion("日", addspace, "A"));
-				completes.push(TimeofDayCompletion("夜", addspace, "B"));
-				completes.push(TimeofDayCompletion("傍晚", addspace, "C"));
-				completes.push(TimeofDayCompletion("清晨", addspace, "D1"));
-				completes.push(TimeofDayCompletion("黎明", addspace, "D2"));
-				completes.push(TimeofDayCompletion("DAY", addspace, "E"));
-				completes.push(TimeofDayCompletion("NIGHT", addspace, "F"));
-				completes.push(TimeofDayCompletion("DUSK", addspace, "G"));
-				completes.push(TimeofDayCompletion("DAWN", addspace, "H"));
-				completes.push(TimeofDayCompletion("MORNING", addspace, "I"));
+				// var addspace = !currentline.endsWith(" ");
+				completes.push(TimeofDayCompletion("日", currentline, position, "A"));
+				completes.push(TimeofDayCompletion("夜", currentline, position, "B"));
+				completes.push(TimeofDayCompletion("傍晚", currentline, position, "C"));
+				completes.push(TimeofDayCompletion("清晨", currentline, position, "D1"));
+				completes.push(TimeofDayCompletion("黎明", currentline, position, "D2"));
+				completes.push(TimeofDayCompletion("DAY", currentline, position, "E"));
+				completes.push(TimeofDayCompletion("NIGHT", currentline, position, "F"));
+				completes.push(TimeofDayCompletion("DUSK", currentline, position, "G"));
+				completes.push(TimeofDayCompletion("DAWN", currentline, position, "H"));
+				completes.push(TimeofDayCompletion("MORNING", currentline, position, "I"));
 			}
 			else {
 				// var scenematch = currentline.match(/^[ \t]*((?:\*{0,3}_?)?(?:int|ext|est|int\.?\/ext|i\.?\/e)?\.(\(内景\)|\(外景\))?)\s*$/gi);
