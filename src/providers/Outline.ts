@@ -259,7 +259,7 @@ class SceneTreeItem extends OutlineTreeItem {
 	constructor(token: afterparser.StructToken, parent: OutlineTreeItem) {
 		super(token.text, token.id, parent)
 
-		this.iconPath = __filename + '/../../../assets/device-camera-video.svg';
+		this.iconPath = __filename + '/../../../assets/clapperboard-open-svgrepo-com.svg';
 		if (token.synopses && token.synopses.length > 0) {
 			this.tooltip = token.synopses.map(s => s.synopsis).join('\n');
 		}
