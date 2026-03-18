@@ -563,13 +563,13 @@ export function wordToColor(word: string, s: number = 0.7, v: number = 0.7): Arr
 	var sdiff = (1 - s) * 100;
 	if (sdiff > 0) {
 		var hash = hashString(word);
-		s = (hash % sdiff) / 100 + s;
+		s = (hash * 19 % sdiff) / 100 + s; // *17 使hash接近时，色相接近，但亮度和饱和度的差异尽量拉大。
 	}
 
 	var vdiff = (1 - v) * 100;
 	if (vdiff > 0) {
 		var hash = hashString(word);
-		v = (hash % vdiff) / 100 + v;
+		v = (hash * 11 % vdiff) / 100 + v; // *11 使hash接近时，色相接近，但亮度和饱和度的差异尽量拉大。
 	}
 
 	return HSVToRGB(stringToH(word, 360), s, v);
@@ -585,7 +585,7 @@ export function wordToColor(word: string, s: number = 0.7, v: number = 0.7): Arr
 
 function stringToH(str: string, colorSplits: number = 360): number {
 	const hash = hashString(str); // generate a hash value for the string
-	const h = (hash % colorSplits) / colorSplits; // 将色相分为 32 个区间
+	const h = (hash * 157 % colorSplits) / colorSplits; // * 139 放大差异。
 	return h;
 }
 
