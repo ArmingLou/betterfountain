@@ -132,18 +132,23 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
 
     for (var i = 0; i < parsed.tokens.length; i++) {
         if (parsed.tokens[i].type === "scene_heading") {
-            fisrtScenceStared = true; //第一个场景之前的角色，不统计。
+            fisrtScenceStared = true; //第一个场景之前的角色，也统计。只是之前的时间不统计但角色需要加上。
         }
-        while (i < parsed.tokens.length && parsed.tokens[i].type === "character" && fisrtScenceStared) {
+        while (i < parsed.tokens.length && parsed.tokens[i].type === "character") {
             const character = parsed.tokens[i].name()
             var speech = "";
             while (i++ && i < parsed.tokens.length) {
                 if (parsed.tokens[i].type === "dialogue") {
                     // speech += parsed.tokens[i].text + " " 
-                    speech += parsed.tokens[i].textNoNotes + " "
+                    if (fisrtScenceStared) {
+                        speech += parsed.tokens[i].textNoNotes + " "
+                    }
                 }
                 else if (parsed.tokens[i].type === "character") {
                     break;
+                }
+                else if (parsed.tokens[i].type === "scene_heading") {
+                    fisrtScenceStared = true;
                 }
                 // else skip extensions / parenthesis / dialogue-begin/-end
             }
@@ -171,7 +176,7 @@ const createCharacterStatistics = (parsed: parseoutput): characterStatistics => 
     let monologueCounter = 0;
 
     Object.keys(dialoguePerCharacter).forEach((singledialPerChar: string) => {
-        const speakingParts = dialoguePerCharacter[singledialPerChar].length;
+        const speakingParts = dialoguePerCharacter[singledialPerChar].filter((part: string) => part !== "").length; //排除了第一个场景之前的 人设 中的 对话数。
         let averageComplexity = 0;
         let secondsSpoken = 0;
         let monologues = 0;
