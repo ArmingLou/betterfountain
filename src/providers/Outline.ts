@@ -54,6 +54,7 @@ export class FountainOutlineTreeDataProvider implements vscode.TreeDataProvider<
 function buildTree(): OutlineTreeItem {
 	const root = new OutlineTreeItem("", "", null);
 	const notes = new NoteRootTreeItem("NOTES", "", root);
+	const bookmarks = new NoteRootTreeItem("Bookmarks", "", root);
 	// done this way to take care of root-level synopses and notes
 	const doc = activeParsedDocument();
 	if (doc) {
@@ -62,23 +63,27 @@ function buildTree(): OutlineTreeItem {
 		if (!root.children) {
 			root.children = []
 		}
-		root.children.push(...structure.map(token => makeTreeItem(token, root, notes)).filter(x => x));
+		root.children.push(...structure.map(token => makeTreeItem(token, root, notes,bookmarks)).filter(x => x));
 		if (root.children && root.children.length > 0) {
 			root.children = root.children.sort((a, b) => a.lineNumber - b.lineNumber);
 		}
 		if (notes.children && notes.children.length > 0) {
 			notes.children = notes.children.sort((a, b) => a.lineNumber - b.lineNumber);
 		}
+		if (bookmarks.children && bookmarks.children.length > 0) {
+			bookmarks.children = bookmarks.children.sort((a, b) => a.lineNumber - b.lineNumber);
+		}
 		if (!root.children) {
 			root.children = []
 		}
 		root.children.push(notes);
+		root.children.push(bookmarks);
 
 	}
 	return root;
 }
 
-function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem, notesRoot: OutlineTreeItem): OutlineTreeItem {
+function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem, notesRoot: OutlineTreeItem, bookmarks: OutlineTreeItem): OutlineTreeItem {
 	var item: OutlineTreeItem;
 	if (token.section) {
 		item = new SectionTreeItem(token, parent);
@@ -96,6 +101,14 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem, n
 		else {
 			return undefined;
 		}
+	}
+	else if (token.isBookmark) {
+		item = new NoteTreeItem({ note: token.text, line: token.id.substring(1) }, bookmarks);
+		if (!bookmarks.children) {
+			bookmarks.children = []
+		}
+		bookmarks.children.push(item);
+		return undefined;
 	}
 	else if (token.ischartor) {
 		item = new DialogueTreeItem(token, parent);
@@ -115,13 +128,13 @@ function makeTreeItem(token: afterparser.StructToken, parent: OutlineTreeItem, n
 			if (!parent.children) {
 				parent.children = []
 			}
-			parent.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, parent, notesRoot)));
+			parent.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, parent, notesRoot,bookmarks)));
 		}
 		else {
 			if (!item.children) {
 				item.children = []
 			}
-			item.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, item, notesRoot)));
+			item.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, item, notesRoot,bookmarks)));
 			// if (token.section) {
 			// 	item.children.push(...token.children.map((tok: afterparser.StructToken) => makeTreeItem(tok, item)));
 			// } else if (token.isscene) {

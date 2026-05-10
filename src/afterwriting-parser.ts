@@ -183,6 +183,7 @@ export class Location {
 }
 export class StructToken {
     text: string;
+    isBookmark: boolean;
     isnote: boolean;
     id: any;
     children: any; //Children of the section
@@ -331,7 +332,11 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         needProcessOutlineNote = 0,
         // current_expet_note_text = "", // 除去 note 之外的文字，用来计算时长。 当 current_has_note = true 才有值。
         current_outline_note_text: string[] = [], // 除去 note 首开口文字，用来 outline 面板提示。 当 needProcessOutlineNote = true 才有值。
-        current_outline_note_linenum: number[] = [] // 是 note 行码，用来 outline 面板提示。 当 needProcessOutlineNote = true 才有值。
+        current_outline_note_linenum: number[] = [], // 是 note 行码，用来 outline 面板提示。 当 needProcessOutlineNote = true 才有值。
+        bookmark_text: string[] = [], // 除去 /*｜ 首开口文字，用来 outline 面板提示。 
+        bookmark_linenum: number[] = [], // 是 bookmark 行码，用来 outline 面板提示。 
+        bookmark_stared = false,// 
+        text_bookmark = ''// 
 
 
     var add_outline_note = function (note: string, li: number) {
@@ -348,8 +353,12 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         for (var i = 0; i < arr.length; i++) {
             var current = arr[i];
             if (current) {
-                if (current === "/*") {
+                if (current === "/*" || current === "/*|") {
                     if (nested_notes == 0) {
+                        if (nested_comments ===0 && current === "/*|") {
+                            bookmark_stared = true;
+                            bookmark_linenum.push(li);
+                        }
                         nested_comments++;
                     }
                     else {
@@ -362,6 +371,18 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 } else if (current === "*/") {
                     if (nested_comments > 0) {
                         nested_comments--;
+                        if (nested_comments === 0){
+                            if (bookmark_stared) {
+                                bookmark_text.push(text_bookmark);
+                                // bookmark_linenum.push(li);
+                                text_bookmark = '';
+                                bookmark_stared = false;
+                            }
+                        } else {
+                            if (bookmark_stared) {
+                                text_bookmark = text_bookmark + current;
+                            }
+                        }
                     } else {
                         if (nested_notes == 0) {
                             // 既不是 note 也不是 comment
@@ -400,6 +421,9 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                         }
                     } else {
                         // 是 comment 的注解内容
+                        if (bookmark_stared) {
+                            text_bookmark = text_bookmark + current;
+                        }
                     }
                 }
                 else if (current === "]]") {
@@ -422,12 +446,18 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             text_valid = text_valid + current;
                         } else {
                             // 是 comment 的注解内容
+                            if (bookmark_stared) {
+                                text_bookmark = text_bookmark + current;
+                            }
                         }
                     }
                 }
                 else {
                     // 非符号文字内容
                     if (nested_comments > 0) {
+                        if (bookmark_stared) {
+                            text_bookmark = text_bookmark + current;
+                        }
                     } else if (nested_notes > 0) {
                         add_outline_note(current ? current : "", li);
                         if (cfg.print_notes) {
@@ -518,7 +548,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
             for (let i = 0; i < current_outline_note_text.length; i++) {
                 if (current_outline_note_text[i] && current_outline_note_text[i].trim().length > 0) {
                     var linenumber = current_outline_note_linenum[i];
-                    result.properties.structure.push({ playSec: _playTimeSec, text: current_outline_note_text[i].trim(), id: '/' + linenumber, isnote: true, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, current_outline_note_text[i].length + 4)), section: false, synopses: [] })
+                    result.properties.structure.push({ playSec: _playTimeSec, text: current_outline_note_text[i].trim(), id: '/' + linenumber, isBookmark: false, isnote: true, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, current_outline_note_text[i].length + 4)), section: false, synopses: [] })
                 }
             }
         }
@@ -757,7 +787,7 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         } else {
             // 2. 至少不是空行了。
 
-            var arr = text.split(/(\/\*)|(\*\/)|(\[\[\|)|(\[\[)|(\]\])/g).filter(if_not_empty);
+            var arr = text.split(/(\/\*\|)|(\/\*)|(\*\/)|(\[\[\|)|(\[\[)|(\]\])/g).filter(if_not_empty);
             reduce_comment_and_note(arr, i);
 
             if (text_valid.trim().length == 0) {
@@ -1506,6 +1536,17 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
         // TODO Arming (2024-09-05) : 
         processInlineNotes2()
         needProcessOutlineNote = 0;
+    }
+    
+    // 处理书签：
+    if (bookmark_text.length > 0) {
+        // 统一在最外层
+        for (let i = 0; i < bookmark_text.length; i++) {
+            if (bookmark_text[i] && bookmark_text[i].trim().length > 0) {
+                var linenumber = bookmark_linenum[i];
+                result.properties.structure.push({ playSec: _playTimeSec, text: bookmark_text[i].trim(), id: '/' + linenumber, isBookmark: true, isnote:false, isscene: false, ischartor: false, dialogueEndLine: 0, durationSec: 0, children: [], level: 0, notes: [], range: new Range(new Position(linenumber, 0), new Position(linenumber, 4)), section: false, synopses: [] })
+            }
+        }
     }
 
     updatePreviousSceneLength();//统计最后一个场景的 时长

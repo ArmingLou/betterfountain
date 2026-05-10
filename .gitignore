@@ -11,3 +11,4 @@ client/server
 /standalone/.webpack
 .env
 /syntaxes/markdown.tmlanguage.json
+.DS_Store
