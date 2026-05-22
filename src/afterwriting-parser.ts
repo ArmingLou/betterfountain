@@ -359,6 +359,11 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                             bookmark_stared = true;
                             bookmark_linenum.push(li);
                         }
+                        if (nested_comments > 0){
+                            if (bookmark_stared) {
+                                text_bookmark = text_bookmark + current;
+                            }
+                        }
                         nested_comments++;
                     }
                     else {
