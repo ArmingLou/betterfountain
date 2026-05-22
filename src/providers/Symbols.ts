@@ -63,10 +63,10 @@ export class FountainSymbolProvider implements vscode.DocumentSymbolProvider {
 		let doc = parsedDocuments.get(document.uri.toString());
 		if (doc) {
 			for (let index = 0; index < doc.properties.structure.length; index++) {
-				if (!doc.properties.structure[index].isnote) {
+				if (!doc.properties.structure[index].isnote && !doc.properties.structure[index].isBookmark) {
 					var next = doc.properties.structure[index + 1];
 					if (next) {
-						if (next.isnote) {
+						if (next.isnote|| next.isBookmark) {
 							next = null;
 						}
 					}
