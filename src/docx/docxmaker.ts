@@ -44,6 +44,7 @@ export class StyleStash {
     italic: boolean;
     underline: boolean;
     override_color: string;
+    grey_color: boolean;
     italic_global: boolean;
     italic_dynamic: boolean;
 }
@@ -294,7 +295,8 @@ async function initDoc(opts: Options) {
             bold: false,
             italic: false,
             underline: false,
-            override_color: null
+            override_color: null,
+            grey_color: false
         };
         opts.italic_global = false;
         opts.italic_dynamic = false;
@@ -315,6 +317,7 @@ async function initDoc(opts: Options) {
             italic: doc.format_state.italic,
             underline: doc.format_state.underline,
             override_color: doc.format_state.override_color,
+            grey_color: doc.format_state.grey_color,
             italic_global: opts.italic_global,
             italic_dynamic: opts.italic_dynamic,
         }
@@ -326,6 +329,7 @@ async function initDoc(opts: Options) {
         doc.format_state.italic = opts.stash_style_global_clumn.italic;
         doc.format_state.underline = opts.stash_style_global_clumn.underline;
         doc.format_state.override_color = opts.stash_style_global_clumn.override_color;
+        doc.format_state.grey_color = opts.stash_style_global_clumn.grey_color;
         opts.italic_global = opts.stash_style_global_clumn.italic_global;
         opts.italic_dynamic = opts.stash_style_global_clumn.italic_dynamic;
     };
@@ -357,7 +361,7 @@ async function initDoc(opts: Options) {
     doc.text2 = function (text: string, options: any, currentLineNotes?: any, notesPage?: any): Docx.Run[] {
         options = options || {};
         var color = options.color || '#000000';
-        color = doc.format_state.override_color ? doc.format_state.override_color : color;
+        color = doc.format_state.override_color ? doc.format_state.override_color : doc.format_state.grey_color ? "#888888" : color;
 
         // doc.fill(color);
 
@@ -481,6 +485,7 @@ async function initDoc(opts: Options) {
                     italic: doc.format_state.italic,
                     underline: doc.format_state.underline,
                     override_color: doc.format_state.override_color,
+                    grey_color: doc.format_state.grey_color,
                     italic_global: opts.italic_global,
                     italic_dynamic: opts.italic_dynamic,
                 }
@@ -493,6 +498,7 @@ async function initDoc(opts: Options) {
                 doc.format_state.italic = opts.stash_style_left_clumn.italic;
                 doc.format_state.underline = opts.stash_style_left_clumn.underline;
                 doc.format_state.override_color = opts.stash_style_left_clumn.override_color;
+                doc.format_state.grey_color = opts.stash_style_left_clumn.grey_color;
                 opts.italic_global = opts.stash_style_left_clumn.italic_global;
                 opts.italic_dynamic = opts.stash_style_left_clumn.italic_dynamic;
             }
@@ -503,6 +509,7 @@ async function initDoc(opts: Options) {
                     italic: doc.format_state.italic,
                     underline: doc.format_state.underline,
                     override_color: doc.format_state.override_color,
+                    grey_color: doc.format_state.grey_color,
                     italic_global: opts.italic_global,
                     italic_dynamic: opts.italic_dynamic,
                 }
@@ -514,6 +521,7 @@ async function initDoc(opts: Options) {
                 doc.format_state.italic = opts.stash_style_right_clumn.italic;
                 doc.format_state.underline = opts.stash_style_right_clumn.underline;
                 doc.format_state.override_color = opts.stash_style_right_clumn.override_color;
+                doc.format_state.grey_color = opts.stash_style_right_clumn.grey_color;
                 opts.italic_global = opts.stash_style_right_clumn.italic_global;
                 opts.italic_dynamic = opts.stash_style_right_clumn.italic_dynamic;
             } else if (elem === charOfStyleTag.italic_global_begin) {
@@ -601,6 +609,8 @@ async function initDoc(opts: Options) {
                 // 强制在原位置打印 note 
                 doc.format_state.override_color = (print.note && print.note.color) || '#000000';
                 doc.forceNoteOrig = true;
+            } else if (elem === charOfStyleTag.grey_color) {
+                doc.format_state.grey_color = !doc.format_state.grey_color;
             } else {
                 // 特殊标示 note_begin 以及 正常字符，进入。
                 if (elem === charOfStyleTag.note_begin) {
@@ -710,7 +720,7 @@ async function initDoc(opts: Options) {
                                     linkurl = link.url;
                                 }
                             }
-                            var coloer2 = doc.format_state.override_color ? doc.format_state.override_color : color
+                            var coloer2 = doc.format_state.override_color ? doc.format_state.override_color : doc.format_state.grey_color ? "#888888" : color
 
                             run.color = coloer2
                             run.size = fontSize

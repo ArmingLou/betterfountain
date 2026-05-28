@@ -147,6 +147,7 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
             italic: false,
             underline: false,
             override_color: "",
+            grey_color: false,
             italic_global: false,
             italic_dynamic: false
         },
@@ -156,6 +157,7 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
             italic: false,
             underline: false,
             override_color: "",
+            grey_color: false,
             italic_global: false,
             italic_dynamic: false
         },
@@ -165,6 +167,7 @@ export var GeneratePdf = async function (outputpath: string, config: FountainCon
             italic: false,
             underline: false,
             override_color: "",
+            grey_color: false,
             italic_global: false,
             italic_dynamic: false
         },

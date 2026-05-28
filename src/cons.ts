@@ -21,7 +21,8 @@ export const charOfStyleTag: { [index: string]: string } = {
     style_global_clean: "⇜",
     italic_global_begin: "↾",
     italic_global_end: "↿",
-    all: "☄☈↭↯↺↻↬↫☍☋↷↶↾↿↝↜⇀𓆡⇜இ⛡",
+    grey_color: "≒",
+    all: "☄☈↭↯↺↻↬↫☍☋↷↶↾↿↝↜⇀𓆡⇜இ⛡≒",
 }
 
 export const blockRegex: { [index: string]: RegExp } = {

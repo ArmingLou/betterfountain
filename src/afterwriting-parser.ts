@@ -1447,15 +1447,18 @@ export var parse = function (original_script: string, cfg: any, generate_html: b
                 // processParentheticalBlock(thistoken);
                 if (text_valid.match(regex.parenthetical_end)) {
                     parenthetical_open = false;
+                    text_display = text_display + charOfStyleTag.grey_color;
                 }
             } else {
                 if (text_valid.match(regex.parenthetical)) {
                     thistoken.type = "parenthetical";
+                    text_display = charOfStyleTag.grey_color + text_display + charOfStyleTag.grey_color;
                     // processParentheticalBlock(thistoken);
                 } else if (text_valid.match(regex.parenthetical_start)) {
                     thistoken.type = "parenthetical";
                     // processParentheticalBlock(thistoken);
                     parenthetical_open = true;
+                    text_display = charOfStyleTag.grey_color + text_display;
                 } else {
                     thistoken.type = "dialogue";
                     processDialogueBlock(thistoken);
